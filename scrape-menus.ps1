@@ -9,8 +9,9 @@
     .\scrape-menus.ps1 -Date 2026-11-18
 #>
 param(
-  # NetNutrition unit ids: 1 Rand, 2 Commons, 3 Kissam, 11 EBI, 20 Rothschild, 21 Carmichael, 19 Zeppos
-  [int[]]$Units = @(1, 2, 3, 11, 20, 21, 19),
+  # NetNutrition unit ids: 1 Rand, 2 Commons, 3 Kissam, 11 EBI, 20 Rothschild, 21 Carmichael, 19 Zeppos,
+  # plus the cafés that post menus: 4 The Pub, 22 West End Bagel, 17 Local Java
+  [int[]]$Units = @(1, 2, 3, 11, 20, 21, 19, 4, 22, 17),
   [datetime]$Date = (Get-Date),
   [string]$Out = "menus.json",
   [int]$DelayMs = 50

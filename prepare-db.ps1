@@ -13,7 +13,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$short = @{ 1 = 'Rand'; 2 = 'Commons'; 3 = 'Kissam'; 11 = 'EBI'; 20 = 'Rothschild'; 21 = 'Carmichael'; 19 = 'Zeppos' }
+$short = @{ 1 = 'Rand'; 2 = 'Commons'; 3 = 'Kissam'; 11 = 'EBI'; 20 = 'Rothschild'; 21 = 'Carmichael'; 19 = 'Zeppos'; 4 = 'The Pub'; 22 = 'West End Bagel'; 17 = 'Local Java' }
 
 if (Test-Path $OutDir) { Remove-Item -Recurse -Force $OutDir }
 New-Item -ItemType Directory -Force $OutDir | Out-Null
