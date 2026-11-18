@@ -383,8 +383,15 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 /* ===== Eat page ===== */
 .eat{gap:16px}
 .eathead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-.mealseg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--pill-edge);border-radius:99px;padding:3px}
-.mealseg button{border:0;background:transparent;border-radius:99px;padding:6px 10px;font-size:.76rem;font-weight:600;color:var(--muted)}
+/* Meal switch: a full-width, three-part segmented control under the search bar */
+.mealseg{display:grid;grid-template-columns:repeat(3,1fr);background:rgba(255,255,255,.04);border:1px solid var(--pill-edge);border-radius:12px;padding:3px}
+.mealseg button{border:0;background:transparent;border-radius:9px;padding:8px 0;font-size:.84rem;font-weight:600;color:var(--muted)}
+/* Top picks header: tap to fold the panel away and back */
+.pickblock{display:flex;flex-direction:column;gap:8px}
+.picktoggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;padding:2px 4px;text-align:left}
+.picktoggle .gs{font-size:.8rem;font-weight:600;color:var(--blue-2)}
+.picks{transition:max-height .35s var(--ease),opacity .25s ease,padding .35s var(--ease),border-color .3s;max-height:320px;overflow:hidden}
+.picks.folded{max-height:0;opacity:0;padding-top:0;padding-bottom:0;border-width:0;box-shadow:none}
 .mealseg button[aria-pressed="true"]{background:var(--panel-2);color:var(--ink)}
 /* top picks: one hero card + two compact rows */
 .picks{display:flex;flex-direction:column;gap:8px}
@@ -618,13 +625,16 @@ html.finder .irow .n,html.finder .prow .n{display:none}
       <button type="button" class="eclear" id="eatClear" aria-label="Clear search" hidden>✕</button>
     </div>
     <div class="echips" id="eatChips" aria-hidden="true"></div>
-    <div class="eathead">
-      <span class="lab picklab">Top picks for you</span>
-      <div class="mealseg" id="mealSeg" role="group" aria-label="Meal">
-        <button type="button" data-meal="Breakfast">Bkfst</button><button type="button" data-meal="Lunch">Lunch</button><button type="button" data-meal="Dinner">Dinner</button>
-      </div>
+    <!-- Meal: its own full-width switch, since it changes everything below (picks, search, halls) -->
+    <div class="mealseg" id="mealSeg" role="group" aria-label="Meal">
+      <button type="button" data-meal="Breakfast">Breakfast</button><button type="button" data-meal="Lunch">Lunch</button><button type="button" data-meal="Dinner">Dinner</button>
     </div>
-    <div class="picks" id="picks"></div>
+    <div class="pickblock" id="pickBlock">
+      <button type="button" class="picktoggle" id="pickToggle" aria-expanded="true" aria-controls="picks">
+        <span class="lab picklab">Top picks for you</span><span class="gs" id="pickToggleTxt">Hide</span>
+      </button>
+      <div class="picks" id="picks"></div>
+    </div>
     <div class="eresults" id="eatResults" hidden></div>
     <div class="places" id="eatPlaces"></div>
     <div class="fine">Menus and hours from NetNutrition, refreshed each morning. Tap any dish to log it.</div>
@@ -1213,7 +1223,7 @@ function renderResults(){
   const q=eat.q.trim().toLowerCase();const active=!!q||[...eat.chips].some(c=>c!=='open');
   // While searching, the picks step aside so results sit right under the search bar.
   $('#eatResults').hidden=!active;$('#eatPlaces').hidden=active;$('#eatClear').hidden=!q;
-  $('#picks').hidden=active;$('.picklab').style.visibility=active?'hidden':'';
+  $('#pickBlock').hidden=active;
   if(!active)return;
   let all=[];for(const id of DINING)all=all.concat(hallItems(id,eat.meal));
   const hits=sortForYou(all.filter(i=>i.kind!=='extra'||q).filter(i=>!q||(i.n+' '+(i.s||'')).toLowerCase().includes(q)).filter(chipOk),null).slice(0,40);
@@ -1274,6 +1284,13 @@ function enterEat(){
   clearInterval(hrTimer);hrTimer=setInterval(()=>{if(curPage!==1)clearInterval(hrTimer);else{renderEat()}},60000);
 }
 $('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]');if(!b)return;eat.meal=b.dataset.meal;renderEat()});
+// Top picks can fold away; the choice is remembered on this device.
+function setPicksOpen(open){
+  const p=$('#picks'),t=$('#pickToggle');p.classList.toggle('folded',!open);t.setAttribute('aria-expanded',String(open));
+  $('#pickToggleTxt').textContent=open?'Hide':'Show';LS.set('picksOpen',open);
+}
+$('#pickToggle').addEventListener('click',()=>setPicksOpen($('#pickToggle').getAttribute('aria-expanded')!=='true'));
+setPicksOpen(LS.get('picksOpen',true));
 $('#eatQ').addEventListener('input',()=>{eat.q=$('#eatQ').value;renderResults();if($('#eatResults').hidden)renderPlaces()});
 // Filter chips show only while you're searching: open on focus, stay while there's text or you're adding a filter,
 // and fold away once you leave an empty search box.
