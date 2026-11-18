@@ -411,6 +411,31 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 .echips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
 .echip{border:1px solid var(--pill-edge);background:transparent;border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:600;color:var(--muted)}
 .echip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+/* Settings toggle (Food finder mode) */
+.toggle{display:flex;align-items:center;gap:14px;background:var(--panel-2);border:1px solid var(--edge);border-radius:14px;padding:12px 14px;cursor:pointer}
+.toggle span{flex:1;min-width:0}
+.toggle b{display:block;font-weight:600}
+.toggle small{display:block;font-size:.76rem;color:var(--muted)}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle i{flex:none;width:44px;height:26px;border-radius:99px;background:rgba(255,255,255,.12);position:relative;transition:background .2s}
+.toggle i::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}
+.toggle input:checked+i{background:var(--blue)}
+.toggle input:checked+i::after{transform:translateX(18px)}
+.toggle input:focus-visible+i{outline:2px solid var(--blue-2);outline-offset:2px}
+#goalForm.finder .trackonly{display:none}
+.trackonly{display:flex;flex-direction:column;gap:16px}
+/* Food finder mode: only Eat and Ask, no numbers in lists, no camera bar */
+html.finder .tabs{grid-template-columns:repeat(2,1fr)}
+html.finder .tabhl{width:calc((100% - 8px) / 2)}
+html.finder .tabs [data-p="0"],html.finder .tabs [data-p="2"],html.finder #pToday,html.finder #pWeek{display:none}
+html.finder .dock{display:none}
+html.finder .irow .n,html.finder .prow .n{display:none}
+/* Dish nutrition card */
+.fdgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fdgrid div{background:var(--panel-2);border-radius:12px;padding:10px 12px}
+.fdgrid b{display:block;font-family:var(--display);font-weight:600;font-size:1.15rem;font-variant-numeric:tabular-nums}
+.fdgrid .wide{grid-column:1/-1}
+#food.scrim{align-items:center;padding-top:calc(16px + env(safe-area-inset-top, 0px))}
 /* custom filters: same chip, with a small ✕; the + chip opens a one-line box */
 .echip.custom{display:inline-flex;align-items:center;gap:2px;padding:0 4px 0 0}
 .echip.custom button{border:0;background:transparent;color:inherit;font:inherit;padding:6px 4px 6px 12px}
@@ -680,19 +705,39 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 
 
 <!-- Targets -->
+<!-- One dish's nutrition (used in food finder mode, where lists show no numbers) -->
+<div class="scrim" id="food" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fdName">
+    <div><h2 id="fdName"></h2><div class="fine" id="fdWhere"></div></div>
+    <div class="fdgrid" id="fdGrid"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="fdClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="scrim" id="settings" hidden>
   <form class="sheet" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <h2 id="setTitle">Daily targets</h2>
-    <div class="names" id="gdir" role="group" aria-label="Your goal">
-      <button type="button" class="name" data-dir="lose">Lose weight</button>
-      <button type="button" class="name" data-dir="maintain">Maintain</button>
-      <button type="button" class="name" data-dir="gain">Gain weight</button>
+    <h2 id="setTitle">Settings</h2>
+    <!-- Food finder mode: no calorie tracking, just finding food -->
+    <label class="toggle" for="gfinder">
+      <span><b>Food finder mode</b><small>Hide calories and tracking. Tap any dish to see its nutrition.</small></span>
+      <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
+    </label>
+    <div class="trackonly">
+      <div class="names" id="gdir" role="group" aria-label="Your goal">
+        <button type="button" class="name" data-dir="lose">Lose weight</button>
+        <button type="button" class="name" data-dir="maintain">Maintain</button>
+        <button type="button" class="name" data-dir="gain">Gain weight</button>
+      </div>
+      <div class="fields goals">
+        <label class="wide">Calories<input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200"></label>
+        <label class="wide">Protein (g)<input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150"></label>
+        <label>Carbs (g)<input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250"></label>
+        <label>Fat (g)<input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70"></label>
+      </div>
     </div>
     <div class="fields goals">
-      <label class="wide">Calories<input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200"></label>
-      <label class="wide">Protein (g)<input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150"></label>
-      <label>Carbs (g)<input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250"></label>
-      <label>Fat (g)<input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70"></label>
       <label class="wide">Foods you like (for recommendations)<textarea id="gprefs" rows="2" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
     </div>
     <div class="actions">
@@ -892,7 +937,8 @@ const goalDir=()=>{const d=state.settings&&state.settings.dir;return d==='lose'|
 let dirDraft='maintain';
 function renderDir(){for(const b of document.querySelectorAll('#gdir [data-dir]'))b.setAttribute('aria-pressed',String(b.dataset.dir===dirDraft))}
 $('#gdir').addEventListener('click',e=>{const b=e.target.closest('[data-dir]');if(!b)return;dirDraft=b.dataset.dir;renderDir()});
-function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';$('#gprefs').value=prefs();$('#settings').hidden=false;setTimeout(()=>$('#gk').focus(),50)}
+function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';$('#gprefs').value=prefs();$('#gfinder').checked=finderOn();$('#goalForm').classList.toggle('finder',finderOn());$('#settings').hidden=false}
+$('#gfinder').addEventListener('change',()=>$('#goalForm').classList.toggle('finder',$('#gfinder').checked));
 function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
@@ -1016,7 +1062,8 @@ function scoreFor(k,p,ctx,liked,st){
   return s;
 }
 function hallStatus(id){const u=hoursData&&hoursData.units.find(x=>x.id===id);return u?{...status(u),u}:null}
-function eatContext(){const G=goals(),t=dayTot();return {room:Math.max(250,G.k-t.k),proLeft:Math.max(0,G.p-t.p),dir:goalDir(),pm:prefModel()}}
+// In food finder mode picks ignore calories and protein left; they go by taste and what's open.
+function eatContext(){const G=goals(),t=dayTot();if(finderOn())return {room:1e9,proLeft:0,dir:'maintain',pm:prefModel()};return {room:Math.max(250,G.k-t.k),proLeft:Math.max(0,G.p-t.p),dir:goalDir(),pm:prefModel()}}
 function topPicks(meal){
   const ctx=eatContext();const out=[];
   for(const id of DINING){
@@ -1107,7 +1154,10 @@ function customOk(it,f){
 }
 function renderChips(){
   const custom=customFilters();
-  $('#eatChips').innerHTML=CHIPS.map(([k,l])=>`<button type="button" class="echip" data-chip="${k}" aria-pressed="${eat.chips.has(k)}">${l}</button>`).join('')
+  // Food finder mode leaves out the calorie / protein chips.
+  const chips=finderOn()?CHIPS.filter(([k])=>k!=='protein'&&k!=='under500'):CHIPS;
+  if(finderOn()){eat.chips.delete('protein');eat.chips.delete('under500')}
+  $('#eatChips').innerHTML=chips.map(([k,l])=>`<button type="button" class="echip" data-chip="${k}" aria-pressed="${eat.chips.has(k)}">${l}</button>`).join('')
     +custom.map(f=>{const on=eat.chips.has('c:'+f.id);return `<span class="echip custom" aria-pressed="${on}"><button type="button" data-chip="c:${esc(f.id)}">${esc(f.label)}</button><button type="button" class="cfdel" data-delchip="${esc(f.id)}" aria-label="Delete filter ${esc(f.label)}">✕</button></span>`}).join('')
     +(eat.addingFilter
       ?`<form class="cfform" id="cfForm"><input id="cfIn" placeholder="e.g. under 400 cal, 30 g protein, no pork" aria-label="New filter" autocomplete="off" enterkeyhint="done"><button type="submit">Add</button></form>`
@@ -1154,7 +1204,7 @@ function placeRow(u,st){
   const isHall=DINING.includes(u.id);const ctx=eatContext();
   let best='';
   if(isHall&&eat.loaded){const m=sortForYou(hallItems(u.id,eat.meal).filter(i=>i.kind==='main'),st)[0];
-    if(m)best=`${m.n} · ${fmt(m.k)} cal · ${Math.round(m.p)} g`;}
+    if(m)best=finderOn()?m.n:`${m.n} · ${fmt(m.k)} cal · ${Math.round(m.p)} g`;}
   const cls=st.open?(st.soon?' soon':' open'):'';const isOpen=eat.open===u.id;
   let body='';
   if(isOpen){
@@ -1220,9 +1270,24 @@ function logFromItems(items,hallId){
   const nm=NAMES.includes(eat.meal)?eat.meal:timeName();
   openReview({mode:'new',meal:{name:nm,hall:hallName(hallId),items:its,tot:{k:Math.round(T.k),p:r1(T.p),c:r1(T.c),f:r1(T.f)}}});
 }
+// Food finder mode: tapping a dish shows its nutrition card instead of logging it.
+const finderOn=()=>!!(state.settings&&state.settings.finder);
+let fdItems=null,fdHall=null;
+function openFood(items,hallId){
+  fdItems=items;fdHall=hallId;const T=items.reduce((t,i)=>({k:t.k+(+i.k||0),p:t.p+(+i.p||0),c:t.c+(+i.c||0),f:t.f+(+i.f||0)}),{k:0,p:0,c:0,f:0});
+  const st=hallStatus(hallId);
+  $('#fdName').textContent=items.map(i=>i.n).join(' + ');
+  $('#fdWhere').textContent=[hallName(hallId),st&&st.label.toLowerCase(),items.length===1&&items[0].v].filter(Boolean).join(' · ');
+  $('#fdGrid').innerHTML=`<div><span class="lab">Calories</span><b>${fmt(T.k)}</b></div><div><span class="lab">Protein</span><b>${r1(T.p)} g</b></div>
+    <div><span class="lab">Carbs</span><b>${r1(T.c)} g</b></div><div><span class="lab">Fat</span><b>${r1(T.f)} g</b></div>`;
+  $('#food').hidden=false;
+}
+$('#fdClose').addEventListener('click',()=>{$('#food').hidden=true});
+$('#food').addEventListener('click',e=>{if(e.target.id==='food')$('#food').hidden=true});
+function tapFood(items,hallId){if(finderOn())openFood(items,hallId);else logFromItems(items,hallId)}
 $('#pEat').addEventListener('click',e=>{
-  const pk=e.target.closest('[data-pick]');if(pk){const c=eat.pickList&&eat.pickList[+pk.dataset.pick];if(c)logFromItems(c.items,c.hall);return}
-  const lg=e.target.closest('[data-log]');if(lg){const [h,n,v]=lg.dataset.log.split('|');const it=(eat.menus[+h]||[]).find(i=>i.n===n&&(i.v||'')===v);if(it)logFromItems([it],+h);return}
+  const pk=e.target.closest('[data-pick]');if(pk){const c=eat.pickList&&eat.pickList[+pk.dataset.pick];if(c)tapFood(c.items,c.hall);return}
+  const lg=e.target.closest('[data-log]');if(lg){const [h,n,v]=lg.dataset.log.split('|');const it=(eat.menus[+h]||[]).find(i=>i.n===n&&(i.v||'')===v);if(it)tapFood([it],+h);return}
   const pl=e.target.closest('[data-place]');if(pl){const id=+pl.dataset.place;eat.open=eat.open===id?null:id;renderPlaces();return}
   const hr=e.target.closest('[data-hours]');if(hr){const id=+hr.dataset.hours;eat.showHours=eat.showHours||{};eat.showHours[id]=!eat.showHours[id];renderPlaces();return}
   const sd=e.target.closest('[data-sides]');if(sd){const id=+sd.dataset.sides;eat.showSides=eat.showSides||{};eat.showSides[id]=!eat.showSides[id];renderPlaces();return}
@@ -1234,6 +1299,8 @@ $('#pEat').addEventListener('click',e=>{
 const pager=$('#pager'),tabs=$('#tabs');
 let curPage=0;
 document.documentElement.classList.add('on-today');
+// Pages in order are Today 0, Eat 1, Week 2, Ask 3. Food finder mode hides Today and Week, so only Eat and Ask are swipeable.
+const visiblePages=()=>finderOn()?[1,3]:[0,1,2,3];
 function setPage(i){
   if(i===curPage)return;curPage=i;
   document.documentElement.classList.toggle('on-today',i===0);
@@ -1245,13 +1312,23 @@ function setPage(i){
 }
 let raf=0;
 pager.addEventListener('scroll',()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
-  const p=pager.scrollLeft/Math.max(1,pager.clientWidth);
-  tabs.style.setProperty('--pos',Math.max(0,Math.min(3,p)).toFixed(3));
-  setPage(Math.round(p));
+  const vis=visiblePages();const p=pager.scrollLeft/Math.max(1,pager.clientWidth);
+  tabs.style.setProperty('--pos',Math.max(0,Math.min(vis.length-1,p)).toFixed(3));
+  setPage(vis[Math.max(0,Math.min(vis.length-1,Math.round(p)))]);
 })},{passive:true});
-function goPage(i){pager.scrollTo({left:i*pager.clientWidth,behavior:calm?'auto':'smooth'})}
+function slotOf(i){const v=visiblePages();const s=v.indexOf(i);return s<0?0:s}
+function goPage(i){pager.scrollTo({left:slotOf(i)*pager.clientWidth,behavior:calm?'auto':'smooth'})}
 tabs.addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b)goPage(+b.dataset.p)});
-addEventListener('resize',()=>{pager.scrollLeft=curPage*pager.clientWidth});
+addEventListener('resize',()=>{pager.scrollLeft=slotOf(curPage)*pager.clientWidth});
+// Switch food finder mode on or off: hide/show Today and Week, and land on Eat if the current page went away.
+let finderApplied=null;
+function applyFinder(){
+  const on=finderOn();if(on===finderApplied)return;finderApplied=on;
+  document.documentElement.classList.toggle('finder',on);
+  const target=on&&!visiblePages().includes(curPage)?1:curPage;
+  requestAnimationFrame(()=>{pager.scrollLeft=slotOf(target)*pager.clientWidth;const v=visiblePages();tabs.style.setProperty('--pos',String(slotOf(target)));curPage=-1;setPage(target)});
+  if(eat.loaded)renderEat();
+}
 
 /* ---------- Ask Claude: a real back-and-forth chat (goals, food questions, your week) ---------- */
 const chatTurns=[];let chatBusy=false;
@@ -1305,7 +1382,7 @@ This week:
 ${days}
 Their food preferences: ${P||'not known yet'}
 ${menus}
-
+${finderOn()?'\nThey use food finder mode: they are NOT tracking calories. Never mention calories, macros, targets or their log unless they ask. Recommend by taste, place and what is open.\n':''}
 How to answer:
 - Use as few words as possible. No greetings, no restating the question, no filler, no closing offers. Aim for under 60 words; never over 100.
 - Format: "- " bullets for options, **bold** for dish, place and key numbers. Use a "### " heading only when listing several options. No tables, no paragraphs longer than one sentence.
@@ -1362,7 +1439,8 @@ $('#starters').addEventListener('click',e=>{const b=e.target.closest('.starter')
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend($('#chatIn').value)});
 $('#goalForm').addEventListener('submit',async e=>{
   e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=r1($('#g'+k).value);if(v>0)g[k]=v}
-  try{await saveSettingsPatch({goals:g,dir:dirDraft,prefs:$('#gprefs').value.trim().slice(0,600)});closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
+  const fin=$('#gfinder').checked;state.settings={...(state.settings||{}),finder:fin};applyFinder();
+  try{await saveSettingsPatch({goals:g,dir:dirDraft,finder:fin,prefs:$('#gprefs').value.trim().slice(0,600)});closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
 });
 
 /* ---------- storage ---------- */
@@ -1557,7 +1635,7 @@ renderDay();renderHalls();renderToday();renderWeek();
     col().onSnapshot(snap=>{
       state.logs={};state.settings=null;
       for(const doc of snap.docs){if(doc.id==='settings')state.settings=doc.data();else if(doc.id.startsWith('log-'))state.logs[doc.id]=doc.data()}
-      renderToday();renderWeek();if(curPage===1)renderEat();
+      renderToday();renderWeek();applyFinder();if(curPage===1)renderEat();
     },()=>{});
   }
 })();
