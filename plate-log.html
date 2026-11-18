@@ -284,6 +284,22 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .starter{border:0;border-radius:14px;padding:12px 8px;font-size:1rem;color:var(--ink);display:flex;align-items:center;gap:12px}
 .starter::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--blue-2),var(--cyan));box-shadow:0 0 10px var(--glow)}
 .starter:active{background:rgba(255,255,255,.05)}
+.starters{margin-top:0}
+
+/* Bottom bar "button" that looks like the text box */
+.fakeTxt{flex:1;min-width:0;border:0;background:transparent;text-align:left;padding:12px 4px;color:var(--faint);font-size:16px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fakeTxt.has{color:var(--ink)}
+/* Typing box overlay, anchored at the top */
+.compose{position:fixed;left:0;right:0;top:0;bottom:0;z-index:12;background:rgba(6,8,13,.8);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  padding:calc(18px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px))}
+.composeBox{max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.composeBox .field{padding-left:20px}
+.composeBox .send:disabled{background:rgba(255,255,255,.07);color:var(--faint);box-shadow:none}
+.composeHint{padding:0 8px}
+/* Popups with text boxes open from the top, so the keyboard never covers them */
+#review.scrim,#settings.scrim{align-items:flex-start;padding-top:calc(14px + env(safe-area-inset-top, 0px))}
+#chat .chatbar{flex:none}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -349,10 +365,8 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
         <button type="button" class="libbtn" id="libBtn" aria-label="Choose a photo from your library" title="Choose a photo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
-        <input class="txt" id="txt" placeholder="Describe what you ate…" aria-label="Describe what you ate">
-        <button type="submit" class="send" id="send" aria-label="Log it" hidden>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
+        <!-- Tapping this opens the typing box near the top of the screen, so the keyboard never pushes the page up. -->
+        <button type="button" class="fakeTxt" id="txtFake" aria-label="Describe what you ate">Describe what you ate…</button>
         <button type="button" class="stop" id="stop" hidden>Stop</button>
       </div>
       <button type="button" class="cam" id="camBtn" aria-label="Take a photo or scan a code">
@@ -361,6 +375,19 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
     </div>
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
     <input type="file" id="lib" accept="image/*" hidden>
+  </form>
+</div>
+
+<!-- Typing box: sits at the top, keyboard opens below it, page stays put -->
+<div class="compose" id="compose" hidden>
+  <form class="composeBox" id="composeForm" autocomplete="off">
+    <div class="field">
+      <input class="txt" id="txt" placeholder="Describe what you ate…" aria-label="Describe what you ate" enterkeyhint="send">
+      <button type="submit" class="send" id="send" aria-label="Log it">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="fine composeHint">e.g. "handful of Cheez-Its" or "chicken and fries at Roth". Tap outside to cancel.</div>
   </form>
 </div>
 
@@ -415,6 +442,13 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
   <div class="sheet chatsheet" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
     <div class="chathead"><h2 id="chatTitle">Ask Claude</h2><button type="button" class="iconbtn" id="closeChat" aria-label="Close">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <!-- Input sits at the top so the keyboard opens below it and nothing scrolls. -->
+    <form class="chatbar" id="chatForm" autocomplete="off">
+      <input id="chatIn" placeholder="Ask about goals, food, your week…" aria-label="Message Claude" enterkeyhint="send">
+      <button type="submit" class="send" id="chatSend" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
     <div class="msgs" id="msgs" aria-live="polite">
       <div class="starters" id="starters">
         <button type="button" class="starter">What should my daily targets be?</button>
@@ -422,12 +456,6 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
         <button type="button" class="starter">What's good to eat today, and where?</button>
       </div>
     </div>
-    <form class="chatbar" id="chatForm" autocomplete="off">
-      <input id="chatIn" placeholder="Ask about goals, food, your week…" aria-label="Message Claude">
-      <button type="submit" class="send" id="chatSend" aria-label="Send">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </button>
-    </form>
   </div>
 </div>
 
@@ -648,7 +676,7 @@ function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
 $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')closeSettings()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#chat').hidden)closeChat();else if(!$('#hours').hidden)$('#hours').hidden=true;else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#compose').hidden)closeCompose();else if(!$('#chat').hidden)closeChat();else if(!$('#hours').hidden)$('#hours').hidden=true;else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
 
 /* ---------- this week (Mon–Sun) ---------- */
 function weekDates(){
@@ -796,7 +824,7 @@ goals, when given: {"k":2300,"p":160,"c":260,"f":75} (k = calories, others in gr
 async function chatSend(text){
   text=String(text||'').trim();if(!text||chatBusy)return;
   if(!sample){bub('Open this page in the Claude app or on claude.ai to chat.','ai');return}
-  $('#starters').hidden=true;$('#chatIn').value='';
+  $('#starters').hidden=true;$('#chatIn').value='';$('#chatIn').blur();   // keyboard goes away so the answer has the whole screen
   bub(text,'me');
   const wait=bub('','ai');wait.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';
   chatBusy=true;$('#chatSend').disabled=true;
@@ -848,8 +876,14 @@ function lockPage(on){
   else if(!on&&R.classList.contains('locked')){R.classList.remove('locked');B.style.position='';B.style.top='';B.style.left='';B.style.right='';scrollTo(0,lockY)}
 }
 // Typing in the bottom bar: hold the page still so only the bar moves up with the keyboard.
-$('#txt').addEventListener('focus',()=>lockPage(true));
-$('#txt').addEventListener('blur',()=>{if($('#chat').hidden)lockPage(false)});
+// The bottom bar is only a button. Tapping it shows the real text box at the TOP of the screen and focuses it
+// in the same tap, so the phone has no reason to scroll the page to keep the box above the keyboard.
+function openCompose(){if(state.busy)return;$('#compose').hidden=false;lockPage(true);$('#txt').focus();updateSend()}
+function closeCompose(){$('#txt').blur();$('#compose').hidden=true;lockPage(false);syncFake()}
+function syncFake(){const v=$('#txt').value.trim();const f=$('#txtFake');f.textContent=v||'Describe what you ate…';f.classList.toggle('has',!!v)}
+$('#txtFake').addEventListener('click',openCompose);
+$('#compose').addEventListener('click',e=>{if(e.target.id==='compose')closeCompose()});
+$('#composeForm').addEventListener('submit',e=>{e.preventDefault();if(!$('#txt').value.trim())return;$('#txt').blur();$('#compose').hidden=true;lockPage(false);$('#form').requestSubmit()});
 function openChat(){$('#chat').hidden=false;lockPage(true);const m=$('#msgs');m.scrollTop=m.scrollHeight}
 function closeChat(){$('#chatIn').blur();$('#chat').hidden=true;lockPage(false)}
 $('#openChat').addEventListener('click',openChat);
@@ -904,7 +938,7 @@ $('#lib').addEventListener('change',onPhoto);
 $('#libBtn').addEventListener('click',()=>{if(state.busy)return;openWhere('library')});
 $('#txt').addEventListener('input',updateSend);
 function updateSend(){
-  $('#send').hidden=state.busy||!$('#txt').value.trim();$('#stop').hidden=!state.busy;
+  $('#send').disabled=state.busy||!$('#txt').value.trim();$('#stop').hidden=!state.busy;$('#txtFake').hidden=state.busy;
 }
 
 /* ---------- status note: one line above the composer, no running log ---------- */
@@ -994,7 +1028,7 @@ $('#form').addEventListener('submit',async e=>{
   // Photos carry the hall picked in the popup; typed messages use a hall named in the text, if any.
   const hallId=photo?state.hall:detectHall(text);
   const ctx={text,photo,code,hallId};
-  $('#txt').value='';state.photo=null;state.code=null;state.hall=null;watchMenu();
+  $('#txt').value='';syncFake();state.photo=null;state.code=null;state.hall=null;watchMenu();
   note('<span class="typing"><i></i><i></i><i></i></span>',{html:true,sticky:true});
   state.busy=true;updateSend();
   ctl=new AbortController();
