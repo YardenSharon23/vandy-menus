@@ -4,177 +4,178 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: one navy column. Calorie gauge + protein bar on top, today's meals, the chat thread, and a pinned composer where you pick the hall, add a photo and type. */
+/* Layout: one navy column. Calorie gauge, protein bar and a slim carbs/fat line on top; today's meals; the chat thread; a pinned composer led by a big camera button. */
 :root{
   color-scheme:dark;
-  --bg:#10131d; --panel:#181c2a; --panel-2:#1f2436; --edge:rgba(255,255,255,.07); --edge-hi:rgba(255,255,255,.13);
-  --ink:#f1f4fb; --muted:#8c93a8; --faint:#5b6276;
-  --blue:#3d7bff; --blue-2:#5fa0ff; --cyan:#8fd8ff; --glow:rgba(77,140,255,.55);
-  --good:#3ddc84; --bad:#ff5b6b;
+  --bg:#0f121b; --panel:#171b28; --panel-2:#1e2333; --line:rgba(255,255,255,.06); --edge:rgba(255,255,255,.1);
+  --ink:#f1f4fb; --muted:#8a91a6; --faint:#575e72;
+  --blue:#3d7bff; --blue-2:#5fa0ff; --cyan:#8fd8ff; --glow:rgba(77,140,255,.5);
+  --carb:#f2c46b; --fat:#c79bff; --good:#3ddc84; --bad:#ff6b78;
   --display:"Poppins","Segoe UI",system-ui,sans-serif;
   --body:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
-  --blur:blur(20px) saturate(140%);
+  --blur:blur(22px) saturate(150%);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);-webkit-font-smoothing:antialiased;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
 .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(34rem 26rem at 100% -6%, rgba(61,123,255,.26), transparent 62%),
-             radial-gradient(28rem 24rem at -10% 40%, rgba(143,216,255,.12), transparent 60%)}
+  background:radial-gradient(32rem 24rem at 92% -8%, rgba(61,123,255,.22), transparent 62%),
+             radial-gradient(26rem 22rem at -12% 46%, rgba(143,216,255,.08), transparent 60%)}
 button,input{font:inherit;color:inherit}
-button{cursor:pointer}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
-.glass{background:rgba(24,28,42,.72);border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
 
-.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding-block:18px 172px;display:flex;flex-direction:column;gap:16px}
+.app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding-block:22px 190px;display:flex;flex-direction:column;gap:22px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.top h1{font-family:var(--display);font-weight:700;font-size:1.35rem;margin:0;letter-spacing:.01em}
-.top .sub{font-size:.82rem;color:var(--muted)}
-.iconbtn{width:42px;height:42px;border-radius:50%;border:1px solid var(--edge-hi);background:var(--panel-2);display:grid;place-items:center;color:var(--ink)}
-.iconbtn svg{width:20px;height:20px}
+.top h1{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.top .sub{font-size:.8rem;color:var(--muted)}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.06);display:grid;place-items:center;color:var(--muted)}
+.iconbtn svg{width:19px;height:19px}
 
 /* Gauge */
-.hero{border-radius:24px;padding:20px 20px 18px;display:flex;flex-direction:column;gap:18px;background:linear-gradient(180deg,var(--panel),#151927)}
-.gauge{position:relative;width:100%;max-width:340px;margin:0 auto}
+.hero{display:flex;flex-direction:column;gap:22px;padding:8px 4px 0}
+.gauge{position:relative;width:100%;max-width:330px;margin:0 auto}
 .gauge svg{display:block;width:100%;height:auto;overflow:visible}
-.gauge .center{position:absolute;left:0;right:0;bottom:4%;text-align:center;display:flex;flex-direction:column;align-items:center}
-.gauge .kcal{font-family:var(--display);font-weight:700;font-size:clamp(2.6rem,13vw,3.4rem);line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.gauge .of{font-size:.85rem;color:var(--muted);margin-top:6px}
-.gauge .left{font-size:.8rem;font-weight:600;margin-top:2px;color:var(--cyan)}
+.gauge .center{position:absolute;left:0;right:0;bottom:2%;text-align:center}
+.gauge .kcal{font-family:var(--display);font-weight:700;font-size:clamp(2.8rem,14vw,3.5rem);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.gauge .of{font-size:.84rem;color:var(--muted);margin-top:8px}
+.gauge .left{font-size:.8rem;font-weight:600;color:var(--cyan);min-height:1.2em}
 .gauge .left.over{color:var(--bad)}
-.ends{display:flex;justify-content:space-between;font-size:.72rem;color:var(--faint);padding:0 4%;margin-top:-2px}
 
 .pro .head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.lab{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.pro .val{font-family:var(--display);font-weight:600;font-size:1.15rem;font-variant-numeric:tabular-nums}
-.pro .val span{color:var(--muted);font-size:.85rem;font-weight:500}
-.track{height:12px;border-radius:99px;background:rgba(255,255,255,.07);margin-top:8px;position:relative}
+.lab{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pro .val{font-family:var(--display);font-weight:600;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.pro .val small{color:var(--muted);font-size:.82rem;font-weight:500}
+.track{height:10px;border-radius:99px;background:rgba(255,255,255,.06);margin-top:9px;position:relative}
 .track i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--blue-2) 70%,var(--cyan));
-  box-shadow:0 0 14px var(--glow);transition:width .6s ease}
-.pro .note{font-size:.78rem;color:var(--muted);margin-top:6px}
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tile{background:var(--panel-2);border:1px solid var(--edge);border-radius:14px;padding:10px 12px;min-width:0}
-.tile b{display:block;font-family:var(--display);font-weight:600;font-size:1.1rem;font-variant-numeric:tabular-nums}
-.tile b span{color:var(--muted);font-size:.8rem;font-weight:500}
-.tile .track{height:5px;margin-top:7px}
-.tile .track i{box-shadow:none;background:var(--blue-2)}
+  box-shadow:0 0 12px var(--glow);transition:width .6s ease}
+.minor{display:flex;gap:18px;flex-wrap:wrap;font-size:.84rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.minor b{color:var(--ink);font-weight:600}
+.minor i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:2px}
 
 /* Meals */
-.meals{display:flex;flex-direction:column;gap:8px}
-.meal{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--edge);border-radius:14px;padding:11px 14px}
+.meals{background:var(--panel);border-radius:20px;padding:4px 16px}
+.meals:empty{display:none}
+.meal{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.meal:first-child{border-top:0}
 .meal .t{flex:1;min-width:0}
-.meal .t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.meal .t small{color:var(--muted);font-size:.78rem}
+.meal .t b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meal .t small{color:var(--muted);font-size:.76rem}
 .meal .n{text-align:right;font-variant-numeric:tabular-nums}
-.meal .n b{font-family:var(--display);font-weight:600}
-.meal .n small{display:block;color:var(--muted);font-size:.78rem}
-.rm{border:0;background:transparent;color:var(--faint);padding:4px;font-size:.85rem}
-.rm.armed{color:var(--bad);font-size:.78rem;font-weight:600}
+.meal .n b{font-family:var(--display);font-weight:600;font-size:.95rem}
+.meal .n small{display:block;color:var(--muted);font-size:.74rem}
+.rm{border:0;background:transparent;color:var(--faint);padding:4px;font-size:.8rem;min-width:22px}
+.rm.armed{color:var(--bad);font-weight:600}
 
 /* Thread */
 .thread{display:flex;flex-direction:column;gap:10px}
-.msg{max-width:88%;border-radius:18px;padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:86%;border-radius:18px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;font-size:.94rem}
 .me{align-self:flex-end;background:linear-gradient(135deg,var(--blue),#2f62d9);border-bottom-right-radius:6px}
-.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--edge);border-bottom-left-radius:6px}
+.bot{align-self:flex-start;background:var(--panel);border-bottom-left-radius:6px}
 .msg img{border-radius:12px;max-height:220px;width:auto;max-width:100%;object-fit:cover}
-.card{border-radius:12px;background:var(--panel-2);padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:.88rem}
+.card{border-radius:12px;background:var(--panel-2);padding:10px 12px;display:flex;flex-direction:column;gap:4px;font-size:.86rem}
 .card .row{display:flex;justify-content:space-between;gap:10px}
 .card .row span:first-child{min-width:0}
 .card .row span:last-child{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
-.card .tot{border-top:1px solid var(--edge-hi);padding-top:6px;margin-top:2px;font-weight:600}
+.card .tot{border-top:1px solid var(--edge);padding-top:6px;margin-top:2px;font-weight:600}
 .card .tot span:last-child{color:var(--cyan)}
-.state{font-size:.8rem;color:var(--muted);display:flex;gap:10px;align-items:center}
+.state{font-size:.78rem;color:var(--muted);display:flex;gap:10px;align-items:center}
 .state .ok{color:var(--good)}
-.state button{border:0;background:transparent;color:var(--ink);text-decoration:underline;padding:0;font-size:.8rem}
+.state button{border:0;background:transparent;color:var(--ink);text-decoration:underline;padding:0;font-size:.78rem}
 .typing{display:flex;gap:5px;align-items:center;padding:4px 0}
 .typing i{width:7px;height:7px;border-radius:50%;background:var(--blue-2);animation:b 1s infinite ease-in-out}
 .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
 @keyframes b{40%{transform:translateY(-4px);opacity:1}0%,80%,100%{opacity:.35}}
-@media (prefers-reduced-motion: reduce){.typing i{animation:none}.track i{transition:none}}
 
 /* Composer */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:5;
-  padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-  background:linear-gradient(180deg,transparent,rgba(16,19,29,.92) 40%)}
-.composer{max-width:520px;margin:0 auto;border-radius:24px;padding:10px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
-.where{display:flex;align-items:center;gap:8px;min-width:0}
-.where .lab{flex:none}
-.halls{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0;padding:1px}
+  padding:24px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background:linear-gradient(180deg,rgba(15,18,27,0),rgba(15,18,27,.94) 34%)}
+.composer{max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.halls{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .halls::-webkit-scrollbar{display:none}
-.hall{flex:none;border:1px solid var(--edge-hi);background:transparent;border-radius:99px;padding:5px 12px;font-size:.82rem;font-weight:600;color:var(--muted)}
+.halls.editing{flex-wrap:wrap;overflow:visible;touch-action:none}
+.hall{flex:none;border:1px solid var(--edge);background:rgba(23,27,40,.8);border-radius:99px;padding:6px 13px;font-size:.8rem;font-weight:600;color:var(--muted);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);touch-action:pan-x;-webkit-user-select:none;user-select:none}
 .hall[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 12px var(--glow)}
+.editing .hall{animation:jig .28s ease-in-out infinite alternate;cursor:grab}
+.editing .hall.drag{animation:none;transform:scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.5);border-color:var(--cyan);color:var(--ink);cursor:grabbing}
+.hall.done{background:var(--ink);color:var(--bg);border-color:var(--ink);animation:none!important}
+@keyframes jig{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
+.hint{font-size:.74rem;color:var(--muted);text-align:center;margin-top:-4px}
+
 .att{display:flex;align-items:center;gap:10px}
-.att img{width:52px;height:52px;border-radius:12px;object-fit:cover}
-.att button{border:0;background:var(--panel-2);border-radius:99px;padding:4px 10px;font-size:.8rem}
-.bar{display:flex;align-items:center;gap:8px;background:var(--panel-2);border-radius:18px;padding:5px}
-.cam{flex:none;width:48px;height:48px;border-radius:14px;border:0;display:grid;place-items:center;color:#fff;
-  background:linear-gradient(135deg,var(--blue-2),var(--blue));box-shadow:0 6px 18px var(--glow)}
-.cam svg{width:23px;height:23px}
-.txt{flex:1;min-width:0;border:0;background:transparent;padding:10px 4px;outline:none}
+.att img{width:48px;height:48px;border-radius:12px;object-fit:cover}
+.att button{border:0;background:var(--panel-2);border-radius:99px;padding:4px 10px;font-size:.78rem}
+.bar{display:flex;align-items:center;gap:12px}
+.field{flex:1;min-width:0;display:flex;align-items:center;gap:6px;height:56px;border-radius:28px;padding:0 6px 0 18px;
+  background:rgba(30,35,51,.82);border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.txt{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:0}
 .txt::placeholder{color:var(--faint)}
-.send{flex:none;width:42px;height:42px;border-radius:12px;border:0;background:var(--blue);color:#fff;display:grid;place-items:center}
-.send:disabled{background:rgba(255,255,255,.06);color:var(--faint);cursor:default}
+.send{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--blue);color:#fff;display:grid;place-items:center}
 .send svg{width:18px;height:18px}
-.stop{flex:none;border:0;background:rgba(255,255,255,.08);border-radius:12px;padding:10px 14px;font-weight:600}
+.stop{flex:none;border:0;background:rgba(255,255,255,.08);border-radius:99px;padding:9px 14px;font-weight:600;font-size:.85rem}
+.cam{flex:none;width:76px;height:76px;border-radius:50%;border:0;display:grid;place-items:center;color:#fff;position:relative;
+  background:radial-gradient(circle at 30% 25%, #8cc0ff, var(--blue) 55%, #2a5bd6);
+  box-shadow:0 0 0 6px rgba(61,123,255,.14),0 10px 30px var(--glow)}
+.cam svg{width:32px;height:32px}
+.cam:active{transform:scale(.96)}
+@media (prefers-reduced-motion: reduce){.typing i,.editing .hall{animation:none}.track i{transition:none}}
 
 /* Settings sheet */
-.scrim{position:fixed;inset:0;z-index:10;background:rgba(5,7,12,.6);display:flex;align-items:flex-end;justify-content:center;
+.scrim{position:fixed;inset:0;z-index:10;background:rgba(5,7,12,.62);display:flex;align-items:flex-end;justify-content:center;
   padding:0 max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
-.sheet{width:100%;max-width:520px;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:16px;background:rgba(24,28,42,.92)}
-.sheet h2{font-family:var(--display);font-size:1.15rem;margin:0}
+.sheet{width:100%;max-width:500px;border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:16px;
+  background:rgba(23,27,40,.94);border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.sheet h2{font-family:var(--display);font-weight:600;font-size:1.1rem;margin:0}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fields label{display:flex;flex-direction:column;gap:6px;font-size:.78rem;color:var(--muted);font-weight:600}
-.fields input{width:100%;background:var(--panel-2);border:1px solid var(--edge-hi);border-radius:12px;padding:11px 12px;font-size:1.05rem;font-family:var(--display);font-weight:600;color:var(--ink)}
-.fields .big{grid-column:1/-1}
+.fields label{display:flex;flex-direction:column;gap:6px;font-size:.76rem;color:var(--muted);font-weight:600}
+.fields input{width:100%;background:var(--panel-2);border:1px solid var(--edge);border-radius:12px;padding:11px 12px;font-size:1.05rem;font-family:var(--display);font-weight:600}
+.fields .wide{grid-column:1/-1}
 .actions{display:flex;gap:10px}
 .btn{flex:1;border:0;border-radius:14px;padding:12px;font-weight:600;background:var(--panel-2)}
-.btn.primary{background:linear-gradient(135deg,var(--blue-2),var(--blue));color:#fff;box-shadow:0 6px 18px var(--glow)}
-.sheet .fine{font-size:.78rem;color:var(--muted)}
+.btn.primary{background:var(--blue);color:#fff;box-shadow:0 6px 18px var(--glow)}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
 <main class="app">
   <div class="top">
     <div><h1>Today</h1><div class="sub" id="day"></div></div>
-    <button class="iconbtn" id="openSettings" aria-label="Settings: target macros">
+    <button class="iconbtn" id="openSettings" aria-label="Daily targets">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
     </button>
   </div>
 
   <section class="hero" aria-label="Today's macros">
-    <div>
-      <div class="gauge">
-        <svg viewBox="0 0 260 150" role="img" aria-labelledby="gaugeLabel">
-          <title id="gaugeLabel">Calories today</title>
-          <defs>
-            <linearGradient id="gg" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stop-color="#2f62d9"/><stop offset=".6" stop-color="#5fa0ff"/><stop offset="1" stop-color="#8fd8ff"/>
-            </linearGradient>
-            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          </defs>
-          <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="16" stroke-linecap="round"/>
-          <path id="arc" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" filter="url(#glow)" style="transition:stroke-dashoffset .8s ease"/>
-          <circle id="knob" cx="20" cy="135" r="9" fill="#ffffff" filter="url(#glow)" hidden/>
-        </svg>
-        <div class="center">
-          <div class="kcal" id="kcal">0</div>
-          <div class="of" id="kcalOf">calories</div>
-          <div class="left" id="kcalLeft"></div>
-        </div>
+    <div class="gauge">
+      <svg viewBox="0 0 260 150" role="img" aria-labelledby="gaugeLabel">
+        <title id="gaugeLabel">Calories today</title>
+        <defs>
+          <linearGradient id="gg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#2f62d9"/><stop offset=".6" stop-color="#5fa0ff"/><stop offset="1" stop-color="#8fd8ff"/>
+          </linearGradient>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="14" stroke-linecap="round"/>
+        <path id="arc" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" filter="url(#glow)" style="transition:stroke-dashoffset .8s ease"/>
+        <circle id="knob" cx="20" cy="135" r="8.5" fill="#ffffff" filter="url(#glow)" hidden/>
+      </svg>
+      <div class="center">
+        <div class="kcal" id="kcal">0</div>
+        <div class="of" id="kcalOf">calories</div>
+        <div class="left" id="kcalLeft"></div>
       </div>
-      <div class="ends"><span>0</span><span id="endGoal"></span></div>
     </div>
 
     <div class="pro">
-      <div class="head"><span class="lab">Protein</span><span class="val"><span id="proNum">0</span> <span id="proOf">g</span></span></div>
+      <div class="head"><span class="lab">Protein</span><span class="val"><span id="proNum">0</span> <small id="proOf">g</small></span></div>
       <div class="track"><i id="proBar" style="width:0"></i></div>
-      <div class="note" id="proNote"></div>
     </div>
 
-    <div class="tiles">
-      <div class="tile"><span class="lab">Carbs</span><b><span id="carbNum" style="color:var(--ink);font-size:1.1rem;font-weight:600">0</span> <span id="carbOf">g</span></b><div class="track" id="carbTrack" hidden><i id="carbBar"></i></div></div>
-      <div class="tile"><span class="lab">Fat</span><b><span id="fatNum" style="color:var(--ink);font-size:1.1rem;font-weight:600">0</span> <span id="fatOf">g</span></b><div class="track" id="fatTrack" hidden><i id="fatBar"></i></div></div>
+    <div class="minor">
+      <span><i style="background:var(--carb)"></i><b id="carbNum">0</b><span id="carbOf"> g carbs</span></span>
+      <span><i style="background:var(--fat)"></i><b id="fatNum">0</b><span id="fatOf"> g fat</span></span>
     </div>
   </section>
 
@@ -183,39 +184,38 @@ button{cursor:pointer}
 </main>
 
 <div class="dock">
-  <form class="composer glass" id="form" autocomplete="off">
-    <div class="where">
-      <span class="lab">At</span>
-      <div class="halls" id="halls" role="group" aria-label="Where are you eating?"></div>
-    </div>
+  <form class="composer" id="form" autocomplete="off">
+    <div class="halls" id="halls" role="group" aria-label="Where are you eating? Press and hold to reorder."></div>
+    <div class="hint" id="reorderHint" hidden>Drag to reorder, then tap Done</div>
     <div class="att" id="att" hidden><img id="attImg" alt="Photo to send"><button type="button" id="attX">Remove photo</button></div>
     <div class="bar">
+      <div class="field">
+        <input class="txt" id="txt" placeholder="Add a note or describe it…" aria-label="Describe what you ate">
+        <button type="submit" class="send" id="send" aria-label="Log it" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <button type="button" class="stop" id="stop" hidden>Stop</button>
+      </div>
       <button type="button" class="cam" id="camBtn" aria-label="Take or upload a photo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
       </button>
-      <input class="txt" id="txt" placeholder="Photo, words, or both…" aria-label="Describe what you ate">
-      <button type="submit" class="send" id="send" aria-label="Log it" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </button>
-      <button type="button" class="stop" id="stop" hidden>Stop</button>
     </div>
     <input type="file" id="file" accept="image/*" hidden>
   </form>
 </div>
 
 <div class="scrim" id="settings" hidden>
-  <form class="sheet glass" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+  <form class="sheet" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <h2 id="setTitle">Daily targets</h2>
     <div class="fields">
-      <label class="big">Calories<input type="number" inputmode="numeric" min="0" id="gk" placeholder="2200"></label>
-      <label class="big">Protein (g)<input type="number" inputmode="numeric" min="0" id="gp" placeholder="150"></label>
+      <label class="wide">Calories<input type="number" inputmode="numeric" min="0" id="gk" placeholder="2200"></label>
+      <label class="wide">Protein (g)<input type="number" inputmode="numeric" min="0" id="gp" placeholder="150"></label>
       <label>Carbs (g)<input type="number" inputmode="numeric" min="0" id="gc" placeholder="250"></label>
       <label>Fat (g)<input type="number" inputmode="numeric" min="0" id="gf" placeholder="70"></label>
     </div>
-    <div class="fine">Leave a box empty to skip that target.</div>
     <div class="actions">
       <button type="button" class="btn" id="closeSettings">Cancel</button>
-      <button type="submit" class="btn primary">Save targets</button>
+      <button type="submit" class="btn primary">Save</button>
     </div>
   </form>
 </div>
@@ -229,16 +229,54 @@ const dstr=(d=new Date())=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2
 const r1=n=>Math.round((+n||0)*10)/10;
 const fmt=n=>Math.round(+n||0).toLocaleString();
 
-const state={date:dstr(),hall:LS.get('hall',1),menu:null,uid:null,logs:{},settings:null,photo:null,busy:false,turns:[],lastLogged:null};
+const state={date:dstr(),hall:LS.get('hall',1),menu:null,uid:null,logs:{},settings:null,photo:null,busy:false,turns:[],lastLogged:null,editing:false};
 let db=null,sample=null,ctl=null,armed=null;
 
-/* ---------- hall chips (in the composer) ---------- */
-function renderHalls(){
-  $('#halls').innerHTML=HALLS.map(h=>`<button type="button" class="hall" data-h="${h.id}" aria-pressed="${h.id===state.hall}">${h.name}</button>`).join('');
-  const on=$('#halls [aria-pressed="true"]');if(on)on.scrollIntoView({block:'nearest',inline:'nearest'});
+/* ---------- hall chips: tap to pick, press and hold to reorder ---------- */
+function hallOrder(){
+  const saved=LS.get('hallOrder',null);const ids=HALLS.map(h=>h.id);
+  const order=Array.isArray(saved)?saved.filter(id=>ids.includes(id)):[];
+  for(const id of ids)if(!order.includes(id))order.push(id);
+  return order;
 }
-$('#halls').addEventListener('click',e=>{const b=e.target.closest('[data-h]');if(!b)return;state.hall=+b.dataset.h;LS.set('hall',state.hall);renderHalls();watchMenu()});
+function renderHalls(){
+  const box=$('#halls');box.classList.toggle('editing',state.editing);$('#reorderHint').hidden=!state.editing;
+  box.innerHTML=hallOrder().map(id=>{const h=HALLS.find(x=>x.id===id);return `<button type="button" class="hall" data-h="${id}" aria-pressed="${id===state.hall}">${h.name}</button>`}).join('')
+    +(state.editing?'<button type="button" class="hall done" id="doneReorder">Done</button>':'');
+  if(!state.editing){const on=box.querySelector('[aria-pressed="true"]');if(on)on.scrollIntoView({block:'nearest',inline:'nearest'})}
+}
 function hallName(){return (HALLS.find(h=>h.id===state.hall)||{}).name}
+(function setupHalls(){
+  const box=$('#halls');let holdT=null,startX=0,startY=0,held=false,drag=null;
+  box.addEventListener('contextmenu',e=>e.preventDefault());
+  box.addEventListener('pointerdown',e=>{
+    const chip=e.target.closest('[data-h]');if(!chip)return;
+    startX=e.clientX;startY=e.clientY;held=false;
+    if(state.editing){drag=chip;chip.classList.add('drag');try{chip.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();return}
+    clearTimeout(holdT);
+    holdT=setTimeout(()=>{held=true;state.editing=true;renderHalls();if(navigator.vibrate)try{navigator.vibrate(12)}catch(_){}},450);
+  });
+  box.addEventListener('pointermove',e=>{
+    if(holdT&&!state.editing&&Math.hypot(e.clientX-startX,e.clientY-startY)>8){clearTimeout(holdT);holdT=null}
+    if(!drag)return;e.preventDefault();
+    const el=document.elementFromPoint(e.clientX,e.clientY);const over=el&&el.closest('[data-h]');
+    if(over&&over!==drag&&over.parentElement===box){
+      const r=over.getBoundingClientRect();const after=(e.clientX>r.left+r.width/2)||(e.clientY>r.bottom);
+      box.insertBefore(drag,after?over.nextSibling:over);
+    }
+  });
+  const end=()=>{
+    clearTimeout(holdT);holdT=null;
+    if(drag){drag.classList.remove('drag');drag=null;LS.set('hallOrder',[...box.querySelectorAll('[data-h]')].map(b=>+b.dataset.h))}
+  };
+  box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
+  box.addEventListener('click',e=>{
+    if(e.target.id==='doneReorder'){state.editing=false;renderHalls();return}
+    if(held||state.editing){held=false;return}
+    const b=e.target.closest('[data-h]');if(!b)return;
+    state.hall=+b.dataset.h;LS.set('hall',state.hall);renderHalls();watchMenu();
+  });
+})();
 function renderDay(){$('#day').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}
 
 /* ---------- menu ---------- */
@@ -257,7 +295,6 @@ function dayTot(){return entries().reduce((t,e)=>({k:t.k+e.tot.k,p:t.p+e.tot.p,c
 function goals(){return (state.settings&&state.settings.goals)||{}}
 function renderToday(){
   const t=dayTot(),G=goals();
-  // gauge
   const pct=G.k?Math.min(1,t.k/G.k):0;
   $('#arc').setAttribute('stroke-dashoffset',String(100-pct*100));
   const a=Math.PI*(1-pct),x=130+110*Math.cos(a),y=135-110*Math.sin(a);
@@ -265,18 +302,11 @@ function renderToday(){
   $('#kcal').textContent=fmt(t.k);
   $('#kcalOf').textContent=G.k?`of ${fmt(G.k)} calories`:'calories';
   const left=$('#kcalLeft');left.classList.toggle('over',!!G.k&&t.k>G.k);
-  left.textContent=G.k?(t.k<=G.k?`${fmt(G.k-t.k)} left`:`${fmt(t.k-G.k)} over`):'Set a target in settings';
-  $('#endGoal').textContent=G.k?fmt(G.k):'';
-  // protein
+  left.textContent=G.k?(t.k<=G.k?`${fmt(G.k-t.k)} left`:`${fmt(t.k-G.k)} over`):'';
   $('#proNum').textContent=fmt(t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   $('#proBar').style.width=(G.p?Math.min(100,t.p/G.p*100):0)+'%';
-  $('#proNote').textContent=G.p?(t.p<G.p?`${fmt(G.p-t.p)} g to go`:'Protein target hit'):'';
-  // carbs & fat
-  for(const [k,key] of [['c','carb'],['f','fat']]){
-    $('#'+key+'Num').textContent=fmt(t[k]);$('#'+key+'Of').textContent=G[k]?`/ ${fmt(G[k])} g`:'g';
-    $('#'+key+'Track').hidden=!G[k];if(G[k])$('#'+key+'Bar').style.width=Math.min(100,t[k]/G[k]*100)+'%';
-  }
-  // meals
+  $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=G.c?` / ${fmt(G.c)} g carbs`:' g carbs';
+  $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=G.f?` / ${fmt(G.f)} g fat`:' g fat';
   $('#meals').innerHTML=entries().slice().reverse().map(e=>`<div class="meal">
     <div class="t"><b>${esc(e.meal||'Food')}</b><small>${new Date(e.t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}${e.hall?' · '+esc(e.hall):''}</small></div>
     <div class="n"><b>${fmt(e.tot.k)}</b><small>${fmt(e.tot.p)} g protein</small></div>
@@ -297,7 +327,7 @@ $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')closeSet
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#settings').hidden)closeSettings()});
 $('#goalForm').addEventListener('submit',async e=>{
   e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=Math.round(+$('#g'+k).value);if(v>0)g[k]=v}
-  try{await saveGoals(g,true);closeSettings()}catch(err){sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.");closeSettings()}
+  try{await saveGoals(g);closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
 });
 
 /* ---------- storage ---------- */
@@ -307,18 +337,22 @@ const col=()=>db&&state.uid?db.collection('data/users/'+state.uid):null;
 function writeEntries(list){const c=col();if(!c)return Promise.reject({code:'no_store'});return queue(()=>c.doc(logId()).set({date:state.date,entries:list}))}
 async function addEntry(entry,replaceId){const list=entries().filter(e=>e.id!==replaceId);list.push(entry);await writeEntries(list)}
 async function removeEntry(id){try{await writeEntries(entries().filter(e=>e.id!==id))}catch(e){sys("Couldn't remove that. Try again.")}}
-async function saveGoals(g,replaceAll){
-  const c=col();if(!c)throw {code:'no_store'};
-  const next=replaceAll?{}:{...goals()};for(const k of ['k','p','c','f'])if(g[k]!=null&&+g[k]>0)next[k]=Math.round(+g[k]);
-  await queue(()=>c.doc('settings').set({...(state.settings||{}),goals:next}));
-}
+async function saveGoals(g){const c=col();if(!c)throw {code:'no_store'};await queue(()=>c.doc('settings').set({...(state.settings||{}),goals:g}))}
 
-/* ---------- photo ---------- */
-$('#camBtn').addEventListener('click',()=>$('#file').click());
-$('#file').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(!f)return;state.photo=f;$('#attImg').src=URL.createObjectURL(f);$('#att').hidden=false;updateSend();$('#txt').focus()});
+/* ---------- photo & input ---------- */
+const CAM_ICON=$('#camBtn').innerHTML;
+const SEND_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+// The big button opens the camera; once a photo is attached it becomes the "Log it" button.
+$('#camBtn').addEventListener('click',()=>{if(state.busy)return;if(state.photo)$('#form').requestSubmit();else $('#file').click()});
+$('#file').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(!f)return;state.photo=f;$('#attImg').src=URL.createObjectURL(f);$('#att').hidden=false;updateSend()});
 $('#attX').addEventListener('click',()=>{state.photo=null;$('#att').hidden=true;updateSend()});
 $('#txt').addEventListener('input',updateSend);
-function updateSend(){$('#send').disabled=state.busy||(!state.photo&&!$('#txt').value.trim())}
+function updateSend(){
+  const ready=!!state.photo||!!$('#txt').value.trim();
+  $('#send').hidden=state.busy||!ready||!!state.photo;$('#stop').hidden=!state.busy;
+  const cam=$('#camBtn');const sendMode=!!state.photo&&!state.busy;
+  if(cam.dataset.mode!==(sendMode?'send':'cam')){cam.dataset.mode=sendMode?'send':'cam';cam.innerHTML=sendMode?SEND_ICON:CAM_ICON;cam.setAttribute('aria-label',sendMode?'Log it':'Take or upload a photo')}
+}
 
 /* ---------- thread ---------- */
 function add(html,cls){const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;$('#thread').append(d);d.scrollIntoView({behavior:'smooth',block:'end'});return d}
@@ -359,7 +393,7 @@ $('#form').addEventListener('submit',async e=>{
   $('#txt').value='';state.photo=null;$('#att').hidden=true;
   const userTurn=(photo?'[Photo attached] ':'')+(text||'Photo only. Log what is in it.');
   const typing=add('<div class="typing"><i></i><i></i><i></i></div>','bot');
-  state.busy=true;updateSend();$('#stop').hidden=false;$('#send').hidden=true;
+  state.busy=true;updateSend();
   ctl=new AbortController();const items=menuList();
   try{
     const turns=[{role:'user',content:instructions()},...state.turns.slice(-10),{role:'user',content:userTurn}];
@@ -387,7 +421,7 @@ $('#form').addEventListener('submit',async e=>{
       catch(err){st.textContent=err&&err.code==='no_store'?'Not saved: open this page in Claude while signed in.':"Couldn't save. Send it again."}
     }
   }catch(err){typing.remove();if(!err||err.code!=='cancelled')sys(errCopy(err&&err.code))}
-  finally{state.busy=false;$('#stop').hidden=true;$('#send').hidden=false;updateSend()}
+  finally{state.busy=false;updateSend()}
 });
 $('#stop').addEventListener('click',()=>ctl&&ctl.abort());
 $('#thread').addEventListener('click',async e=>{
