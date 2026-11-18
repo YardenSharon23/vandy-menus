@@ -516,7 +516,8 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 .closedtoggle .gs svg{width:14px;height:14px;transition:transform .25s var(--ease)}
 .closedtoggle[aria-expanded="true"] .gs svg{transform:rotate(180deg)}
 .phead .t b{font-family:var(--display);font-size:1rem;letter-spacing:.01em;color:var(--ink)}
-.closedlist{display:flex;flex-direction:column;gap:8px}
+.closedlist{display:flex;flex-direction:column;gap:18px}
+.pgroup{display:flex;flex-direction:column;gap:8px}
 /* slim top picks: two lines each, same size, the first one just softly tinted */
 .picks{gap:6px}
 .pick{padding:10px 14px;border-radius:14px;gap:1px 12px}
@@ -1358,19 +1359,19 @@ const CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 function renderPlaces(){
   const box=$('#eatPlaces');
   if(!hoursData){box.innerHTML='<div class="pickempty">Hours aren\'t loaded yet.</div>';return}
-  const now=new Date();const kind=id=>DINING.includes(id)||id===4?0:[12,13,14,15].includes(id)?1:[6,7,8,9].includes(id)?2:3;
+  // Three groups, in this order: dining halls (and The Pub), quicker spots (Suzie's, Wasabi, VandyBlenz, cafés…), then Munchie Marts.
+  const now=new Date();const kind=id=>DINING.includes(id)||id===4?0:[12,13,14,15].includes(id)?2:1;
   const all=hoursData.units.map(u=>({u,st:status(u,now),k:kind(u.id)}));
   const open=all.filter(x=>x.st.open).sort((a,b)=>(a.k-b.k)||(b.st.wait-a.st.wait));
   const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
-  // Dining halls that are open show by default; open Munchie Marts and cafés fold into one row; closed places fold into another.
-  const openHalls=open.filter(x=>x.k===0),openOther=open.filter(x=>x.k!==0);
-  const showHalls=eat.showHalls!==false;
-  box.innerHTML=`<button type="button" class="closedtoggle" id="hallsToggle" aria-expanded="${showHalls}"><span class="gt">Main dining halls <small>${openHalls.length} open</small></span><span class="gs">${showHalls?'Hide':'Show'}${CHEV}</span></button>`
-    +(showHalls?`<div class="closedlist">${openHalls.length?openHalls.map(x=>placeRow(x.u,x.st)).join(''):'<div class="pickempty">No dining halls are open right now.</div>'}</div>`:'')
-    +(openOther.length?`<button type="button" class="closedtoggle" id="moreToggle" aria-expanded="${!!eat.showMore}"><span class="gt">Munchies &amp; cafés <small>${openOther.length} open</small></span><span class="gs">${eat.showMore?'Hide':'Show'}${CHEV}</span></button>`
-      +(eat.showMore?`<div class="closedlist">${openOther.map(x=>placeRow(x.u,x.st)).join('')}</div>`:''):'')
+  // Each group is its own stack; a slightly larger gap between stacks shows where one kind of place ends.
+  const groups=list=>[0,1,2].map(k=>list.filter(x=>x.k===k)).filter(g=>g.length)
+    .map(g=>`<div class="pgroup">${g.map(x=>placeRow(x.u,x.st)).join('')}</div>`).join('');
+  const showOpen=eat.showOpen!==false;
+  box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">Open <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
+    +(showOpen?`<div class="closedlist">${open.length?groups(open):'<div class="pickempty">Nothing is open right now.</div>'}</div>`:'')
     +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${eat.showClosed}"><span class="gt">Closed <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}${CHEV}</span></button>`
-    +(eat.showClosed?`<div class="closedlist">${closed.map(x=>placeRow(x.u,x.st)).join('')}</div>`:'');
+    +(eat.showClosed?`<div class="closedlist">${groups(closed)}</div>`:'');
 }
 function renderEat(){
   if(!eat.meal)eat.meal=defaultMeal();
@@ -1441,7 +1442,7 @@ $('#pEat').addEventListener('click',e=>{
   const hr=e.target.closest('[data-hours]');if(hr){const id=+hr.dataset.hours;eat.showHours=eat.showHours||{};eat.showHours[id]=!eat.showHours[id];renderPlaces();return}
   const sd=e.target.closest('[data-sides]');if(sd){const id=+sd.dataset.sides;eat.showSides=eat.showSides||{};eat.showSides[id]=!eat.showSides[id];renderPlaces();return}
   if(e.target.closest('#closedToggle')){eat.showClosed=!eat.showClosed;renderPlaces();return}
-  if(e.target.closest('#hallsToggle')){eat.showHalls=eat.showHalls===false;renderPlaces();return}
+  if(e.target.closest('#openToggle')){eat.showOpen=eat.showOpen===false;renderPlaces();return}
   if(e.target.closest('#moreToggle')){eat.showMore=!eat.showMore;renderPlaces()}
 });
 
