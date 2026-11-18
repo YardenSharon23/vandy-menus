@@ -245,7 +245,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="note" id="note" role="status" aria-live="polite" hidden></div>
     <div class="bar">
       <div class="field">
-        <input class="txt" id="txt" placeholder="Describe something you ate…" aria-label="Describe what you ate">
+        <input class="txt" id="txt" placeholder="Describe what you ate…" aria-label="Describe what you ate">
         <button type="submit" class="send" id="send" aria-label="Log it" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
@@ -415,7 +415,7 @@ const logId=()=>'log-'+state.date;
 function entries(){return ((state.logs[logId()]||{}).entries)||[]}
 function dayTot(){return entries().reduce((t,e)=>{const T=e.tot||{};return {k:t.k+(+T.k||0),p:t.p+(+T.p||0),c:t.c+(+T.c||0),f:t.f+(+T.f||0)}},{k:0,p:0,c:0,f:0})}
 // Calories and protein always have a target so the gauge and bar fill; change them in settings.
-const DEFAULT_GOALS={k:2000,p:120};
+const DEFAULT_GOALS={k:2000,p:120,c:250,f:70};
 function goals(){return {...DEFAULT_GOALS,...((state.settings&&state.settings.goals)||{})}}
 const ICONS={
   Breakfast:'<path d="M12 3v2M5.6 5.6l1.4 1.4M3 12h2M19 12h2M17 7l1.4-1.4"/><path d="M6 16a6 6 0 0 1 12 0"/><path d="M3 19h18"/>',
@@ -439,8 +439,8 @@ function renderToday(){
   $('#proNum').textContent=fmt(t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
-  $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=G.c?` / ${fmt(G.c)} g carbs`:' g carbs';
-  $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=G.f?` / ${fmt(G.f)} g fat`:' g fat';
+  $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=` / ${fmt(G.c)} g carbs`;
+  $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=` / ${fmt(G.f)} g fat`;
   const es=entries().slice().sort((a,b)=>a.t<b.t?-1:1);
   $('#log').hidden=!es.length;
   $('#entries').innerHTML=es.map(e=>{const n=entryName(e);return `<button type="button" class="entry" data-edit="${esc(e.id)}">
