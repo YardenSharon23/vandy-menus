@@ -189,6 +189,16 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .entry .n b{font-family:var(--display);font-weight:600;font-size:.95rem}
 .entry .n small{display:block;color:var(--muted);font-size:.74rem}
 .entry .chev{color:var(--faint);flex:none}
+/* each kind of entry gets its own soft tint, so the day reads at a glance */
+.entry .ic.k-breakfast{background:rgba(255,196,107,.13);color:#ffc96b}
+.entry .ic.k-lunch{background:rgba(61,123,255,.14);color:var(--blue-2)}
+.entry .ic.k-dinner{background:rgba(150,130,255,.15);color:#b3a6ff}
+.entry .ic.k-snack{background:rgba(61,220,132,.12);color:#6fe3a3}
+.entry .ic.k-drink{background:rgba(80,200,235,.13);color:#72d6ef}
+/* the planned beer row: same card, amber accents, dashed edge because it's planned, not eaten yet */
+.entry.beer{border:1px dashed rgba(242,180,80,.35);background:rgba(242,180,80,.05)}
+.entry.beer .ic{background:rgba(242,180,80,.14);color:#f3c46e}
+.entry.beer .n b{color:#f3c46e}
 
 /* Status note (replaces a chat log: one line at a time, above the composer) */
 .note{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px;font-size:.88rem;
@@ -943,10 +953,11 @@ const DEFAULT_GOALS={k:2000,p:120,c:250,f:70};
 function goals(){return {...DEFAULT_GOALS,...((state.settings&&state.settings.goals)||{})}}
 const ICONS={
   Breakfast:'<path d="M12 3v2M5.6 5.6l1.4 1.4M3 12h2M19 12h2M17 7l1.4-1.4"/><path d="M6 16a6 6 0 0 1 12 0"/><path d="M3 19h18"/>',
-  Lunch:'<circle cx="12" cy="12" r="7"/><path d="M12 8v4l2.5 2"/>',
+  // midday sun, dinner moon, an apple for snacks, a cup with a straw for drinks
+  Lunch:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
   Dinner:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
-  Snack:'<path d="M7 4h10l-1 16H8z"/><path d="M7.5 9h9"/>',
-  Drink:'<path d="M6 4h12l-1.5 16h-9z"/><path d="M6.5 9h11"/>'};
+  Snack:'<path d="M12 7.5c-1.6-1.5-5.2-1.6-6.4 1.3-1.4 3.4.7 9 3.4 10.6 1.1.6 2 .2 3-.3 1 .5 1.9.9 3 .3 2.7-1.6 4.8-7.2 3.4-10.6-1.2-2.9-4.8-2.8-6.4-1.3z"/><path d="M12 7.5c0-1.9.9-3.3 2.6-4.1"/>',
+  Drink:'<path d="M6.5 8h11l-1.3 12.2a1 1 0 0 1-1 .8H8.8a1 1 0 0 1-1-.8z"/><path d="M13 8l1.6-5H18"/><path d="M7 12.5h10"/>'};
 const icon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||ICONS.Snack}</svg>`;
 // Older entries stored a longer title in `meal` ("Lunch at Rand"); pull the short name out of it.
 function entryName(e){if(NAMES.includes(e.name))return e.name;const m=String(e.meal||'').toLowerCase();return NAMES.find(n=>m.includes(n.toLowerCase()))||'Snack'}
@@ -1014,16 +1025,22 @@ function renderToday(){
   $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=` / ${fmt(G.c)} g carbs`;
   $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=` / ${fmt(G.f)} g fat`;
   const es=entries().slice().sort((a,b)=>a.t<b.t?-1:1);
-  $('#log').hidden=!es.length;
+  $('#log').hidden=!es.length&&!B;
   const fresh=seenEntries?es.filter(e=>!seenEntries.has(e.id)).map(e=>e.id):[];
   seenEntries=new Set(es.map(e=>e.id));
   $('#entries').innerHTML=es.map(e=>{const n=entryName(e);return `<button type="button" class="entry${fresh.includes(e.id)?' new':''}" data-edit="${esc(e.id)}">
-    <span class="ic">${icon(n)}</span>
+    <span class="ic k-${n.toLowerCase()}">${icon(n)}</span>
     <span class="t"><b>${esc(n)}</b><small>${new Date(e.t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}${e.hall?' · '+esc(e.hall):''} · ${esc(e.items.map(i=>i.n).join(', '))}</small></span>
     <span class="n"><b>${fmt(e.tot.k)}</b><small>${fmt(e.tot.p)} g protein</small></span>
-    <svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></button>`}).join('');
+    <svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></button>`}).join('')
+  // The beer plan sits last in the list, as "later today"; tapping it opens Room for beer.
+    +(B?`<button type="button" class="entry beer" data-beer="1">
+    <span class="ic">${$('#beerBtn svg').outerHTML}</span>
+    <span class="t"><b>${fmtBeer(B.n)} ${B.n===1?'beer':'beers'}</b><small>Later today · ${esc({100:'Light',150:'Regular',210:'IPA / craft'}[B.per]||'Beer')} · ${B.per} cal each</small></span>
+    <span class="n"><b>${fmt(bk)}</b><small>set aside</small></span>
+    <svg class="chev" width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></button>`:'');
 }
-$('#entries').addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if(!b)return;const en=entries().find(x=>x.id===b.dataset.edit);if(en)openReview({mode:'edit',entry:en})});
+$('#entries').addEventListener('click',e=>{if(e.target.closest('[data-beer]'))return openBeer();const b=e.target.closest('[data-edit]');if(!b)return;const en=entries().find(x=>x.id===b.dataset.edit);if(en)openReview({mode:'edit',entry:en})});
 
 /* ---------- review / edit sheet ---------- */
 function itemsTot(items){return items.reduce((t,i)=>({k:t.k+i.k*i.sv,p:t.p+i.p*i.sv,c:t.c+i.c*i.sv,f:t.f+i.f*i.sv}),{k:0,p:0,c:0,f:0})}
