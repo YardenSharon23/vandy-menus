@@ -156,6 +156,22 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .minor{display:flex;gap:18px;flex-wrap:wrap;font-size:.84rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .minor b{color:var(--ink);font-weight:600}
 .minor i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:2px}
+/* Room for beer: a quiet amber pill at the end of the carbs / fat row */
+.minor{align-items:center}
+.beerbtn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(242,180,80,.28);background:rgba(242,180,80,.08);color:#f3c46e;border-radius:99px;padding:5px 11px;font-size:.78rem;font-weight:600;font-variant-numeric:tabular-nums}
+.beerbtn svg{width:14px;height:14px}
+.beerbtn.on{background:rgba(242,180,80,.16);border-color:rgba(242,180,80,.5)}
+.beerbtn:active{transform:scale(.96)}
+#beer.scrim{align-items:center;padding-top:calc(16px + env(safe-area-inset-top, 0px))}
+.beerstep{display:flex;align-items:center;justify-content:center;gap:14px}
+.beerstep button{flex:none;width:46px;height:46px;border-radius:50%;border:1px solid var(--edge);background:var(--panel-2);font-size:1.4rem;line-height:1;color:var(--ink)}
+.beerstep label{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.76rem;color:var(--muted)}
+.beerstep input{width:96px;text-align:center;font-family:var(--display);font-size:2.2rem;font-weight:600;background:transparent;border:0;color:var(--ink);padding:0}
+.beerstep input:focus{outline:none}
+#beerKind .name[aria-pressed="true"]{background:#e0a23c;border-color:#e0a23c;color:#1a1306}
+.beersum{background:rgba(242,180,80,.07);border:1px solid rgba(242,180,80,.18);border-radius:14px;padding:12px 14px;font-size:.86rem;color:var(--muted);line-height:1.45;font-variant-numeric:tabular-nums}
+.beersum b{color:#f3c46e;font-weight:600}
+.beersum strong{color:var(--ink);font-weight:600}
 
 /* Entries */
 .log{display:flex;flex-direction:column;gap:10px}
@@ -610,6 +626,12 @@ html.finder .irow .n,html.finder .prow .n{display:none}
         <!-- thick track with a subtle inner shade, then the glowing fill on top -->
         <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="#1b2031" stroke-width="24" stroke-linecap="round"/>
         <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#trackShade)" stroke-width="24" stroke-linecap="round"/>
+        <!-- Room for beer: amber, filling backward from the right end, so it reads as calories set aside -->
+        <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="240" y1="0" x2="20" y2="0">
+          <stop offset="0" stop-color="#9a5512"/><stop offset=".6" stop-color="#d4841f"/><stop offset="1" stop-color="#f4b657"/>
+        </linearGradient>
+        <filter id="bglow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#f2a93b" flood-opacity=".4"/></filter>
+        <path id="beerArc" d="M240 135 A110 110 0 0 0 20 135" fill="none" stroke="url(#bg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="0 400" filter="url(#bglow)" opacity="0" style="transition:stroke-dasharray 1s var(--ease),opacity .3s"/>
         <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
         <!-- Inner protein ring: green when protein keeps pace with calories, yellow when a little behind, red when well behind -->
         <!-- like the calorie arc: a deep-to-light gradient over just the filled part, so a short fill still ends bright -->
@@ -634,6 +656,7 @@ html.finder .irow .n,html.finder .prow .n{display:none}
     <div class="minor">
       <span><i style="background:var(--carb)"></i><b id="carbNum">0</b><span id="carbOf"> g carbs</span></span>
       <span><i style="background:var(--fat)"></i><b id="fatNum">0</b><span id="fatOf"> g fat</span></span>
+      <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
     </div>
   </section>
 
@@ -723,6 +746,29 @@ html.finder .irow .n,html.finder .prow .n{display:none}
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
     <input type="file" id="lib" accept="image/*" hidden>
   </form>
+</div>
+
+<!-- Room for beer: plan drinks ahead; the calories are set aside on the gauge -->
+<div class="scrim" id="beer" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="beerTitle">
+    <div><h2 id="beerTitle">Room for beer</h2><div class="fine">Set aside calories for drinks later today. Calories left, top picks and protein pace all plan around it.</div></div>
+    <div class="beerstep">
+      <button type="button" data-bstep="-1" aria-label="One fewer">&minus;</button>
+      <label><input type="number" inputmode="decimal" min="0" max="30" step="0.5" id="beerN" aria-label="Number of beers"><span id="beerUnit">beers</span></label>
+      <button type="button" data-bstep="1" aria-label="One more">+</button>
+    </div>
+    <div class="names" id="beerKind" role="group" aria-label="Kind of beer">
+      <button type="button" class="name" data-per="100">Light</button>
+      <button type="button" class="name" data-per="150">Regular</button>
+      <button type="button" class="name" data-per="210">IPA / craft</button>
+    </div>
+    <div class="beersum" id="beerSum"></div>
+    <div class="actions">
+      <button type="button" class="btn danger" id="beerClear">Clear</button>
+      <button type="button" class="btn" id="beerCancel">Cancel</button>
+      <button type="button" class="btn primary" id="beerSave">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- Where are you eating? (asked right before each photo or message) -->
@@ -887,6 +933,10 @@ function menuList(){if(!state.menu)return[];const out=[];let i=0;for(const m of 
 /* ---------- today ---------- */
 const logId=()=>'log-'+state.date;
 function entries(){return ((state.logs[logId()]||{}).entries)||[]}
+// Planned beer for today: {n: how many (halves allowed), per: calories each}; null when none.
+function planBeer(){const b=(state.logs[logId()]||{}).beer;return b&&+b.n>0&&+b.per>0?{n:+b.n,per:+b.per}:null}
+function beerK(){const b=planBeer();return b?Math.round(b.n*b.per):0}
+const fmtBeer=n=>Number.isInteger(n)?String(n):n.toFixed(1).replace(/\.0$/,'');
 function dayTot(){return entries().reduce((t,e)=>{const T=e.tot||{};return {k:t.k+(+T.k||0),p:t.p+(+T.p||0),c:t.c+(+T.c||0),f:t.f+(+T.f||0)}},{k:0,p:0,c:0,f:0})}
 // Calories and protein always have a target so the gauge and bar fill; change them in settings.
 const DEFAULT_GOALS={k:2000,p:120,c:250,f:70};
@@ -952,7 +1002,15 @@ function renderToday(){
   countTo($('#proNum'),t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
-  renderPace(t,G,pct,pp/100);
+  // Room for beer: calories set aside are drawn from the right end of the arc, and every "how far along am I"
+  // number (protein pace, top picks) is measured against what's left for food.
+  const bk=beerK(),bp=G.k?Math.min(1,bk/G.k):0,ba=$('#beerArc');
+  ba.style.strokeDasharray=`${(345.58*bp).toFixed(2)} 400`;ba.setAttribute('opacity',bp>0?'1':'0');
+  $('#bg').setAttribute('x2',String(Math.min(220,130+110*Math.cos(Math.PI*bp)-6)));
+  const B=planBeer();$('#beerBtn').classList.toggle('on',!!B);
+  $('#beerBtnTxt').textContent=B?`${fmtBeer(B.n)} ${B.n===1?'beer':'beers'} · ${fmt(bk)} cal`:'Room for beer';
+  const foodK=Math.max(1,G.k-bk);
+  renderPace(t,G,G.k?Math.min(1,t.k/foodK):0,pp/100);
   $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=` / ${fmt(G.c)} g carbs`;
   $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=` / ${fmt(G.f)} g fat`;
   const es=entries().slice().sort((a,b)=>a.t<b.t?-1:1);
@@ -1186,7 +1244,7 @@ function scoreFor(k,p,ctx,liked,st){
 }
 function hallStatus(id){const u=hoursData&&hoursData.units.find(x=>x.id===id);return u?{...status(u),u}:null}
 // In food finder mode picks ignore calories and protein left; they go by taste and what's open.
-function eatContext(){const G=goals(),t=dayTot();if(finderOn())return {room:1e9,proLeft:0,dir:'maintain',pm:prefModel()};return {room:Math.max(250,G.k-t.k),proLeft:Math.max(0,G.p-t.p),dir:goalDir(),pm:prefModel()}}
+function eatContext(){const G=goals(),t=dayTot();if(finderOn())return {room:1e9,proLeft:0,dir:'maintain',pm:prefModel()};return {room:Math.max(250,G.k-t.k-beerK()),proLeft:Math.max(0,G.p-t.p),dir:goalDir(),pm:prefModel()}}
 function topPicks(meal){
   const ctx=eatContext();const out=[];
   for(const id of MENU_UNITS){
@@ -1437,6 +1495,39 @@ function openFood(items,hallId){
 }
 $('#fdClose').addEventListener('click',()=>{$('#food').hidden=true});
 $('#food').addEventListener('click',e=>{if(e.target.id==='food')$('#food').hidden=true});
+
+/* ---------- Room for beer ---------- */
+// Calories per 12 oz can or bottle, rounded from the brands' labels.
+const BEER_KINDS={100:'Light beer or hard seltzer: Bud Light, Coors Light, Michelob Ultra, White Claw',
+  150:'Regular lager or ale: Budweiser, Yuengling, Stella, Corona',
+  210:'IPA or craft beer: usually 180–250 a can'};
+let beerDraft=null;
+function openBeer(){
+  const B=planBeer();beerDraft={n:B?B.n:2,per:B?B.per:150};
+  $('#beerN').value=fmtBeer(beerDraft.n);$('#beerClear').hidden=!B;renderBeer();$('#beer').hidden=false;
+}
+function renderBeer(){
+  const {n,per}=beerDraft;
+  for(const b of document.querySelectorAll('#beerKind [data-per]'))b.setAttribute('aria-pressed',String(+b.dataset.per===per));
+  $('#beerUnit').textContent=n===1?'beer':'beers';
+  const k=Math.round(n*per),G=goals(),t=dayTot(),left=G.k-t.k-k;
+  $('#beerSum').innerHTML=n>0
+    ?`<b>${fmt(k)} cal</b> set aside: ${esc(fmtBeer(n))} × ${per} cal<br>${esc(BEER_KINDS[per])}<br><strong>${left>=0?fmt(left)+' cal left':'Over by '+fmt(-left)+' cal'}</strong> for food today`
+    :'Set how many you\'re planning on.';
+}
+const closeBeer=()=>{$('#beer').hidden=true};
+$('#beerBtn').addEventListener('click',openBeer);
+$('#beerN').addEventListener('input',()=>{const v=parseFloat($('#beerN').value);beerDraft.n=Math.max(0,Math.min(30,isFinite(v)?Math.round(v*10)/10:0));renderBeer()});
+$('#beer').addEventListener('click',e=>{
+  if(e.target.id==='beer')return closeBeer();
+  const st=e.target.closest('[data-bstep]');
+  if(st){beerDraft.n=Math.max(0,Math.min(30,Math.round((beerDraft.n+ +st.dataset.bstep)*2)/2));$('#beerN').value=fmtBeer(beerDraft.n);renderBeer();return}
+  const kd=e.target.closest('[data-per]');if(kd){beerDraft.per=+kd.dataset.per;renderBeer()}
+});
+async function saveBeer(b){closeBeer();try{await writeBeer(b)}catch(err){sys(err&&err.code==='no_store'?'Beer plans save when this page is open in Claude.':"Couldn't save that. Try again.")}}
+$('#beerSave').addEventListener('click',()=>saveBeer(beerDraft.n>0?{n:beerDraft.n,per:beerDraft.per}:null));
+$('#beerClear').addEventListener('click',()=>saveBeer(null));
+$('#beerCancel').addEventListener('click',closeBeer);
 function tapFood(items,hallId){if(finderOn())openFood(items,hallId);else logFromItems(items,hallId)}
 $('#pEat').addEventListener('click',e=>{
   const pk=e.target.closest('[data-pick]');if(pk){const c=eat.pickList&&eat.pickList[+pk.dataset.pick];if(c)tapFood(c.items,c.hall);return}
@@ -1546,7 +1637,7 @@ function coachPrompt(menus){
   const P=prefs();
   return `You are the friendly nutrition helper inside Plate Log, a Vanderbilt student's personal macro tracker. Today is ${state.date}, ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.
 Their current daily targets: ${tg('k')} kcal, ${tg('p')} g protein, ${tg('c')} g carbs, ${tg('f')} g fat. Their goal: ${{lose:'lose weight',gain:'gain weight',maintain:'maintain weight'}[goalDir()]}${state.settings&&state.settings.dir?'':' (not set by them yet)'}.
-Today so far: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein, ${Math.round(t.c)} g carbs, ${Math.round(t.f)} g fat. Entries: ${entries().map(e=>`${entryName(e)} (${e.items.map(i=>i.n).join(', ')}) ${Math.round(e.tot.k)} kcal`).join('; ')||'none'}.
+${beerK()?`They plan to drink ${fmtBeer(planBeer().n)} beers later today (~${beerK()} kcal set aside), so food calories left = target - eaten - ${beerK()}.\n`:''}Today so far: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein, ${Math.round(t.c)} g carbs, ${Math.round(t.f)} g fat. Entries: ${entries().map(e=>`${entryName(e)} (${e.items.map(i=>i.n).join(', ')}) ${Math.round(e.tot.k)} kcal`).join('; ')||'none'}.
 This week:
 ${days}
 Their food preferences: ${P||'not known yet'}
@@ -1616,7 +1707,11 @@ $('#goalForm').addEventListener('submit',async e=>{
 let chain=Promise.resolve();
 const queue=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p};
 const col=()=>db&&state.uid?db.collection('data/users/'+state.uid):null;
-function writeEntries(list){const c=col();if(!c)return Promise.reject({code:'no_store'});return queue(()=>c.doc(logId()).set({date:state.date,entries:list}))}
+function writeEntries(list){const c=col();if(!c)return Promise.reject({code:'no_store'});const b=planBeer();return queue(()=>c.doc(logId()).set({date:state.date,entries:list,...(b?{beer:b}:{})}))}
+// Saving the beer plan keeps the day's entries as they are.
+function writeBeer(b){const c=col();if(!c)return Promise.reject({code:'no_store'});const cur=state.logs[logId()]||{};
+  const doc={date:state.date,entries:cur.entries||[],...(b?{beer:b}:{})};state.logs[logId()]=doc;renderToday();
+  return queue(()=>c.doc(logId()).set(doc))}
 async function upsertEntry(entry,replaceId){
   const list=entries().slice();const ix=replaceId?list.findIndex(e=>e.id===replaceId):-1;
   if(ix>=0)list[ix]={...entry,t:list[ix].t};else list.push(entry);
