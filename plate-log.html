@@ -204,6 +204,9 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
 .field{flex:1;min-width:0;display:flex;align-items:center;gap:6px;height:56px;border-radius:28px;padding:0 6px 0 18px;
   background:rgba(30,35,51,.82);border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
 .txt{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:0}
+.libbtn{flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--faint);display:grid;place-items:center}
+.libbtn svg{width:18px;height:18px}
+.libbtn:active{color:var(--ink);background:rgba(255,255,255,.06)}
 .txt::placeholder{color:var(--faint)}
 .send{flex:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--blue);color:#fff;display:grid;place-items:center}
 .send svg{width:18px;height:18px}
@@ -310,6 +313,9 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
     <div class="bar">
       <div class="field">
         <input class="txt" id="txt" placeholder="Describe what you ate…" aria-label="Describe what you ate">
+        <button type="button" class="libbtn" id="libBtn" aria-label="Choose a photo from your library" title="Choose a photo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-4.5-4.5L7 19"/></svg>
+        </button>
         <button type="submit" class="send" id="send" aria-label="Log it" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
@@ -320,6 +326,7 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
       </button>
     </div>
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
+    <input type="file" id="lib" accept="image/*" hidden>
   </form>
 </div>
 
@@ -492,6 +499,7 @@ function hallName(id=state.hall){return (HALLS.find(h=>h.id===id)||{}).name}
     state.hall=+b.dataset.h;watchMenu();closeWhere();
     const act=pending;pending=null;
     if(act==='photo')$('#file').click();               // still inside the tap, so the camera is allowed to open
+    else if(act==='library')$('#lib').click();
     else if(act==='send')$('#form').requestSubmit();
   });
 })();
@@ -826,14 +834,18 @@ async function readCode(file,url){
     const r=await new Z.BrowserMultiFormatReader(hints).decodeFromImageUrl(url);if(r)return {text:r.getText(),format:String(Z.BarcodeFormat[r.getBarcodeFormat()]||'')}}catch(e){}
   return null;
 }
-$('#file').addEventListener('change',async e=>{
+async function onPhoto(e){
   const f=e.target.files[0];e.target.value='';if(!f)return;
   // Photo taken: check it for a QR code or barcode, then send it straight away (with any typed note).
   state.photo=f;state.code=null;const url=URL.createObjectURL(f);
   note('<span class="typing"><i></i><i></i><i></i></span>',{html:true,sticky:true});
   state.code=await readCode(f,url);
   $('#form').requestSubmit();
-});
+}
+$('#file').addEventListener('change',onPhoto);
+$('#lib').addEventListener('change',onPhoto);
+// Small secondary option: pick an existing photo instead of opening the camera.
+$('#libBtn').addEventListener('click',()=>{if(state.busy)return;openWhere('library')});
 $('#txt').addEventListener('input',updateSend);
 function updateSend(){
   $('#send').hidden=state.busy||!$('#txt').value.trim();$('#stop').hidden=!state.busy;
