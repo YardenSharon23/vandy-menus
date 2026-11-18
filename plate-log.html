@@ -374,10 +374,19 @@ button:active{transform:scale(.96)}
           <linearGradient id="gg" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="240" y2="0">
             <stop offset="0" stop-color="#2f62d9"/><stop offset=".7" stop-color="#5fa0ff"/><stop offset="1" stop-color="#8fd8ff"/>
           </linearGradient>
-          <filter id="glow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#4d8cff" flood-opacity=".5"/></filter>
+          <filter id="glow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#4d8cff" flood-opacity=".55"/></filter>
+          <!-- darker toward the bottom of the track so it reads as a groove -->
+          <linearGradient id="trackShade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".05"/><stop offset="1" stop-color="#000000" stop-opacity=".25"/>
+          </linearGradient>
         </defs>
-        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="12" stroke-linecap="round"/>
-        <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>      </svg>
+        <!-- faint tick marks around the outside (drawn by script) -->
+        <g id="ticks"></g>
+        <!-- thick track with a subtle inner shade, then the glowing fill on top -->
+        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="#1b2031" stroke-width="24" stroke-linecap="round"/>
+        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#trackShade)" stroke-width="24" stroke-linecap="round"/>
+        <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
+      </svg>
       <div class="center">
         <div class="kcal" id="kcal">0</div>
         <div class="of" id="kcalOf">calories</div>
@@ -394,7 +403,7 @@ button:active{transform:scale(.96)}
   </section>
 
   <section class="log" id="log" hidden aria-label="Today's entries">
-    <span class="lab">Today's entries</span>
+    <span class="lab">Entries</span>
     <div class="entries" id="entries"></div>
   </section>
 
@@ -627,6 +636,10 @@ const ICONS={
 const icon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||ICONS.Snack}</svg>`;
 // Older entries stored a longer title in `meal` ("Lunch at Rand"); pull the short name out of it.
 function entryName(e){if(NAMES.includes(e.name))return e.name;const m=String(e.meal||'').toLowerCase();return NAMES.find(n=>m.includes(n.toLowerCase()))||'Snack'}
+// Gauge tick marks: 21 fine ticks just outside the arc, a little brighter at 0, 25, 50, 75 and 100%.
+(function(){let s='';for(let i=0;i<=20;i++){const a=Math.PI*(1-i/20),major=i%5===0,r1=127,r2=major?134:131;
+  const c=Math.cos(a),n=Math.sin(a);s+=`<line x1="${(130+r1*c).toFixed(1)}" y1="${(135-r1*n).toFixed(1)}" x2="${(130+r2*c).toFixed(1)}" y2="${(135-r2*n).toFixed(1)}" stroke="rgba(255,255,255,${major?.22:.09})" stroke-width="${major?1.6:1.1}" stroke-linecap="round"/>`}
+  $('#ticks').innerHTML=s})();
 // Numbers glide to their new value instead of jumping (skipped when the viewer prefers reduced motion).
 const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function countTo(el,target){
