@@ -68,7 +68,8 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
 .hr .wk .td{color:var(--ink);font-weight:600}
 
 /* Ask Claude */
-.chatsheet{height:min(640px,calc(100% - 40px));padding:16px 16px 12px;gap:12px;overflow:hidden}
+.chatsheet{height:min(680px,calc(100% - 24px));max-height:none;padding:16px 16px 12px;gap:12px;overflow:hidden}
+html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .chathead{display:flex;align-items:center;justify-content:space-between}
 .msgs{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:2px}
 .bub{max-width:88%;border-radius:18px;padding:10px 14px;font-size:.92rem;line-height:1.5;overflow-wrap:anywhere}
@@ -177,7 +178,8 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
 @keyframes b{40%{transform:translateY(-4px);opacity:1}0%,80%,100%{opacity:.35}}
 
 /* Composer */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:5;
+/* --kb = how much of the screen the on-screen keyboard covers (set from visualViewport), so bars ride on top of it */
+.dock{position:fixed;left:0;right:0;bottom:var(--kb,0px);z-index:5;transition:bottom .15s ease-out;
   padding:24px max(16px, env(safe-area-inset-right, 0px)) calc(34px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   background:linear-gradient(180deg,rgba(15,18,27,0),rgba(15,18,27,.94) 34%)}
 .composer{max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
@@ -218,7 +220,8 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
 .cam:active{transform:scale(.96)}
 
 /* Sheets */
-.scrim{position:fixed;inset:0;z-index:10;background:rgba(5,7,12,.62);display:flex;align-items:flex-end;justify-content:center;
+/* Sheets fill only the visible area (above the keyboard), so typing never pushes the page around. */
+.scrim{position:fixed;left:0;right:0;top:var(--vvtop,0px);height:var(--vvh,100%);z-index:10;overscroll-behavior:contain;background:rgba(5,7,12,.62);display:flex;align-items:flex-end;justify-content:center;
   padding:0 max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))}
 .sheet{width:100%;max-width:500px;max-height:calc(100% - 40px);overflow-y:auto;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:16px;
   background:rgba(23,27,40,.96);border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
@@ -614,7 +617,7 @@ function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
 $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')closeSettings()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#chat').hidden)$('#chat').hidden=true;else if(!$('#hours').hidden)$('#hours').hidden=true;else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#chat').hidden)closeChat();else if(!$('#hours').hidden)$('#hours').hidden=true;else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
 
 /* ---------- this week (Mon–Sun) ---------- */
 function weekDates(){
@@ -747,8 +750,9 @@ Their food preferences: ${P||'not known yet'}
 ${menus}
 
 How to answer:
-- Format with light markdown: a short "### " heading when it helps, **bold** for dish names, places and key numbers, and "- " bullets for options. No tables. Usually under 140 words. Be direct and practical.
-- Recommendations ("what's good today", "where should I eat"): pick 2 to 4 options that fit their preferences and what's left of today's targets. For each: **dish** at **place**, then calories and protein, and a few words on why. Prefer places that are open now or open soonest, and say so. Pair items from the same hall into a plate when that makes sense.
+- Use as few words as possible. No greetings, no restating the question, no filler, no closing offers. Aim for under 60 words; never over 100.
+- Format: "- " bullets for options, **bold** for dish, place and key numbers. Use a "### " heading only when listing several options. No tables, no paragraphs longer than one sentence.
+- Recommendations ("what's good today", "where should I eat"): 2 or 3 bullets, each exactly like: "**Dish** at **Place** · 450 cal · 38 g protein · open till 3". Combine items into one plate when they're from the same hall. Prefer places open now or opening soonest. Add at most one short line after the bullets.
 - If their food preferences aren't known and they ask for recommendations, first ask in one or two quick questions what they like, dislike, and any diet (vegetarian, halal, allergies). You may give one or two safe picks meanwhile.
 - Whenever they tell you what they like, dislike, or how they eat, return "prefs": the FULL updated summary (one or two short sentences merging old and new), so the app remembers it. Otherwise "prefs" is null.
 - Daily targets: if you don't know their weight, height, age, sex, activity level and goal (lose, maintain, gain), give a starting range and ask for what's missing. When you give specific numbers, also put them in "goals".
@@ -796,9 +800,30 @@ async function chatSend(text){
   }catch(e){wait.textContent=errCopy(e&&e.code)}
   finally{chatBusy=false;$('#chatSend').disabled=false}
 }
-$('#openChat').addEventListener('click',()=>{$('#chat').hidden=false;setTimeout(()=>$('#chatIn').focus(),50)});
-$('#closeChat').addEventListener('click',()=>{$('#chat').hidden=true});
-$('#chat').addEventListener('click',e=>{if(e.target.id==='chat')$('#chat').hidden=true});
+// Keyboard-aware layout: track the visible viewport so the chat box and bottom bar sit right above the keyboard.
+(function(){
+  const vv=window.visualViewport,R=document.documentElement;
+  const sync=()=>{const h=vv?vv.height:innerHeight,top=vv?vv.offsetTop:0;
+    R.style.setProperty('--vvh',h+'px');R.style.setProperty('--vvtop',top+'px');R.style.setProperty('--kb',Math.max(0,innerHeight-h-top)+'px');
+    const m=$('#msgs');if(!$('#chat').hidden&&m)m.scrollTop=m.scrollHeight};
+  if(vv){vv.addEventListener('resize',sync);vv.addEventListener('scroll',sync)}
+  addEventListener('resize',sync);sync();
+})();
+// While a sheet is open the page behind it can't scroll, so it never jumps.
+let lockY=0;
+function lockPage(on){
+  const R=document.documentElement,B=document.body;
+  if(on&&!R.classList.contains('locked')){lockY=scrollY;R.classList.add('locked');B.style.position='fixed';B.style.top=-lockY+'px';B.style.left='0';B.style.right='0'}
+  else if(!on&&R.classList.contains('locked')){R.classList.remove('locked');B.style.position='';B.style.top='';B.style.left='';B.style.right='';scrollTo(0,lockY)}
+}
+// Typing in the bottom bar: hold the page still so only the bar moves up with the keyboard.
+$('#txt').addEventListener('focus',()=>lockPage(true));
+$('#txt').addEventListener('blur',()=>{if($('#chat').hidden)lockPage(false)});
+function openChat(){$('#chat').hidden=false;lockPage(true);const m=$('#msgs');m.scrollTop=m.scrollHeight}
+function closeChat(){$('#chatIn').blur();$('#chat').hidden=true;lockPage(false)}
+$('#openChat').addEventListener('click',openChat);
+$('#closeChat').addEventListener('click',closeChat);
+$('#chat').addEventListener('click',e=>{if(e.target.id==='chat')closeChat()});
 $('#starters').addEventListener('click',e=>{const b=e.target.closest('.starter');if(b)chatSend(b.textContent)});
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend($('#chatIn').value)});
 $('#goalForm').addEventListener('submit',async e=>{
