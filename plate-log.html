@@ -16,6 +16,7 @@
   --blur:blur(22px) saturate(150%);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);-webkit-font-smoothing:antialiased;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
@@ -379,6 +380,70 @@ body{padding-left:0;padding-right:0}
 /* camera bar belongs to Today; it slides away on the other pages */
 .dock{transition:transform .35s var(--ease),opacity .25s}
 html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:none}
+/* ===== Eat page ===== */
+.eat{gap:16px}
+.eathead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.mealseg{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--pill-edge);border-radius:99px;padding:3px}
+.mealseg button{border:0;background:transparent;border-radius:99px;padding:6px 10px;font-size:.76rem;font-weight:600;color:var(--muted)}
+.mealseg button[aria-pressed="true"]{background:var(--panel-2);color:var(--ink)}
+/* top picks: one hero card + two compact rows */
+.picks{display:flex;flex-direction:column;gap:8px}
+.pick{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;width:100%;border:1px solid var(--pill-edge);background:var(--panel);
+  border-radius:18px;padding:12px 14px;text-align:left}
+.pick .tagline{grid-column:1/-1;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--blue-2)}
+.pick .nm{font-weight:600;min-width:0}
+.pick .wh{grid-column:1/2;font-size:.78rem;color:var(--muted);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick .why{grid-column:1/-1;font-size:.78rem;color:var(--cyan)}
+.pick .mac{grid-row:2/4;grid-column:2/3;text-align:right;font-variant-numeric:tabular-nums}
+.pick .mac b{display:block;font-family:var(--display);font-weight:600;font-size:1.05rem}
+.pick .mac small{color:var(--muted);font-size:.74rem}
+.pick .mac b small.u{display:inline;font-family:var(--body);font-size:.72rem;font-weight:500;color:var(--muted)}
+.pick.hero{background:linear-gradient(160deg,rgba(61,123,255,.2),rgba(61,123,255,.05) 60%),var(--panel);border-color:rgba(95,160,255,.35);padding:16px}
+.pick.hero .nm{font-size:1.08rem}
+.pick.hero .mac b{font-size:1.3rem}
+.pickempty{font-size:.86rem;color:var(--muted);background:var(--panel);border-radius:16px;padding:14px}
+/* search */
+.esearch{display:flex;align-items:center;gap:8px;background:var(--pill);border:1px solid var(--pill-edge);border-radius:99px;padding:0 8px 0 14px;height:48px}
+.esearch svg{width:17px;height:17px;color:var(--faint);flex:none}
+.esearch input{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:10px 0}
+.esearch input::placeholder{color:var(--faint)}
+.eclear{border:0;background:rgba(255,255,255,.07);border-radius:50%;width:28px;height:28px;font-size:.75rem;color:var(--muted)}
+.echips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
+.echip{border:1px solid var(--pill-edge);background:transparent;border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:600;color:var(--muted)}
+.echip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.eresults,.ilist{display:flex;flex-direction:column;background:var(--panel);border-radius:16px;padding:2px 4px}
+.irow{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;text-align:left;padding:10px;border-top:1px solid var(--line)}
+.irow:first-child{border-top-color:transparent}
+.irow .t{flex:1;min-width:0}
+.irow .t b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.irow .t small{display:block;font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.irow .n{flex:none;text-align:right;font-variant-numeric:tabular-nums;font-size:.82rem}
+.irow .n b{font-weight:600}
+.irow .n small{display:block;color:var(--muted);font-size:.72rem}
+.irow .pp{color:var(--cyan)}
+.sub2{padding:8px 10px 2px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.morebtn{border:0;background:transparent;color:var(--blue-2);font-weight:600;font-size:.82rem;padding:10px;text-align:left;width:100%}
+/* places */
+.places{display:flex;flex-direction:column;gap:8px}
+.place{background:var(--panel);border-radius:16px;overflow:hidden}
+.place.open{background:linear-gradient(180deg,rgba(61,220,132,.07),rgba(61,220,132,.02)),var(--panel);border:1px solid rgba(61,220,132,.18)}
+.phead{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;text-align:left;padding:12px 14px}
+.phead .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.place.open .dot{background:var(--good);box-shadow:0 0 0 3px rgba(61,220,132,.18),0 0 12px rgba(61,220,132,.8)}
+.place.soon .dot{background:var(--carb);box-shadow:0 0 0 3px rgba(242,196,107,.15)}
+.phead .t{flex:1;min-width:0}
+.phead .t b{display:block;font-weight:600}
+.phead .t small{display:block;font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phead .st{flex:none;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.place.open .st{color:var(--good)}
+.place.soon .st{color:var(--carb)}
+.pbody{padding:0 6px 8px}
+.pbody .ilist{background:transparent;padding:0}
+.pweek{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;padding:2px 14px 12px 32px;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.pweek .td{color:var(--ink);font-weight:600}
+.closedtoggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:.84rem;padding:10px 4px}
+.closedlist{display:flex;flex-direction:column;gap:8px}
+
 /* the old load-in on .top would replay inside pages; keep it only for the first page */
 .page:not(#pToday) .pagein{animation:none}
 
@@ -393,8 +458,8 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
   <nav class="tabs" id="tabs" role="tablist" aria-label="Pages">
     <span class="tabhl" aria-hidden="true"></span>
     <button type="button" role="tab" data-p="0" aria-selected="true">Today</button>
-    <button type="button" role="tab" data-p="1" aria-selected="false">Week</button>
-    <button type="button" role="tab" data-p="2" aria-selected="false">Open</button>
+    <button type="button" role="tab" data-p="1" aria-selected="false">Eat</button>
+    <button type="button" role="tab" data-p="2" aria-selected="false">Week</button>
     <button type="button" role="tab" data-p="3" aria-selected="false">Ask</button>
   </nav>
   <button class="iconbtn" id="openSettings" aria-label="Daily targets">
@@ -452,6 +517,28 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 </main>
 </section>
 
+<!-- Eat: what to eat right now. Top picks first, then search, then the places (open ones only, closed folded away). -->
+<section class="page" id="pEat" aria-label="Eat">
+  <div class="pagein eat">
+    <div class="eathead">
+      <div><h1 id="eatTitle">Lunch</h1><div class="sub" id="eatSub"></div></div>
+      <div class="mealseg" id="mealSeg" role="group" aria-label="Meal">
+        <button type="button" data-meal="Breakfast">Bkfst</button><button type="button" data-meal="Lunch">Lunch</button><button type="button" data-meal="Dinner">Dinner</button>
+      </div>
+    </div>
+    <div class="picks" id="picks"></div>
+    <div class="esearch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>
+      <input id="eatQ" placeholder="Search food at every hall" aria-label="Search food" autocomplete="off" enterkeyhint="search">
+      <button type="button" class="eclear" id="eatClear" aria-label="Clear search" hidden>✕</button>
+    </div>
+    <div class="echips" id="eatChips" hidden></div>
+    <div class="eresults" id="eatResults" hidden></div>
+    <div class="places" id="eatPlaces"></div>
+    <div class="fine">Menus and hours from NetNutrition, refreshed each morning. Tap any dish to log it.</div>
+  </div>
+</section>
+
 <section class="page" id="pWeek" aria-label="This week">
   <div class="pagein">
     <div><h1>This week</h1><div class="sub" id="wkRange"></div></div>
@@ -461,14 +548,6 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
       <div class="wkchart" id="wkChart"></div>
     </div>
     <div class="wkpro" id="wkPro"></div>
-  </div>
-</section>
-
-<section class="page" id="pOpen" aria-label="What's open">
-  <div class="pagein">
-    <div><h1>Open now</h1><div class="sub" id="hrNow"></div></div>
-    <div class="hrlist" id="hrList"><div class="fine">Loading hours…</div></div>
-    <div class="fine">Hours from NetNutrition. Tap a place for the week. Holidays may differ.</div>
   </div>
 </section>
 
@@ -820,28 +899,6 @@ function status(u,now=new Date()){
     const t=tshort(rs[0].o);return {open:false,wait:i*1440+rs[0].s-m,label:i===0?'Opens '+t:i===1?'Tomorrow '+t:'Opens '+DAYS[(d+i)%7].slice(0,3)+' '+t}}}
   return {open:false,wait:1e9,label:'Closed this week'};
 }
-function renderHours(){
-  const now=new Date();$('#hrNow').textContent=now.toLocaleDateString(undefined,{weekday:'long'})+', '+now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
-  if(!hoursData){$('#hrList').innerHTML='<div class="fine">Hours aren\'t loaded yet. They refresh with the morning menus.</div>';return}
-  // Two sections: open right now, then closed. Inside each, places are clustered (unlabelled) by kind:
-  // main dining halls, Munchie Marts, Suzie's cafés, then the smaller spots. Each cluster is its own card.
-  const kind=id=>[1,2,3,11,20,21,19].includes(id)?0:[12,13,14,15].includes(id)?1:[6,7,8,9].includes(id)?2:3;
-  const all=hoursData.units.map(u=>({u,st:status(u,now),k:kind(u.id)}));
-  const openNow=all.filter(x=>x.st.open).sort((a,b)=>(a.k-b.k)||(b.st.wait-a.st.wait));
-  const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
-  const sections=[[`Open now · ${openNow.length}`,openNow,true],['Closed',closed,false]];
-  const row=({u,st})=>`
-      <button type="button" class="hr${st.open?(st.soon?' soon':' open'):''}" data-u="${u.id}" aria-expanded="${hrOpen===u.id}">
-        <span class="row"><span class="dot"></span><span class="nm">${esc(shortName(u.name))}</span><span class="st">${esc(st.label)}</span></span>
-        ${hrOpen===u.id?`<span class="wk">${[1,2,3,4,5,6,0].map(i=>{const rs=ranges(u,i);const td=i===now.getDay()?' class="td"':'';
-          return `<span${td}>${DAYS[i].slice(0,3)}</span><span${td}>${rs.length?rs.map(r=>tshort(r.o)+'–'+tshort(r.c)).join(', '):'Closed'}</span>`}).join('')}</span>`:''}
-      </button>`;
-  $('#hrList').innerHTML=sections.map(([title,us,isOpen])=>{
-    if(!us.length)return isOpen?'<div class="hrgroup"><span class="lab">Open now</span><div class="fine">Nothing is open right now.</div></div>':'';
-    const clusters=[0,1,2,3].map(k=>us.filter(x=>x.k===k)).filter(c=>c.length);
-    return `<div class="hrgroup"><span class="lab">${esc(title)}</span>${clusters.map(c=>`<div class="hrrows${isOpen?' lit':''}">${c.map(row).join('')}</div>`).join('')}</div>`;
-  }).join('');
-}
 // Hours are fetched once when the app starts (and again only if that failed), so the panel opens
 // already filled in and the slide-up animation never has its contents swapped mid-way.
 let hoursLoading=null;
@@ -850,13 +907,214 @@ function loadHours(){
   if(!hoursLoading)hoursLoading=db.doc('menus/hours').get().then(s=>{if(s.exists)hoursData=s.data();return hoursData}).catch(()=>null).finally(()=>{hoursLoading=null});
   return hoursLoading;
 }
-// Open page: render when you arrive, then refresh every minute while you're on it.
-function enterOpen(){
-  renderHours();
-  if(!hoursData)loadHours().then(()=>{if(curPage===2)renderHours()});
-  clearInterval(hrTimer);hrTimer=setInterval(()=>{if(curPage!==2)clearInterval(hrTimer);else renderHours()},60000);
+/* ---------- Eat page ---------- */
+// Menus for every dining hall today, loaded once in the background so the page opens instantly.
+const DINING=[1,2,3,11,20,21,19];
+const eat={menus:{},loaded:false,meal:null,q:'',chips:new Set(['open']),open:null,showClosed:false,showExtras:{}};
+async function loadEatMenus(){
+  if(!db)return;
+  const lists=await Promise.all(DINING.map(id=>menuFor(id).catch(()=>[])));
+  DINING.forEach((id,i)=>{eat.menus[id]=lists[i]});eat.loaded=true;
+  if(curPage===1)renderEat();
 }
-$('#hrList').addEventListener('click',e=>{const b=e.target.closest('[data-u]');if(b){const id=+b.dataset.u;hrOpen=hrOpen===id?null:id;renderHours()}});
+// What kind of thing an item is, from Vanderbilt's station names.
+const EXTRA_RE=/condiment|beverage|juice|dressing|topping|sauce|self-serve|cooler|smoothie|add-in|soft serve|ice cream|salad bar|omelet|fruit|cheese|creamer|syrup|broth|bun$|bakery|dessert|deli (meat|bread)/i;
+const MAIN_RE=/main|entr[eé]e|^pizza$|protein$|meats$|^deli$|southern breakfast|^bagel/i;
+const SIDE_RE=/side|base|grain|veggies$|vegetable|soup|composed/i;
+function kindOf(it){
+  const s=it.s||'';
+  if(EXTRA_RE.test(s)||(+it.k||0)<40)return 'extra';
+  if(MAIN_RE.test(s)&&(+it.k||0)>=120)return 'main';
+  if(SIDE_RE.test(s))return 'side';
+  return (+it.p||0)>=15&&(+it.k||0)>=200?'main':'side';
+}
+// "Grill Main" and "Grill Side" share the family "grill"; plates are only built inside one family.
+const stationFamily=s=>String(s||'').replace(/\s+(mains?|entr[eé]e|sides?|base|grains?|protein|veggies)$/i,'').trim().toLowerCase();
+function defaultMeal(){const h=new Date().getHours()+new Date().getMinutes()/60;return h<10.5?'Breakfast':h<15.5?'Lunch':'Dinner'}
+// Items one hall serves for a meal (Brunch counts for breakfast and lunch; Daily Offerings count all day), deduplicated.
+function hallItems(id,meal){
+  const all=eat.menus[id]||[];
+  const want=m=>m===meal||m==='Daily Offerings'||(m==='Brunch'&&meal!=='Dinner');
+  const list=all.filter(i=>want(i.meal));
+  const seen=new Set();return list.filter(i=>{const k=i.n+'|'+i.v;if(seen.has(k))return false;seen.add(k);return true}).map(i=>({...i,hall:id,kind:kindOf(i)}));
+}
+// Your stated preferences, turned into liked words, disliked words and diet tags.
+function prefModel(){
+  const P=prefs().toLowerCase();const like=new Set(),hate=new Set(),diet=new Set();
+  const stop=new Set(['love','loves','like','likes','really','food','foods','eat','eating','with','and','the','but','also','prefer','into','spicy-ish','stuff','things','dont','don\'t','not','no','hate','hates','dislike','dislikes','avoid','allergic','allergy','to','any','i','im','i\'m','very','much','more','less','kind','of']);
+  for(const clause of P.split(/[,.;\n]|\bbut\b/)){
+    const neg=/\b(no|not|don'?t|hate|hates|dislike|dislikes|avoid|allergic|without|never)\b/.test(clause);
+    for(const w of clause.match(/[a-z]{4,}/g)||[]){if(stop.has(w))continue;(neg?hate:like).add(w.replace(/s$/,''))}
+  }
+  if(/\bvegan\b/.test(P))diet.add('Vegan');else if(/\bvegetarian\b/.test(P))diet.add('Vegetarian');
+  if(/\bhalal\b/.test(P))diet.add('Halal');
+  return {like,hate,diet};
+}
+const nameHas=(it,set)=>{const n=(it.n+' '+(it.s||'')).toLowerCase();for(const w of set)if(n.includes(w))return w;return null};
+const fitsDiet=(it,diet)=>{if(!diet.size)return true;const t=String(it.t||'');if(diet.has('Vegan'))return /vegan/i.test(t);if(diet.has('Vegetarian'))return /vegan|vegetarian/i.test(t);if(diet.has('Halal'))return /halal|vegan|vegetarian/i.test(t);return true};
+// Score a dish (or plate) for you right now: protein per calorie, room left in today's calories, your goal, your tastes, and whether it's open.
+function scoreFor(k,p,ctx,liked,st){
+  const dens=k>0?p/(k/100):0;let s=Math.min(dens,12)*1.6;
+  const room=ctx.room;
+  s+=k<=room?2.5:-(k-room)/120;
+  if(ctx.dir==='lose')s-=Math.max(0,k-650)/90;
+  if(ctx.dir==='gain')s+=Math.min(k,950)/320+p/25;
+  if(ctx.proLeft>20)s+=Math.min(p,ctx.proLeft)/12;
+  if(liked)s+=4;
+  if(st){if(!st.open&&st.wait>240)s-=3;else if(!st.open)s-=0.8;if(st.open&&st.soon)s-=1.5}
+  return s;
+}
+function hallStatus(id){const u=hoursData&&hoursData.units.find(x=>x.id===id);return u?{...status(u),u}:null}
+function eatContext(){const G=goals(),t=dayTot();return {room:Math.max(250,G.k-t.k),proLeft:Math.max(0,G.p-t.p),dir:goalDir(),pm:prefModel()}}
+function topPicks(meal){
+  const ctx=eatContext();const out=[];
+  for(const id of DINING){
+    const st=hallStatus(id);const items=hallItems(id,meal);
+    const mains=items.filter(i=>i.kind==='main'&&!nameHas(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet));
+    const sides=items.filter(i=>i.kind==='side'&&!nameHas(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet)&&(+i.k||0)>=60);
+    for(const m of mains){
+      const liked=nameHas(m,ctx.pm.like);
+      out.push({type:'dish',hall:id,st,items:[m],k:+m.k,p:+m.p,liked,score:scoreFor(+m.k,+m.p,ctx,liked,st)});
+      // A full plate only when a matching side (same station family) makes it clearly better.
+      const fam=stationFamily(m.s);const best=sides.filter(s=>stationFamily(s.s)===fam)
+        .map(s=>({s,sc:scoreFor(+m.k+ +s.k,+m.p+ +s.p,ctx,liked||nameHas(s,ctx.pm.like),st)})).sort((a,b)=>b.sc-a.sc)[0];
+      if(best&&+m.k+ +best.s.k<=ctx.room+150)out.push({type:'plate',hall:id,st,items:[m,best.s],k:+m.k+ +best.s.k,p:+m.p+ +best.s.p,liked,score:best.sc});
+    }
+  }
+  out.sort((a,b)=>b.score-a.score);
+  // Up to 3 picks from different halls; a plate only makes the list if it beats that hall's best single dish.
+  const picks=[],usedHall=new Set();
+  for(const c of out){if(picks.length>=3)break;if(usedHall.has(c.hall))continue;
+    if(c.type==='plate'){const single=out.find(x=>x.type==='dish'&&x.hall===c.hall);if(single&&c.score<single.score+1)continue}
+    picks.push(c);usedHall.add(c.hall)}
+  return picks;
+}
+function whyLine(c,ctx){
+  if(c.liked)return `You like ${c.liked}`;
+  const dens=c.k>0?c.p/(c.k/100):0;
+  if(dens>=9)return `${Math.round(c.p)} g protein for ${fmt(c.k)} cal`;
+  if(ctx.dir==='gain'&&c.k>=600)return 'Big plate for your gain goal';
+  if(c.k<=ctx.room)return `Fits the ${fmt(ctx.room)} cal you have left`;
+  return `${Math.round(c.p)} g protein`;
+}
+function itemRow(it,showHall){
+  const hn=hallName(it.hall);const dens=it.k>0?it.p/(it.k/100):0;
+  return `<button type="button" class="irow" data-log="${it.hall}|${esc(it.n)}|${esc(it.v)}">
+    <span class="t"><b>${esc(it.n)}</b><small>${showHall?esc(hn)+' · ':''}${esc(it.s||'')} · ${esc(it.v||'')}</small></span>
+    <span class="n"><b>${fmt(it.k)}</b> cal<small class="${dens>=8&&it.p>=12?'pp':''}">${r1(it.p)} g protein</small></span></button>`;
+}
+function renderPicks(){
+  const box=$('#picks');
+  if(!eat.loaded){box.innerHTML='<div class="pickempty">Loading today\'s menus…</div>';return}
+  const picks=topPicks(eat.meal);const ctx=eatContext();
+  if(!picks.length){box.innerHTML=`<div class="pickempty">No ${eat.meal.toLowerCase()} menus are posted right now. Try another meal above.</div>`;return}
+  eat.pickList=picks;
+  box.innerHTML=picks.map((c,ix)=>{
+    const st=c.st;const name=c.items.map(i=>i.n).join(' + ');
+    const when=st?(st.open?st.label.toLowerCase():st.label.toLowerCase()):'';
+    const tag=ix===0?(c.type==='plate'?'Top pick · full plate':'Top pick'):(c.type==='plate'?'Full plate':(c.p>=30?'High protein':'Also good'));
+    return `<button type="button" class="pick${ix===0?' hero':''}" data-pick="${ix}">
+      <span class="tagline">${tag}</span>
+      <span class="nm">${esc(name)}</span>
+      <span class="mac"><b>${fmt(c.k)} <small class="u">cal</small></b><small>${Math.round(c.p)} g protein</small></span>
+      <span class="wh">${esc(hallName(c.hall))} · ${esc(c.items[0].s||'')}${when?' · '+esc(when):''}</span>
+      ${ix===0?`<span class="why">${esc(whyLine(c,ctx))}</span>`:''}
+    </button>`}).join('');
+}
+const CHIPS=[['open','Open now'],['protein','High protein'],['under500','Under 500 cal'],['veg','Vegetarian'],['vegan','Vegan'],['halal','Halal']];
+function renderChips(){$('#eatChips').innerHTML=CHIPS.map(([k,l])=>`<button type="button" class="echip" data-chip="${k}" aria-pressed="${eat.chips.has(k)}">${l}</button>`).join('')}
+function chipOk(it){
+  const C=eat.chips,t=String(it.t||'');
+  if(C.has('open')){const st=hallStatus(it.hall);if(st&&!st.open)return false}
+  if(C.has('protein')&&!(it.p>=15&&it.k>0&&it.p/(it.k/100)>=7))return false;
+  if(C.has('under500')&&!(it.k<=500))return false;
+  if(C.has('veg')&&!/vegan|vegetarian/i.test(t))return false;
+  if(C.has('vegan')&&!/vegan/i.test(t))return false;
+  if(C.has('halal')&&!/halal/i.test(t))return false;
+  return true;
+}
+function renderResults(){
+  const q=eat.q.trim().toLowerCase();const active=!!q||[...eat.chips].some(c=>c!=='open');
+  $('#eatResults').hidden=!active;$('#eatPlaces').hidden=active;$('#eatClear').hidden=!q;
+  if(!active)return;
+  let all=[];for(const id of DINING)all=all.concat(hallItems(id,eat.meal));
+  const hits=all.filter(i=>i.kind!=='extra'||q).filter(i=>!q||(i.n+' '+(i.s||'')).toLowerCase().includes(q)).filter(chipOk)
+    .sort((a,b)=>(b.p/(b.k||1))-(a.p/(a.k||1))).slice(0,40);
+  $('#eatResults').innerHTML=hits.length?hits.map(i=>itemRow(i,true)).join(''):`<div class="pickempty">Nothing matches${q?` "${esc(eat.q)}"`:''}${eat.chips.has('open')?' at open places':''}.</div>`;
+}
+function placeRow(u,st){
+  const isHall=DINING.includes(u.id);const ctx=eatContext();
+  let best='';
+  if(isHall&&eat.loaded){const m=hallItems(u.id,eat.meal).filter(i=>i.kind==='main'&&!nameHas(i,ctx.pm.hate)).sort((a,b)=>scoreFor(+b.k,+b.p,ctx,nameHas(b,ctx.pm.like),st)-scoreFor(+a.k,+a.p,ctx,nameHas(a,ctx.pm.like),st))[0];
+    if(m)best=`Best: ${m.n} · ${fmt(m.k)} cal · ${Math.round(m.p)} g`;}
+  const cls=st.open?(st.soon?' soon':' open'):'';const isOpen=eat.open===u.id;
+  let body='';
+  if(isOpen){
+    if(isHall){const items=hallItems(u.id,eat.meal);const mains=items.filter(i=>i.kind==='main'),sides=items.filter(i=>i.kind==='side'),extras=items.filter(i=>i.kind==='extra');
+      const showX=!!eat.showExtras[u.id];
+      body=`<div class="pbody">${items.length?`<div class="ilist">${mains.length?'<div class="sub2">Mains</div>'+mains.map(i=>itemRow(i,false)).join(''):''}
+        ${sides.length?'<div class="sub2">Sides</div>'+sides.map(i=>itemRow(i,false)).join(''):''}
+        ${extras.length?(showX?'<div class="sub2">Extras</div>'+extras.map(i=>itemRow(i,false)).join(''):''):''}</div>
+        ${extras.length?`<button type="button" class="morebtn" data-extras="${u.id}">${showX?'Hide extras':`Sauces, toppings & drinks (${extras.length})`}</button>`:''}`
+        :`<div class="pickempty">No ${eat.meal.toLowerCase()} menu posted here today.</div>`}</div>`;
+    }
+    const now=new Date();
+    body+=`<div class="pweek">${[1,2,3,4,5,6,0].map(i=>{const rs=ranges(u,i);const td=i===now.getDay()?' class="td"':'';
+      return `<span${td}>${DAYS[i].slice(0,3)}</span><span${td}>${rs.length?rs.map(r=>tshort(r.o)+'–'+tshort(r.c)).join(', '):'Closed'}</span>`}).join('')}</div>`;
+  }
+  return `<div class="place${cls}"><button type="button" class="phead" data-place="${u.id}" aria-expanded="${isOpen}">
+    <span class="dot"></span><span class="t"><b>${esc(shortName(u.name))}</b>${best?`<small>${esc(best)}</small>`:''}</span><span class="st">${esc(st.label)}</span></button>${body}</div>`;
+}
+function renderPlaces(){
+  const box=$('#eatPlaces');
+  if(!hoursData){box.innerHTML='<div class="pickempty">Hours aren\'t loaded yet.</div>';return}
+  const now=new Date();const kind=id=>DINING.includes(id)?0:[12,13,14,15].includes(id)?1:[6,7,8,9].includes(id)?2:3;
+  const all=hoursData.units.map(u=>({u,st:status(u,now),k:kind(u.id)}));
+  const open=all.filter(x=>x.st.open).sort((a,b)=>(a.k-b.k)||(b.st.wait-a.st.wait));
+  const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
+  // Dining halls that are open show by default; open Munchie Marts and cafés fold into one row; closed places fold into another.
+  const openHalls=open.filter(x=>x.k===0),openOther=open.filter(x=>x.k!==0);
+  box.innerHTML=`<span class="lab">Open now</span>`
+    +(openHalls.length?openHalls.map(x=>placeRow(x.u,x.st)).join(''):'<div class="pickempty">No dining halls are open right now.</div>')
+    +(openOther.length?`<button type="button" class="closedtoggle" id="moreToggle" aria-expanded="${!!eat.showMore}"><span>Munchies &amp; cafés · ${openOther.length} open</span><span>${eat.showMore?'Hide':'Show'}</span></button>`
+      +(eat.showMore?`<div class="closedlist">${openOther.map(x=>placeRow(x.u,x.st)).join('')}</div>`:''):'')
+    +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${eat.showClosed}"><span>Closed · ${closed.length}</span><span>${eat.showClosed?'Hide':'Show'}</span></button>`
+    +(eat.showClosed?`<div class="closedlist">${closed.map(x=>placeRow(x.u,x.st)).join('')}</div>`:'');
+}
+function renderEat(){
+  if(!eat.meal)eat.meal=defaultMeal();
+  $('#eatTitle').textContent=eat.meal;
+  const openCount=hoursData?hoursData.units.filter(u=>DINING.includes(u.id)&&status(u).open).length:0;
+  $('#eatSub').textContent=`${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}${hoursData?` · ${openCount} ${openCount===1?'hall':'halls'} open`:''}`;
+  for(const b of document.querySelectorAll('#mealSeg [data-meal]'))b.setAttribute('aria-pressed',String(b.dataset.meal===eat.meal));
+  renderPicks();renderResults();if($('#eatResults').hidden)renderPlaces();
+}
+function enterEat(){
+  renderEat();
+  if(!hoursData)loadHours().then(()=>{if(curPage===1)renderEat()});
+  if(!eat.loaded)loadEatMenus();
+  clearInterval(hrTimer);hrTimer=setInterval(()=>{if(curPage!==1)clearInterval(hrTimer);else{renderEat()}},60000);
+}
+$('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]');if(!b)return;eat.meal=b.dataset.meal;renderEat()});
+$('#eatQ').addEventListener('input',()=>{eat.q=$('#eatQ').value;renderResults();if($('#eatResults').hidden)renderPlaces()});
+$('#eatQ').addEventListener('focus',()=>{renderChips();$('#eatChips').hidden=false});
+$('#eatClear').addEventListener('click',()=>{$('#eatQ').value='';eat.q='';renderResults();if($('#eatResults').hidden)renderPlaces()});
+$('#eatChips').addEventListener('click',e=>{const b=e.target.closest('[data-chip]');if(!b)return;const k=b.dataset.chip;eat.chips.has(k)?eat.chips.delete(k):eat.chips.add(k);renderChips();renderResults();if($('#eatResults').hidden)renderPlaces()});
+// Logging straight from the menu: exact NetNutrition numbers, no photo needed.
+function logFromItems(items,hallId){
+  const its=items.map(i=>({n:i.n,v:i.v||'',sv:1,k:r1(i.k),p:r1(i.p),c:r1(i.c),f:r1(i.f)}));
+  const T=itemsTot(its);
+  const nm=NAMES.includes(eat.meal)?eat.meal:timeName();
+  openReview({mode:'new',meal:{name:nm,hall:hallName(hallId),items:its,tot:{k:Math.round(T.k),p:r1(T.p),c:r1(T.c),f:r1(T.f)}}});
+}
+$('#pEat').addEventListener('click',e=>{
+  const pk=e.target.closest('[data-pick]');if(pk){const c=eat.pickList&&eat.pickList[+pk.dataset.pick];if(c)logFromItems(c.items,c.hall);return}
+  const lg=e.target.closest('[data-log]');if(lg){const [h,n,v]=lg.dataset.log.split('|');const it=(eat.menus[+h]||[]).find(i=>i.n===n&&(i.v||'')===v);if(it)logFromItems([it],+h);return}
+  const pl=e.target.closest('[data-place]');if(pl){const id=+pl.dataset.place;eat.open=eat.open===id?null:id;renderPlaces();return}
+  const ex=e.target.closest('[data-extras]');if(ex){const id=+ex.dataset.extras;eat.showExtras[id]=!eat.showExtras[id];renderPlaces();return}
+  if(e.target.closest('#closedToggle')){eat.showClosed=!eat.showClosed;renderPlaces();return}
+  if(e.target.closest('#moreToggle')){eat.showMore=!eat.showMore;renderPlaces()}
+});
 
 /* ---------- Swipe pager: Today · Week · Open · Ask ---------- */
 const pager=$('#pager'),tabs=$('#tabs');
@@ -867,8 +1125,8 @@ function setPage(i){
   document.documentElement.classList.toggle('on-today',i===0);
   tabs.querySelectorAll('[data-p]').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.p===i)));
   if(i!==0)$('#txt').blur();
-  if(i===1&&!$('#wkChart').classList.contains('shown'))requestAnimationFrame(()=>{$('#wkChart').classList.add('shown');$('#wkPro').classList.add('shown')});
-  if(i===2)enterOpen();
+  if(i===1)enterEat();
+  if(i===2&&!$('#wkChart').classList.contains('shown'))requestAnimationFrame(()=>{$('#wkChart').classList.add('shown');$('#wkPro').classList.add('shown')});
   if(i===3){const m=$('#msgs');m.scrollTop=m.scrollHeight}
 }
 let raf=0;
@@ -1169,7 +1427,7 @@ function errCopy(code){
 }
 
 /* ---------- day rollover ---------- */
-function rollDay(){const d=dstr();if(d!==state.date){state.date=d;state.lastLogged=null;state.turns=[];renderDay();watchMenu();renderToday()}}
+function rollDay(){const d=dstr();if(d!==state.date){state.date=d;state.lastLogged=null;state.turns=[];renderDay();watchMenu();renderToday();eat.menus={};eat.loaded=false;eat.meal=null;loadEatMenus()}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)rollDay()});
 
 /* ---------- boot ---------- */
@@ -1179,13 +1437,13 @@ renderDay();renderHalls();renderToday();renderWeek();
   const [d,s,u]=await Promise.all([use('db'),use('sample'),use('user')]);
   db=d;sample=s;
   if(!sample||!db)sys('Open this page in the Claude app or on claude.ai to log food.');
-  watchMenu();loadHours();
+  watchMenu();loadHours();loadEatMenus();
   if(u&&db){try{state.uid=await u.id()}catch(e){state.uid=null}}
   if(state.uid){
     col().onSnapshot(snap=>{
       state.logs={};state.settings=null;
       for(const doc of snap.docs){if(doc.id==='settings')state.settings=doc.data();else if(doc.id.startsWith('log-'))state.logs[doc.id]=doc.data()}
-      renderToday();renderWeek();
+      renderToday();renderWeek();if(curPage===1)renderEat();
     },()=>{});
   }
 })();
