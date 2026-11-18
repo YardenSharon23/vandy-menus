@@ -243,6 +243,7 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .ritem .nm{font-weight:500;min-width:0}
 .ritem .sub{grid-column:1/2;font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .ritem .x{grid-column:2/3;justify-self:end;border:0;background:transparent;color:var(--faint);font-size:.76rem;padding:0}
+.ritem .portion{grid-column:1/2;font-size:.74rem;color:var(--cyan);font-variant-numeric:tabular-nums}
 .step{display:flex;align-items:center;border-radius:10px;background:rgba(255,255,255,.05);grid-row:1/2;grid-column:2/3}
 .step button{border:0;background:transparent;width:30px;height:30px;font-size:1.05rem;color:var(--ink)}
 .step span{min-width:44px;text-align:center;font-size:.86rem;font-variant-numeric:tabular-nums}
@@ -925,13 +926,20 @@ function openReview({mode,entry,meal,replaceId,ctx}){
   $('#rvWhere').textContent=[src.hall,mode==='edit'?new Date(entry.t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):''].filter(Boolean).join(' · ');
   renderReview(true);$('#review').hidden=false;
 }
+// How much of an item you're logging, in plain words: "1.5 × 5 oz. portion ≈ 213 g", or Claude's guess for off-menu food.
+function portionText(i){
+  if(i.v==='estimate')return `<span class="est">Estimate</span>${i.eg?` · about ${i.eg} g`:''}`;
+  const g=+i.gr>0?Math.round(i.gr*i.sv):null;
+  return `${i.sv===1?'':i.sv+' × '}${esc(i.v||'1 serving')}${g?` ≈ ${g} g`:''}`;
+}
 function renderReview(fillTotals){
   const D=state.draft;
   $('#rvNames').innerHTML=NAMES.map(n=>`<button type="button" class="name" data-n="${n}" aria-pressed="${n===D.name}">${n}</button>`).join('');
   $('#rvItems').innerHTML=D.items.length?D.items.map((i,ix)=>`<div class="ritem">
       <span class="nm">${esc(i.n)}</span>
       <span class="step" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">−</button><span>${i.sv}×</span><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
-      <span class="sub">${fmt(i.k*i.sv)} cal · ${r1(i.p*i.sv)} g protein${i.v==='estimate'?' · <span class="est">estimate</span>':i.v?' · '+esc(i.v):''}</span>
+      <span class="sub">${fmt(i.k*i.sv)} cal · ${r1(i.p*i.sv)} g protein</span>
+      <span class="portion">${portionText(i)}</span>
       <button type="button" class="x" data-x="${ix}">Remove</button></div>`).join('')
     :'<div class="empty">No items. Type the totals below.</div>';
   if(fillTotals){const T=D.manual?D.tot:itemsTot(D.items);for(const k of ['k','p','c','f'])$('#t'+k).value=k==='k'?Math.round(T[k]):r1(T[k])}
@@ -1319,7 +1327,7 @@ $('#eatChips').addEventListener('click',e=>{
 $('#eatChips').addEventListener('submit',e=>{if(e.target.id!=='cfForm')return;e.preventDefault();const v=$('#cfIn').value;if(v.trim())addCustomFilter(v);else{eat.addingFilter=false;renderChips()}});
 // Logging straight from the menu: exact NetNutrition numbers, no photo needed.
 function logFromItems(items,hallId){
-  const its=items.map(i=>({n:i.n,v:i.v||'',sv:1,k:r1(i.k),p:r1(i.p),c:r1(i.c),f:r1(i.f)}));
+  const its=items.map(i=>({n:i.n,v:i.v||'',gr:+i.g||null,sv:1,k:r1(i.k),p:r1(i.p),c:r1(i.c),f:r1(i.f)}));
   const T=itemsTot(its);
   const nm=NAMES.includes(eat.meal)?eat.meal:timeName();
   openReview({mode:'new',meal:{name:nm,hall:hallName(hallId),items:its,tot:{k:Math.round(T.k),p:r1(T.p),c:r1(T.c),f:r1(T.f)}}});
@@ -1597,8 +1605,10 @@ The student tells you what they ate with a photo, a text message, or both. A pho
 ${where}
 
 How to estimate:
-- Plates almost always hold several foods. Scan the WHOLE photo: every section of the plate, every bowl, cup, side dish and anything at the edges. List each distinct food as its own item: grilled chicken, Brussels sprouts and fries are three items, not one. Break built dishes into their parts the way the menu lists them (a bowl or wrap becomes its base, protein, toppings and sauce; a salad becomes greens, each topping and the dressing).
-- Match each item separately to the menu item it most likely is, and give menu_id plus servings (decimals like 0.5, 1.5) judged against that item's serving size and grams. Use station names to tell similar items apart, and prefer items from the meal being served now. Use the plate (about 10 in), bowls, cups and utensils for scale. Include visible sauces, dressings, toppings, bread and drinks.
+- Plates almost always hold several foods. Scan the WHOLE photo: every section of the plate, every bowl, cup, side dish and anything at the edges. List each distinct food as its own item: grilled chicken, Brussels sprouts and fries are three items, not one. ALWAYS include every side (rice, potatoes, vegetables, bread, salad, fruit), not just the main. Break built dishes into their parts the way the menu lists them (a bowl or wrap becomes its base, protein, toppings and sauce; a salad becomes greens, each topping and the dressing).
+- Match each item separately to the menu item it most likely is (use station names to tell similar items apart; prefer the meal being served now).
+- Portions, for every item: first estimate how many grams of it are on the plate, using the plate (a standard dinner plate is about 10 in / 25 cm), bowls, cups, utensils and hands for scale, and how much of the plate it covers and how thick it is. Return that as "grams". Then compare with the menu's serving weight in grams and give servings = your grams ÷ serving grams, rounded to 0.25. Do NOT default to 1: a heaping scoop of rice is often 1.5–2 servings, a small spoonful 0.5. If a serving has no gram weight, judge against its listed size (e.g. "4 oz. portion", "1 piece").
+- Include visible sauces, dressings, toppings, bread and drinks as their own items too.
 - If one food on the plate isn't on the menu, still include it: set menu_id null and estimate its calories, protein_g, carbs_g and fat_g from what you see in the photo (typical portion size for how much is there). Never drop a food because you can't match it.
 - A nutrition label in the photo: use its numbers exactly, times the servings they ate (assume 1 unless told).
 - A barcode or QR code: use the product name and label visible in the photo. If you recognise the product from the code or packaging, use its usual label values. If you can't tell what the product is, say so in reply, ask them to type the product name, and set meal to null.
@@ -1609,8 +1619,8 @@ How to estimate:
 So far today: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein.
 
 Reply with only JSON:
-{"reply":"one short, friendly sentence","meal":{"name":"Dinner","items":[{"menu_id":"i12","label":"Grilled Chicken Breast","servings":1.5},{"menu_id":"i30","label":"Roasted Brussels Sprouts","servings":1},{"menu_id":"i41","label":"French Fries","servings":0.75},{"menu_id":null,"label":"Ranch dip, small cup","servings":1,"calories":110,"protein_g":0.5,"carbs_g":2,"fat_g":11}],"replaces_last":false}}
-meal may be null. Labels are short food names. Before answering, check that every food visible in the photo appears in items.`;
+{"reply":"one short, friendly sentence","meal":{"name":"Dinner","items":[{"menu_id":"i12","label":"Grilled Chicken Breast","grams":170,"servings":1.5},{"menu_id":"i30","label":"Roasted Brussels Sprouts","grams":85,"servings":1},{"menu_id":"i41","label":"French Fries","grams":60,"servings":0.75},{"menu_id":null,"label":"Ranch dip, small cup","grams":30,"servings":1,"calories":110,"protein_g":0.5,"carbs_g":2,"fat_g":11}],"replaces_last":false}}
+meal may be null. Labels are short food names. Before answering, check that every food visible in the photo appears in items, including every side.`;
 }
 // One call to Claude. ctx = {text, photo, code, hallId}; `history` adds the recent conversation (for "actually two bags").
 async function ask(ctx,{history=true,signal}={}){
@@ -1623,8 +1633,14 @@ async function ask(ctx,{history=true,signal}={}){
   if(res&&res.meal&&Array.isArray(res.meal.items)&&res.meal.items.length){
     const its=res.meal.items.map(it=>{
       const c=it.menu_id?items.find(x=>x.id===String(it.menu_id)):null;
-      if(c)return {n:c.n,v:c.v||'',sv:Math.max(0.25,Math.round((+it.servings||1)*4)/4),k:r1(c.k),p:r1(c.p),c:r1(c.c),f:r1(c.f)};
-      return {n:String(it.label||'Food'),v:'estimate',sv:1,k:r1(it.calories),p:r1(it.protein_g),c:r1(it.carbs_g),f:r1(it.fat_g)};
+      // Portion: when Claude gives the grams it sees and the menu gives a serving weight, servings = grams ÷ serving grams.
+      const seen=+it.grams>0?Math.round(+it.grams):null;
+      if(c){
+        const fromGrams=seen&&+c.g>0?seen/(+c.g):null;
+        const sv=Math.min(6,Math.max(0.25,Math.round((fromGrams||+it.servings||1)*4)/4));
+        return {n:c.n,v:c.v||'',gr:+c.g||null,eg:seen,sv,k:r1(c.k),p:r1(c.p),c:r1(c.c),f:r1(c.f)};
+      }
+      return {n:String(it.label||'Food'),v:'estimate',eg:seen,sv:1,k:r1(it.calories),p:r1(it.protein_g),c:r1(it.carbs_g),f:r1(it.fat_g)};
     });
     const T=itemsTot(its);
     meal={name:NAMES.includes(res.meal.name)?res.meal.name:timeName(),hall:ctx.hallId?hallName(ctx.hallId):'',items:its,tot:{k:Math.round(T.k),p:r1(T.p),c:r1(T.c),f:r1(T.f)}};
