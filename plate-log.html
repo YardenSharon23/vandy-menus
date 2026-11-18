@@ -107,7 +107,8 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .wkstats div{background:var(--panel-2);border-radius:14px;padding:10px 12px;min-width:0}
 .wkstats b{display:block;font-family:var(--display);font-weight:600;font-size:1.1rem;margin-top:2px;font-variant-numeric:tabular-nums}
 .wkhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
-.wkchart{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;height:150px;align-items:end;padding-top:16px}
+/* height comes from the content (label + 110px bar + day letter), so nothing spills into the protein row below */
+.wkchart{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;padding-top:4px}
 .wkcol .b .gl{position:absolute;left:0;right:0;border-top:1.5px dashed rgba(255,255,255,.45);z-index:1}
 .wkcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;min-width:0}
 .wkcol .v{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -118,8 +119,9 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .wkcol .d{font-size:.72rem;color:var(--muted);font-weight:600}
 .wkcol.today .d{color:var(--ink)}
 .wkcol.future .b{opacity:.4}
-.wkpro{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
-.wkpro div{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.wkpro{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:4px}
+.wkpro div{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.wkpro small{white-space:nowrap;line-height:1.2}
 .wkpro .t{width:100%;height:6px;border-radius:99px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
 .wkpro .t i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#2f62d9,var(--blue-2) 70%,var(--cyan))}
 .wkpro small{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -735,7 +737,7 @@ function renderWeek(){
       <span class="v">${r.k?fmt(r.k):''}</span>
       <span class="b" style="height:${H}px"><i style="height:${h}px"></i><span class="gl" style="bottom:${(G.k/max*H).toFixed(1)}px"></span></span>
       <span class="d">${r.d.toLocaleDateString(undefined,{weekday:'narrow'})}</span></div>`}).join('');
-  $('#wkPro').innerHTML=rows.map(r=>`<div class="${r.p>=G.p&&r.p>0?'hit':''}"><span class="t"><i style="width:${G.p?Math.min(100,r.p/G.p*100):0}%"></i></span><small>${r.p?fmt(r.p)+'g':'–'}</small></div>`).join('');
+  $('#wkPro').innerHTML=rows.map(r=>`<div class="${r.p>=G.p&&r.p>0?'hit':''}"><span class="t"><i style="width:${G.p?Math.min(100,r.p/G.p*100):0}%"></i></span><small>${r.p?fmt(r.p)+' g':'–'}</small></div>`).join('');
 }
 $('#openWeek').addEventListener('click',()=>{renderWeek();$('#week').hidden=false});
 $('#closeWeek').addEventListener('click',()=>{$('#week').hidden=true});
