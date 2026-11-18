@@ -26,7 +26,7 @@ button,input{font:inherit;color:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
 
-.app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding-block:22px 190px;display:flex;flex-direction:column;gap:22px}
+.app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding-block:22px 140px;display:flex;flex-direction:column;gap:22px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .top h1{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
 .top .sub{font-size:.8rem;color:var(--muted)}
@@ -88,11 +88,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   padding:24px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   background:linear-gradient(180deg,rgba(15,18,27,0),rgba(15,18,27,.94) 34%)}
 .composer{max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
-.halls{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.halls::-webkit-scrollbar{display:none}
-.halls.editing{flex-wrap:wrap;overflow:visible;touch-action:none}
-.hall{flex:none;border:1px solid var(--edge);background:rgba(23,27,40,.8);border-radius:99px;padding:6px 13px;font-size:.8rem;font-weight:600;color:var(--muted);
-  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);touch-action:pan-x;-webkit-user-select:none;user-select:none}
+.halls{display:grid;grid-template-columns:1fr 1fr;gap:10px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.halls.editing{touch-action:none}
+.hall{border:1px solid var(--edge);background:var(--panel-2);border-radius:16px;padding:16px 14px;font-size:1rem;font-weight:600;color:var(--ink);text-align:left;
+  font-family:var(--display);-webkit-user-select:none;user-select:none}
+.hall:active{background:var(--blue);border-color:var(--blue)}
+.hall.done{grid-column:1/-1;text-align:center}
 .hall[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 12px var(--glow)}
 .halls.need .hall{animation:need .7s ease 2;border-color:var(--cyan);color:var(--ink)}
 @keyframes need{0%,100%{transform:none}30%{transform:translateY(-3px)}60%{transform:translateY(1px)}}
@@ -203,9 +204,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <div class="dock">
   <form class="composer" id="form" autocomplete="off">
     <div class="note" id="note" role="status" aria-live="polite" hidden></div>
-    <div class="halls" id="halls" role="group" aria-label="Where are you eating? Press and hold to reorder."></div>
-    <div class="hint" id="reorderHint" hidden>Drag to reorder, then tap Done</div>
-    <div class="att" id="att" hidden><img id="attImg" alt="Photo to send"><div class="meta" id="attMeta"></div><button type="button" id="attX">Remove</button></div>
     <div class="bar">
       <div class="field">
         <input class="txt" id="txt" placeholder="Add a note or describe it…" aria-label="Describe what you ate">
@@ -220,6 +218,16 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     </div>
     <input type="file" id="file" accept="image/*" hidden>
   </form>
+</div>
+
+<!-- Where are you eating? (asked right before each photo or message) -->
+<div class="scrim" id="where" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="whereTitle">
+    <h2 id="whereTitle">Where are you eating?</h2>
+    <div class="halls" id="halls" role="group" aria-label="Dining halls. Press and hold to reorder."></div>
+    <div class="fine" id="reorderHint">Press and hold to reorder.</div>
+    <button type="button" class="btn" id="whereCancel">Cancel</button>
+  </div>
 </div>
 
 <!-- Review / edit an entry -->
@@ -284,11 +292,17 @@ function hallOrder(){
   return order;
 }
 function renderHalls(){
-  const box=$('#halls');box.classList.toggle('editing',state.editing);$('#reorderHint').hidden=!state.editing;
-  box.innerHTML=hallOrder().map(id=>{const h=HALLS.find(x=>x.id===id);return `<button type="button" class="hall" data-h="${id}" aria-pressed="${id===state.hall}">${h.name}</button>`}).join('')
+  const box=$('#halls');box.classList.toggle('editing',state.editing);
+  $('#reorderHint').textContent=state.editing?'Drag to reorder, then tap Done.':'Press and hold to reorder.';
+  box.innerHTML=hallOrder().map(id=>{const h=HALLS.find(x=>x.id===id);return `<button type="button" class="hall" data-h="${id}">${h.name}</button>`}).join('')
     +(state.editing?'<button type="button" class="hall done" id="doneReorder">Done</button>':'');
-  if(!state.editing){const on=box.querySelector('[aria-pressed="true"]');if(on)on.scrollIntoView({block:'nearest',inline:'nearest'})}
 }
+/* The hall popup opens on every camera tap (then the camera opens) and on sending text without a hall picked. */
+let pending=null;
+function openWhere(action){pending=action;state.editing=false;renderHalls();$('#where').hidden=false}
+function closeWhere(){$('#where').hidden=true;state.editing=false}
+$('#whereCancel').addEventListener('click',()=>{pending=null;closeWhere()});
+$('#where').addEventListener('click',e=>{if(e.target.id==='where'){pending=null;closeWhere()}});
 function hallName(id=state.hall){return (HALLS.find(h=>h.id===id)||{}).name}
 (function setupHalls(){
   const box=$('#halls');let holdT=null,startX=0,startY=0,held=false,drag=null;
@@ -315,7 +329,10 @@ function hallName(id=state.hall){return (HALLS.find(h=>h.id===id)||{}).name}
     if(e.target.id==='doneReorder'){state.editing=false;renderHalls();return}
     if(held||state.editing){held=false;return}
     const b=e.target.closest('[data-h]');if(!b)return;
-    state.hall=+b.dataset.h;LS.set('hall',state.hall);renderHalls();watchMenu();
+    state.hall=+b.dataset.h;watchMenu();closeWhere();
+    const act=pending;pending=null;
+    if(act==='photo')$('#file').click();               // still inside the tap, so the camera is allowed to open
+    else if(act==='send')$('#form').requestSubmit();
   });
 })();
 function renderDay(){$('#day').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}
@@ -446,14 +463,7 @@ async function removeEntry(id){try{await writeEntries(entries().filter(e=>e.id!=
 async function saveGoals(g){const c=col();if(!c)throw {code:'no_store'};await queue(()=>c.doc('settings').set({...(state.settings||{}),goals:g}))}
 
 /* ---------- photo, QR & barcodes ---------- */
-const CAM_ICON=$('#camBtn').innerHTML;
-const SEND_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-function needHall(){
-  note("Pick where you're eating first.");
-  const h=$('#halls');h.classList.remove('need');void h.offsetWidth;h.classList.add('need');
-  setTimeout(()=>h.classList.remove('need'),1400);
-}
-$('#camBtn').addEventListener('click',()=>{if(state.busy)return;if(state.hall==null){needHall();return}if(state.photo)$('#form').requestSubmit();else $('#file').click()});
+$('#camBtn').addEventListener('click',()=>{if(state.busy)return;openWhere('photo')});
 let zx=null;
 function loadZXing(){
   if(zx)return zx;
@@ -469,19 +479,15 @@ async function readCode(file,url){
 }
 $('#file').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
+  // Photo taken: check it for a QR code or barcode, then send it straight away (with any typed note).
   state.photo=f;state.code=null;const url=URL.createObjectURL(f);
-  $('#attImg').src=url;$('#att').hidden=false;$('#attMeta').textContent='Checking for a QR code or barcode…';updateSend();
-  const code=await readCode(f,url);if(state.photo!==f)return;
-  state.code=code;
-  $('#attMeta').innerHTML=code?`Scanned ${esc(/qr/i.test(code.format)?'QR code':'barcode')}: <b>${esc(code.text.length>40?code.text.slice(0,40)+'…':code.text)}</b>`:'Photo ready. Tap → to log it.';
+  note('<span class="typing"><i></i><i></i><i></i></span>',{html:true,sticky:true});
+  state.code=await readCode(f,url);
+  $('#form').requestSubmit();
 });
-$('#attX').addEventListener('click',()=>{state.photo=null;state.code=null;$('#att').hidden=true;updateSend()});
 $('#txt').addEventListener('input',updateSend);
 function updateSend(){
-  const ready=!!state.photo||!!$('#txt').value.trim();
-  $('#send').hidden=state.busy||!ready||!!state.photo;$('#stop').hidden=!state.busy;
-  const cam=$('#camBtn');const sendMode=!!state.photo&&!state.busy;
-  if(cam.dataset.mode!==(sendMode?'send':'cam')){cam.dataset.mode=sendMode?'send':'cam';cam.innerHTML=sendMode?SEND_ICON:CAM_ICON;cam.setAttribute('aria-label',sendMode?'Log it':'Take a photo or scan a code')}
+  $('#send').hidden=state.busy||!$('#txt').value.trim();$('#stop').hidden=!state.busy;
 }
 
 /* ---------- status note: one line above the composer, no running log ---------- */
@@ -527,11 +533,11 @@ meal may be null. Labels are short food names.`;
 }
 $('#form').addEventListener('submit',async e=>{
   e.preventDefault();if(state.busy)return;
-  if(state.hall==null){needHall();return}
+  if(state.hall==null){openWhere('send');return}
   const text=$('#txt').value.trim();const photo=state.photo;const code=state.code;if(!text&&!photo)return;
   if(!sample){sys('Open this page in the Claude app or on claude.ai to log food.');return}
   rollDay();
-  $('#txt').value='';state.photo=null;state.code=null;$('#att').hidden=true;
+  $('#txt').value='';state.photo=null;state.code=null;
   const userTurn=(photo?'[Photo attached] ':'')+(code?`[The page decoded a ${code.format||'code'} in the photo: "${code.text}"] `:'')+(text||'Photo only. Log what is in it.');
   note('<span class="typing"><i></i><i></i><i></i></span>',{html:true,sticky:true});
   state.busy=true;updateSend();
