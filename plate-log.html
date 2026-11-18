@@ -1248,8 +1248,10 @@ function placeRow(u,st){
         :`<div class="pickempty">No ${eat.meal.toLowerCase()} menu posted here today.</div>`}</div>`;
     }
     // Weekly hours fold behind one small row, closed by default.
-    const now=new Date();const showH=!!(eat.showHours||{})[u.id];
-    body+=`<button type="button" class="hourstoggle" data-hours="${u.id}" aria-expanded="${showH}">${showH?'− Hide hours':'+ Hours this week'}</button>`
+    // Dining halls fold their hours behind a button (the menu comes first). Munchies and cafés have no menu here,
+    // so tapping them shows the week's hours right away.
+    const now=new Date();const showH=!isHall||!!(eat.showHours||{})[u.id];
+    body+=(isHall?`<button type="button" class="hourstoggle" data-hours="${u.id}" aria-expanded="${showH}">${showH?'− Hide hours':'+ Hours this week'}</button>`:'')
       +(showH?`<div class="pweek">${[1,2,3,4,5,6,0].map(i=>{const rs=ranges(u,i);const td=i===now.getDay()?' class="td"':'';
       return `<span${td}>${DAYS[i].slice(0,3)}</span><span${td}>${rs.length?rs.map(r=>tshort(r.o)+'–'+tshort(r.c)).join(', '):'Closed'}</span>`}).join('')}</div>`:'');
   }
