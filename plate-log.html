@@ -157,9 +157,12 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .minor b{color:var(--ink);font-weight:600}
 .minor i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:2px}
 /* Room for beer: a quiet amber pill at the end of the carbs / fat row */
-.minor{align-items:center}
-.beerbtn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(242,180,80,.28);background:rgba(242,180,80,.08);color:#f3c46e;border-radius:99px;padding:5px 11px;font-size:.78rem;font-weight:600;font-variant-numeric:tabular-nums}
-.beerbtn svg{width:14px;height:14px}
+/* one line on phones: carbs, fat and a compact beer pill (just the calories once set) */
+.minor{align-items:center;flex-wrap:nowrap;gap:14px}
+.minor>span{white-space:nowrap}
+.beerbtn{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(242,180,80,.28);background:rgba(242,180,80,.08);color:#f3c46e;border-radius:99px;padding:4px 9px;font-size:.74rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.beerbtn svg{width:13px;height:13px}
+@media (max-width:380px){.minor{gap:10px;font-size:.8rem}.minor i{margin-right:5px}}
 .beerbtn.on{background:rgba(242,180,80,.16);border-color:rgba(242,180,80,.5)}
 .beerbtn:active{transform:scale(.96)}
 #beer.scrim{align-items:center;padding-top:calc(16px + env(safe-area-inset-top, 0px))}
@@ -1026,7 +1029,8 @@ function renderToday(){
   ba.style.strokeDasharray=`${(345.58*bp).toFixed(2)} 400`;ba.setAttribute('opacity',bp>0?'1':'0');
   $('#bg').setAttribute('x2',String(Math.min(220,130+110*Math.cos(Math.PI*bp)-6)));
   const B=planBeer();$('#beerBtn').classList.toggle('on',!!B);$('#beerBtn').hidden=!beerOn();
-  $('#beerBtnTxt').textContent=B?`${fmtBeer(B.n)} ${B.n===1?'beer':'beers'} · ${fmt(bk)} cal`:'Room for beer';
+  $('#beerBtnTxt').textContent=B?`${fmt(bk)} cal`:'Beer';
+  $('#beerBtn').setAttribute('aria-label',B?`Room for beer: ${fmtBeer(B.n)} ${B.n===1?'beer':'beers'}, ${fmt(bk)} calories set aside`:'Room for beer');
   const foodK=Math.max(1,G.k-bk);
   renderPace(t,G,G.k?Math.min(1,t.k/foodK):0,pp/100);
   $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=` / ${fmt(G.c)} g carbs`;
