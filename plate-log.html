@@ -232,10 +232,10 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="names" id="rvNames" role="group" aria-label="Name"></div>
     <div class="ritems" id="rvItems"></div>
     <div class="fields">
-      <label>Calories<input type="number" inputmode="decimal" min="0" id="tk"></label>
-      <label>Protein g<input type="number" inputmode="decimal" min="0" id="tp"></label>
-      <label>Carbs g<input type="number" inputmode="decimal" min="0" id="tc"></label>
-      <label>Fat g<input type="number" inputmode="decimal" min="0" id="tf"></label>
+      <label>Calories<input type="number" inputmode="decimal" min="0" step="any" id="tk"></label>
+      <label>Protein g<input type="number" inputmode="decimal" min="0" step="any" id="tp"></label>
+      <label>Carbs g<input type="number" inputmode="decimal" min="0" step="any" id="tc"></label>
+      <label>Fat g<input type="number" inputmode="decimal" min="0" step="any" id="tf"></label>
     </div>
     <div class="fine" id="rvFine">Change servings above, or type over any total.</div>
     <div class="actions">
@@ -251,10 +251,10 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <form class="sheet" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <h2 id="setTitle">Daily targets</h2>
     <div class="fields goals">
-      <label class="wide">Calories<input type="number" inputmode="numeric" min="0" id="gk" placeholder="2200"></label>
-      <label class="wide">Protein (g)<input type="number" inputmode="numeric" min="0" id="gp" placeholder="150"></label>
-      <label>Carbs (g)<input type="number" inputmode="numeric" min="0" id="gc" placeholder="250"></label>
-      <label>Fat (g)<input type="number" inputmode="numeric" min="0" id="gf" placeholder="70"></label>
+      <label class="wide">Calories<input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200"></label>
+      <label class="wide">Protein (g)<input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150"></label>
+      <label>Carbs (g)<input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250"></label>
+      <label>Fat (g)<input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70"></label>
     </div>
     <div class="actions">
       <button type="button" class="btn" id="closeSettings">Cancel</button>
@@ -409,7 +409,7 @@ $('#rvDelete').addEventListener('click',async()=>{const D=state.draft;if(!D)retu
   $('#rvDelete').dataset.armed='';$('#rvDelete').textContent='Delete';closeReview();await removeEntry(D.id)});
 $('#reviewForm').addEventListener('submit',async e=>{
   e.preventDefault();const D=state.draft;if(!D)return;
-  const tot={k:Math.max(0,Math.round(+$('#tk').value||0)),p:Math.max(0,r1($('#tp').value)),c:Math.max(0,r1($('#tc').value)),f:Math.max(0,r1($('#tf').value))};
+  const tot={k:Math.max(0,r1($('#tk').value)),p:Math.max(0,r1($('#tp').value)),c:Math.max(0,r1($('#tc').value)),f:Math.max(0,r1($('#tf').value))};
   const entry={id:D.id||Date.now().toString(36)+Math.random().toString(36).slice(2,6),t:D.t||new Date().toISOString(),name:D.name,hall:D.hall,items:D.items,tot,manual:!!D.manual};
   const replace=D.mode==='edit'?D.id:D.replaceId;const bubble=D.bubble;
   closeReview();$('#rvDelete').textContent='Delete';$('#rvDelete').dataset.armed='';
@@ -428,7 +428,7 @@ $('#closeSettings').addEventListener('click',closeSettings);
 $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')closeSettings()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#review').hidden)$('#rvCancel').click()});
 $('#goalForm').addEventListener('submit',async e=>{
-  e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=Math.round(+$('#g'+k).value);if(v>0)g[k]=v}
+  e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=r1($('#g'+k).value);if(v>0)g[k]=v}
   try{await saveGoals(g);closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
 });
 
