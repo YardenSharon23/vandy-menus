@@ -408,7 +408,10 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 .esearch input{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:10px 0}
 .esearch input::placeholder{color:var(--faint)}
 .eclear{border:0;background:rgba(255,255,255,.07);border-radius:50%;width:28px;height:28px;font-size:.75rem;color:var(--muted)}
-.echips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
+/* filter chips only while searching: they slide open under the search bar and fold away after */
+.echips{display:flex;flex-wrap:wrap;gap:6px;max-height:0;opacity:0;overflow:hidden;margin-top:-16px;transform:translateY(-6px);pointer-events:none;
+  transition:max-height .32s var(--ease),opacity .22s ease,transform .32s var(--ease),margin-top .32s var(--ease)}
+.echips.show{max-height:180px;opacity:1;margin-top:-6px;transform:none;pointer-events:auto}
 .echip{border:1px solid var(--pill-edge);background:transparent;border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:600;color:var(--muted)}
 .echip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
 /* Places vs. dishes: dining hall names use the display face, larger and bold; dish names stay in the body face, lighter and smaller */
@@ -487,7 +490,11 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 .pbody .ilist{background:transparent;padding:0}
 .pweek{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;padding:2px 14px 12px 32px;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .pweek .td{color:var(--ink);font-weight:600}
-.closedtoggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:.84rem;padding:10px 4px}
+/* "Munchies & cafés" and "Closed": same card and heading font as a dining hall, so every place reads the same */
+.closedtoggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:var(--panel);border-radius:16px;padding:12px 14px;text-align:left}
+.closedtoggle .gt{font-family:var(--display);font-weight:600;font-size:1.02rem;letter-spacing:.01em;color:var(--ink)}
+.closedtoggle .gt small{font-family:var(--body);font-weight:500;font-size:.76rem;color:var(--muted);margin-left:6px}
+.closedtoggle .gs{font-size:.8rem;font-weight:600;color:var(--blue-2)}
 .closedlist{display:flex;flex-direction:column;gap:8px}
 /* slim top picks: two lines each, same size, the first one just softly tinted */
 .picks{gap:6px}
@@ -610,7 +617,7 @@ html.finder .irow .n,html.finder .prow .n{display:none}
       <input id="eatQ" placeholder="Search food at every hall" aria-label="Search food" autocomplete="off" enterkeyhint="search">
       <button type="button" class="eclear" id="eatClear" aria-label="Clear search" hidden>✕</button>
     </div>
-    <div class="echips" id="eatChips" hidden></div>
+    <div class="echips" id="eatChips" aria-hidden="true"></div>
     <div class="eathead">
       <span class="lab picklab">Top picks for you</span>
       <div class="mealseg" id="mealSeg" role="group" aria-label="Meal">
@@ -1250,9 +1257,9 @@ function renderPlaces(){
   const openHalls=open.filter(x=>x.k===0),openOther=open.filter(x=>x.k!==0);
   box.innerHTML=`<span class="lab">Open now</span>`
     +(openHalls.length?openHalls.map(x=>placeRow(x.u,x.st)).join(''):'<div class="pickempty">No dining halls are open right now.</div>')
-    +(openOther.length?`<button type="button" class="closedtoggle" id="moreToggle" aria-expanded="${!!eat.showMore}"><span>Munchies &amp; cafés · ${openOther.length} open</span><span>${eat.showMore?'Hide':'Show'}</span></button>`
+    +(openOther.length?`<button type="button" class="closedtoggle" id="moreToggle" aria-expanded="${!!eat.showMore}"><span class="gt">Munchies &amp; cafés <small>${openOther.length} open</small></span><span class="gs">${eat.showMore?'Hide':'Show'}</span></button>`
       +(eat.showMore?`<div class="closedlist">${openOther.map(x=>placeRow(x.u,x.st)).join('')}</div>`:''):'')
-    +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${eat.showClosed}"><span>Closed · ${closed.length}</span><span>${eat.showClosed?'Hide':'Show'}</span></button>`
+    +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${eat.showClosed}"><span class="gt">Closed <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}</span></button>`
     +(eat.showClosed?`<div class="closedlist">${closed.map(x=>placeRow(x.u,x.st)).join('')}</div>`:'');
 }
 function renderEat(){
@@ -1268,8 +1275,20 @@ function enterEat(){
 }
 $('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]');if(!b)return;eat.meal=b.dataset.meal;renderEat()});
 $('#eatQ').addEventListener('input',()=>{eat.q=$('#eatQ').value;renderResults();if($('#eatResults').hidden)renderPlaces()});
-$('#eatQ').addEventListener('focus',()=>{renderChips();$('#eatChips').hidden=false});
-$('#eatClear').addEventListener('click',()=>{$('#eatQ').value='';eat.q='';renderResults();if($('#eatResults').hidden)renderPlaces()});
+// Filter chips show only while you're searching: open on focus, stay while there's text or you're adding a filter,
+// and fold away once you leave an empty search box.
+function showChips(on){const c=$('#eatChips');if(on)renderChips();c.classList.toggle('show',on);c.setAttribute('aria-hidden',String(!on))}
+function maybeHideChips(){setTimeout(()=>{
+  const a=document.activeElement;const inside=a&&(a.id==='eatQ'||$('#eatChips').contains(a));
+  const filtering=[...eat.chips].some(c=>c!=='open');   // keep them up while a filter is on, so you can see and undo it
+  if(!inside&&!eat.q.trim()&&!eat.addingFilter&&!filtering)showChips(false);
+},180)}
+$('#eatQ').addEventListener('focus',()=>showChips(true));
+$('#eatQ').addEventListener('blur',maybeHideChips);
+$('#eatChips').addEventListener('focusout',maybeHideChips);
+// tapping a chip shouldn't steal focus from the search box (which would fold the chips away mid-tap)
+$('#eatChips').addEventListener('pointerdown',e=>{if(e.target.closest('button'))e.preventDefault()});
+$('#eatClear').addEventListener('click',()=>{$('#eatQ').value='';eat.q='';renderResults();if($('#eatResults').hidden)renderPlaces();if(document.activeElement!==$('#eatQ'))maybeHideChips()});
 $('#eatChips').addEventListener('click',e=>{
   if(e.target.closest('#addChip')){eat.addingFilter=true;renderChips();return}
   const d=e.target.closest('[data-delchip]');if(d){deleteCustomFilter(d.dataset.delchip);return}
