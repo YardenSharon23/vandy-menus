@@ -784,7 +784,7 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 </div>
 
 <script>
-const HALLS=[{id:1,name:'Rand'},{id:2,name:'Commons'},{id:3,name:'Kissam'},{id:11,name:'EBI'},{id:20,name:'Rothschild'},{id:21,name:'Carmichael'},{id:19,name:'Zeppos'},{id:0,name:'Elsewhere'}];
+const HALLS=[{id:1,name:'Rand'},{id:2,name:'Commons'},{id:3,name:'Kissam'},{id:11,name:'EBI'},{id:20,name:'Rothschild'},{id:21,name:'Carmichael'},{id:19,name:'Zeppos'},{id:4,name:'The Pub'},{id:22,name:'West End Bagel'},{id:17,name:'Local Java'},{id:0,name:'Elsewhere'}];
 const NAMES=['Breakfast','Lunch','Dinner','Snack','Drink'];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1047,22 +1047,27 @@ function loadHours(){
 /* ---------- Eat page ---------- */
 // Menus for every dining hall today, loaded once in the background so the page opens instantly.
 const DINING=[1,2,3,11,20,21,19];
+// Cafés that post menus on NetNutrition (VandyBlenz, Wasabi, Holy Smokes and the Munchies don't).
+const CAFES=[4,22,17];const MENU_UNITS=[...DINING,...CAFES];
 const eat={menus:{},loaded:false,meal:null,q:'',chips:new Set(['open']),open:null,showClosed:false,showExtras:{}};
 async function loadEatMenus(){
   if(!db)return;
-  const lists=await Promise.all(DINING.map(id=>menuFor(id).catch(()=>[])));
-  DINING.forEach((id,i)=>{eat.menus[id]=lists[i]});eat.loaded=true;
+  const lists=await Promise.all(MENU_UNITS.map(id=>menuFor(id).catch(()=>[])));
+  MENU_UNITS.forEach((id,i)=>{eat.menus[id]=lists[i]});eat.loaded=true;
   if(curPage===1)renderEat();
 }
 // What kind of thing an item is, from Vanderbilt's station names.
-const EXTRA_RE=/condiment|beverage|juice|dressing|topping|sauce|self-serve|cooler|smoothie|add-in|soft serve|ice cream|salad bar|omelet|fruit|cheese|dairy|legume|creamer|syrup|broth|bun$|bakery|dessert|deli (meat|bread)/i;
+const EXTRA_RE=/condiment|beverage|juice|dressing|topping|sauce|spread|milkshake|self-serve|cooler|smoothie|add-in|soft serve|ice cream|salad bar|omelet|fruit|cheese|dairy|legume|creamer|syrup|broth|bun$|bakery|dessert|deli (meat|bread)/i;
 // Build-your-own stations (Kissam's "Chop Chop Meats & Tofus", salad-bar proteins…) list their proteins separately; real proteins count as mains.
 const PROTEIN_STATION_RE=/meats?\b|tofu|protein/i;
-const MAIN_RE=/main|entr[eé]e|^pizza$|protein$|meats$|^deli$|southern breakfast|^bagel/i;
-const SIDE_RE=/side|base|grain|veggies$|vegetable|soup|composed/i;
+// Cafés: West End Bagel's "Bagel Signature" sandwiches and "Bagel Pizza" are mains too.
+const MAIN_RE=/main|entr[eé]e|pizza|signature|protein$|meats$|^deli$|southern breakfast|^bagel/i;
+const SIDE_RE=/side|base|grain|veggies$|vegetable|soup|composed|salad|yogurt/i;
 function kindOf(it){
   const s=it.s||'';
   if(PROTEIN_STATION_RE.test(s)&&!/deli meat/i.test(s)&&(+it.p||0)>=12&&(+it.k||0)>=80)return 'main';
+  // Local Java's grab-and-go case mixes sandwiches with snacks: a real meal counts as a main, the rest as sides.
+  if(/grab n go|grab & go|grab and go/i.test(s))return (+it.k||0)>=250&&(+it.p||0)>=10?'main':'side';
   if(EXTRA_RE.test(s)||(+it.k||0)<40)return 'extra';
   if(MAIN_RE.test(s)&&(+it.k||0)>=120)return 'main';
   if(SIDE_RE.test(s))return 'side';
@@ -1109,7 +1114,7 @@ function hallStatus(id){const u=hoursData&&hoursData.units.find(x=>x.id===id);re
 function eatContext(){const G=goals(),t=dayTot();if(finderOn())return {room:1e9,proLeft:0,dir:'maintain',pm:prefModel()};return {room:Math.max(250,G.k-t.k),proLeft:Math.max(0,G.p-t.p),dir:goalDir(),pm:prefModel()}}
 function topPicks(meal){
   const ctx=eatContext();const out=[];
-  for(const id of DINING){
+  for(const id of MENU_UNITS){
     const st=hallStatus(id);const items=hallItems(id,meal);
     const mains=items.filter(i=>i.kind==='main'&&!nameHas(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet));
     const sides=items.filter(i=>i.kind==='side'&&!nameHas(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet)&&(+i.k||0)>=60);
@@ -1239,12 +1244,12 @@ function renderResults(){
   $('#eatResults').hidden=!active;$('#eatPlaces').hidden=active;$('#eatClear').hidden=!q;
   $('#pickBlock').hidden=active;
   if(!active)return;
-  let all=[];for(const id of DINING)all=all.concat(hallItems(id,eat.meal));
+  let all=[];for(const id of MENU_UNITS)all=all.concat(hallItems(id,eat.meal));
   const hits=sortForYou(all.filter(i=>i.kind!=='extra'||q).filter(i=>!q||(i.n+' '+(i.s||'')).toLowerCase().includes(q)).filter(chipOk),null).slice(0,40);
   $('#eatResults').innerHTML=hits.length?hits.map(i=>itemRow(i,true)).join(''):`<div class="pickempty">Nothing matches${q?` "${esc(eat.q)}"`:''}${eat.chips.has('open')?' at open places':''}.</div>`;
 }
 function placeRow(u,st){
-  const isHall=DINING.includes(u.id);const ctx=eatContext();
+  const isHall=MENU_UNITS.includes(u.id);const ctx=eatContext();
   let best='';
   if(isHall&&eat.loaded){const m=sortForYou(hallItems(u.id,eat.meal).filter(i=>i.kind==='main'),st)[0];
     if(m)best=finderOn()?m.n:`${m.n} · ${fmt(m.k)} cal · ${Math.round(m.p)} g`;}
@@ -1592,7 +1597,7 @@ $('#note').addEventListener('click',async e=>{
 
 /* ---------- Claude ---------- */
 // Typed messages never ask where you are: a hall named in the text ("chicken at roth") is picked up here.
-const HALL_WORDS=[[1,/\brand\b/i],[2,/\bcommons\b/i],[3,/\bkissam\b/i],[11,/\b(ebi|e\.?\s?bronson|ingram)\b/i],[20,/\broth(schild|s)?\b/i],[21,/\b(carmichael|carm)\b/i],[19,/\bzeppos\b/i]];
+const HALL_WORDS=[[1,/\brand\b/i],[2,/\bcommons\b/i],[3,/\bkissam\b/i],[11,/\b(ebi|e\.?\s?bronson|ingram)\b/i],[20,/\broth(schild|s)?\b/i],[21,/\b(carmichael|carm)\b/i],[19,/\bzeppos\b/i],[4,/\b(the pub|overcup)\b/i],[22,/\b(west end bagel|bagel co\.?)\b/i],[17,/\blocal java\b/i]];
 function detectHall(text){for(const [id,re] of HALL_WORDS)if(re.test(text||''))return id;return null}
 async function menuFor(hallId){
   if(!hallId||!db)return[];
