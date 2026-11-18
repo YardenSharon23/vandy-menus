@@ -174,15 +174,16 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <svg viewBox="0 0 260 150" role="img" aria-labelledby="gaugeLabel">
         <title id="gaugeLabel">Calories today</title>
         <defs>
-          <linearGradient id="gg" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#2f62d9"/><stop offset=".6" stop-color="#5fa0ff"/><stop offset="1" stop-color="#8fd8ff"/>
+          <!-- Same colours as the protein bar; the gradient is stretched over just the filled part (see renderToday). -->
+          <linearGradient id="gg" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="240" y2="0">
+            <stop offset="0" stop-color="#2f62d9"/><stop offset=".7" stop-color="#5fa0ff"/><stop offset="1" stop-color="#8fd8ff"/>
           </linearGradient>
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="glow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#4d8cff" flood-opacity=".5"/></filter>
         </defs>
-        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="14" stroke-linecap="round"/>
-        <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="14" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
-        <!-- glossy highlight along the filled part, same look as the protein bar -->
-        <path id="arcHi" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="4" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" transform="translate(0 -2.5)"/>
+        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="12" stroke-linecap="round"/>
+        <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
+        <!-- shine on the outer edge of the fill, like the top shine on the protein bar -->
+        <path id="arcHi" class="arcfill" d="M17 135 A113 113 0 0 1 243 135" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="3" stroke-linecap="round" stroke-dasharray="355" stroke-dashoffset="355"/>
       </svg>
       <div class="center">
         <div class="kcal" id="kcal">0</div>
@@ -371,9 +372,13 @@ function renderToday(){
   const t=dayTot(),G=goals();
   const pct=G.k?Math.min(1,t.k/G.k):0;
   // Real arc length (π·r), not pathLength, which some phone browsers ignore for dashes.
-  const off=String(345.58*(1-pct));
-  $('#arc').style.strokeDashoffset=off;$('#arcHi').style.strokeDashoffset=off;
-  $('#arcHi').style.opacity=pct>0.03?'1':'0';
+  $('#arc').style.strokeDashoffset=String(345.58*(1-pct));
+  // shine stops a little short of the rounded end so it sits inside the cap
+  $('#arcHi').style.strokeDashoffset=String(Math.min(355,355*(1-pct)+8));
+  $('#arcHi').style.opacity=pct>0.04?'1':'0';
+  // stretch the blue→cyan gradient over the filled part only, so a short fill still ends in cyan like the protein bar
+  const endX=130-110*Math.cos(Math.PI*pct);
+  $('#gg').setAttribute('x2',String(Math.max(40,endX+6)));
   $('#kcal').textContent=fmt(t.k);
   $('#kcalOf').textContent=G.k?`of ${fmt(G.k)} calories`:'calories';
   $('#proNum').textContent=fmt(t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
