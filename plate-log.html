@@ -443,6 +443,18 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 .pweek .td{color:var(--ink);font-weight:600}
 .closedtoggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:transparent;color:var(--muted);font-weight:600;font-size:.84rem;padding:10px 4px}
 .closedlist{display:flex;flex-direction:column;gap:8px}
+/* slim top picks: two lines each, same size, the first one just softly tinted */
+.picks{gap:6px}
+.pick{padding:10px 14px;border-radius:14px;gap:1px 12px}
+.pick .nm{grid-row:1;grid-column:1;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick .wh{grid-row:2;grid-column:1}
+.pick .mac{grid-row:1/3;grid-column:2}
+.pick .mac b{font-size:.98rem}
+.pick.hero{padding:10px 14px}
+.pick.hero .nm{font-size:.95rem}
+.pick.hero .mac b{font-size:.98rem}
+.morerow{display:flex;gap:4px;flex-wrap:wrap}
+.morerow .morebtn{width:auto}
 
 /* the old load-in on .top would replay inside pages; keep it only for the first page */
 .page:not(#pToday) .pagein{animation:none}
@@ -520,6 +532,12 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 <!-- Eat: what to eat right now. Top picks first, then search, then the places (open ones only, closed folded away). -->
 <section class="page" id="pEat" aria-label="Eat">
   <div class="pagein eat">
+    <div class="esearch">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>
+      <input id="eatQ" placeholder="Search food at every hall" aria-label="Search food" autocomplete="off" enterkeyhint="search">
+      <button type="button" class="eclear" id="eatClear" aria-label="Clear search" hidden>✕</button>
+    </div>
+    <div class="echips" id="eatChips" hidden></div>
     <div class="eathead">
       <div><h1 id="eatTitle">Lunch</h1><div class="sub" id="eatSub"></div></div>
       <div class="mealseg" id="mealSeg" role="group" aria-label="Meal">
@@ -527,12 +545,6 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
       </div>
     </div>
     <div class="picks" id="picks"></div>
-    <div class="esearch">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>
-      <input id="eatQ" placeholder="Search food at every hall" aria-label="Search food" autocomplete="off" enterkeyhint="search">
-      <button type="button" class="eclear" id="eatClear" aria-label="Clear search" hidden>✕</button>
-    </div>
-    <div class="echips" id="eatChips" hidden></div>
     <div class="eresults" id="eatResults" hidden></div>
     <div class="places" id="eatPlaces"></div>
     <div class="fine">Menus and hours from NetNutrition, refreshed each morning. Tap any dish to log it.</div>
@@ -960,7 +972,7 @@ function scoreFor(k,p,ctx,liked,st){
   if(ctx.dir==='lose')s-=Math.max(0,k-650)/90;
   if(ctx.dir==='gain')s+=Math.min(k,950)/320+p/25;
   if(ctx.proLeft>20)s+=Math.min(p,ctx.proLeft)/12;
-  if(liked)s+=4;
+  if(liked)s+=8;   // foods you said you like win ties and most close calls
   if(st){if(!st.open&&st.wait>240)s-=3;else if(!st.open)s-=0.8;if(st.open&&st.soon)s-=1.5}
   return s;
 }
@@ -997,28 +1009,32 @@ function whyLine(c,ctx){
   if(c.k<=ctx.room)return `Fits the ${fmt(ctx.room)} cal you have left`;
   return `${Math.round(c.p)} g protein`;
 }
+// Menu rows: just the dish name (plus the hall in search results) and its calories / protein. No station or portion text.
 function itemRow(it,showHall){
-  const hn=hallName(it.hall);const dens=it.k>0?it.p/(it.k/100):0;
+  const dens=it.k>0?it.p/(it.k/100):0;
   return `<button type="button" class="irow" data-log="${it.hall}|${esc(it.n)}|${esc(it.v)}">
-    <span class="t"><b>${esc(it.n)}</b><small>${showHall?esc(hn)+' · ':''}${esc(it.s||'')} · ${esc(it.v||'')}</small></span>
+    <span class="t"><b>${esc(it.n)}</b>${showHall?`<small>${esc(hallName(it.hall))}</small>`:''}</span>
     <span class="n"><b>${fmt(it.k)}</b> cal<small class="${dens>=8&&it.p>=12?'pp':''}">${r1(it.p)} g protein</small></span></button>`;
 }
+// Sort a hall's dishes the way you'd want them: things you like first, then best fit for your day.
+function sortForYou(list,st){
+  const ctx=eatContext();
+  return list.filter(i=>!nameHas(i,ctx.pm.hate)).map(i=>({i,s:scoreFor(+i.k,+i.p,ctx,nameHas(i,ctx.pm.like),st)+(fitsDiet(i,ctx.pm.diet)?0:-20)}))
+    .sort((a,b)=>b.s-a.s).map(x=>x.i);
+}
+// Top picks: three slim cards, name on the left, calories and protein on the right, hall and closing time underneath.
 function renderPicks(){
   const box=$('#picks');
   if(!eat.loaded){box.innerHTML='<div class="pickempty">Loading today\'s menus…</div>';return}
-  const picks=topPicks(eat.meal);const ctx=eatContext();
-  if(!picks.length){box.innerHTML=`<div class="pickempty">No ${eat.meal.toLowerCase()} menus are posted right now. Try another meal above.</div>`;return}
+  const picks=topPicks(eat.meal);
+  if(!picks.length){box.innerHTML=`<div class="pickempty">No ${eat.meal.toLowerCase()} menus are posted right now.</div>`;return}
   eat.pickList=picks;
   box.innerHTML=picks.map((c,ix)=>{
     const st=c.st;const name=c.items.map(i=>i.n).join(' + ');
-    const when=st?(st.open?st.label.toLowerCase():st.label.toLowerCase()):'';
-    const tag=ix===0?(c.type==='plate'?'Top pick · full plate':'Top pick'):(c.type==='plate'?'Full plate':(c.p>=30?'High protein':'Also good'));
     return `<button type="button" class="pick${ix===0?' hero':''}" data-pick="${ix}">
-      <span class="tagline">${tag}</span>
       <span class="nm">${esc(name)}</span>
       <span class="mac"><b>${fmt(c.k)} <small class="u">cal</small></b><small>${Math.round(c.p)} g protein</small></span>
-      <span class="wh">${esc(hallName(c.hall))} · ${esc(c.items[0].s||'')}${when?' · '+esc(when):''}</span>
-      ${ix===0?`<span class="why">${esc(whyLine(c,ctx))}</span>`:''}
+      <span class="wh">${esc(hallName(c.hall))}${st?' · '+esc(st.label.toLowerCase()):''}</span>
     </button>`}).join('');
 }
 const CHIPS=[['open','Open now'],['protein','High protein'],['under500','Under 500 cal'],['veg','Vegetarian'],['vegan','Vegan'],['halal','Halal']];
@@ -1038,24 +1054,26 @@ function renderResults(){
   $('#eatResults').hidden=!active;$('#eatPlaces').hidden=active;$('#eatClear').hidden=!q;
   if(!active)return;
   let all=[];for(const id of DINING)all=all.concat(hallItems(id,eat.meal));
-  const hits=all.filter(i=>i.kind!=='extra'||q).filter(i=>!q||(i.n+' '+(i.s||'')).toLowerCase().includes(q)).filter(chipOk)
-    .sort((a,b)=>(b.p/(b.k||1))-(a.p/(a.k||1))).slice(0,40);
+  const hits=sortForYou(all.filter(i=>i.kind!=='extra'||q).filter(i=>!q||(i.n+' '+(i.s||'')).toLowerCase().includes(q)).filter(chipOk),null).slice(0,40);
   $('#eatResults').innerHTML=hits.length?hits.map(i=>itemRow(i,true)).join(''):`<div class="pickempty">Nothing matches${q?` "${esc(eat.q)}"`:''}${eat.chips.has('open')?' at open places':''}.</div>`;
 }
 function placeRow(u,st){
   const isHall=DINING.includes(u.id);const ctx=eatContext();
   let best='';
-  if(isHall&&eat.loaded){const m=hallItems(u.id,eat.meal).filter(i=>i.kind==='main'&&!nameHas(i,ctx.pm.hate)).sort((a,b)=>scoreFor(+b.k,+b.p,ctx,nameHas(b,ctx.pm.like),st)-scoreFor(+a.k,+a.p,ctx,nameHas(a,ctx.pm.like),st))[0];
-    if(m)best=`Best: ${m.n} · ${fmt(m.k)} cal · ${Math.round(m.p)} g`;}
+  if(isHall&&eat.loaded){const m=sortForYou(hallItems(u.id,eat.meal).filter(i=>i.kind==='main'),st)[0];
+    if(m)best=`${m.n} · ${fmt(m.k)} cal · ${Math.round(m.p)} g`;}
   const cls=st.open?(st.soon?' soon':' open'):'';const isOpen=eat.open===u.id;
   let body='';
   if(isOpen){
-    if(isHall){const items=hallItems(u.id,eat.meal);const mains=items.filter(i=>i.kind==='main'),sides=items.filter(i=>i.kind==='side'),extras=items.filter(i=>i.kind==='extra');
-      const showX=!!eat.showExtras[u.id];
-      body=`<div class="pbody">${items.length?`<div class="ilist">${mains.length?'<div class="sub2">Mains</div>'+mains.map(i=>itemRow(i,false)).join(''):''}
-        ${sides.length?'<div class="sub2">Sides</div>'+sides.map(i=>itemRow(i,false)).join(''):''}
-        ${extras.length?(showX?'<div class="sub2">Extras</div>'+extras.map(i=>itemRow(i,false)).join(''):''):''}</div>
-        ${extras.length?`<button type="button" class="morebtn" data-extras="${u.id}">${showX?'Hide extras':`Sauces, toppings & drinks (${extras.length})`}</button>`:''}`
+    // Mains open, sorted for you. Sides and extras each stay folded until you tap them.
+    if(isHall){const items=hallItems(u.id,eat.meal);
+      const mains=sortForYou(items.filter(i=>i.kind==='main'),st),sides=sortForYou(items.filter(i=>i.kind==='side'),st),extras=items.filter(i=>i.kind==='extra');
+      const showS=!!(eat.showSides||{})[u.id],showX=!!eat.showExtras[u.id];
+      body=`<div class="pbody">${items.length?`<div class="ilist">${mains.map(i=>itemRow(i,false)).join('')}
+        ${showS?'<div class="sub2">Sides</div>'+sides.map(i=>itemRow(i,false)).join(''):''}
+        ${showX?'<div class="sub2">Extras</div>'+extras.map(i=>itemRow(i,false)).join(''):''}</div>
+        <div class="morerow">${sides.length?`<button type="button" class="morebtn" data-sides="${u.id}">${showS?'Hide sides':`Sides (${sides.length})`}</button>`:''}
+        ${extras.length?`<button type="button" class="morebtn" data-extras="${u.id}">${showX?'Hide extras':`Sauces & drinks (${extras.length})`}</button>`:''}</div>`
         :`<div class="pickempty">No ${eat.meal.toLowerCase()} menu posted here today.</div>`}</div>`;
     }
     const now=new Date();
@@ -1111,6 +1129,7 @@ $('#pEat').addEventListener('click',e=>{
   const pk=e.target.closest('[data-pick]');if(pk){const c=eat.pickList&&eat.pickList[+pk.dataset.pick];if(c)logFromItems(c.items,c.hall);return}
   const lg=e.target.closest('[data-log]');if(lg){const [h,n,v]=lg.dataset.log.split('|');const it=(eat.menus[+h]||[]).find(i=>i.n===n&&(i.v||'')===v);if(it)logFromItems([it],+h);return}
   const pl=e.target.closest('[data-place]');if(pl){const id=+pl.dataset.place;eat.open=eat.open===id?null:id;renderPlaces();return}
+  const sd=e.target.closest('[data-sides]');if(sd){const id=+sd.dataset.sides;eat.showSides=eat.showSides||{};eat.showSides[id]=!eat.showSides[id];renderPlaces();return}
   const ex=e.target.closest('[data-extras]');if(ex){const id=+ex.dataset.extras;eat.showExtras[id]=!eat.showExtras[id];renderPlaces();return}
   if(e.target.closest('#closedToggle')){eat.showClosed=!eat.showClosed;renderPlaces();return}
   if(e.target.closest('#moreToggle')){eat.showMore=!eat.showMore;renderPlaces()}
