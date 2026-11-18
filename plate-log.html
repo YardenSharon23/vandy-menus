@@ -285,6 +285,56 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .starters{margin-top:auto}
 #chat .chatbar{flex:none}
 
+/* ===== Motion: small, quick, eased. Everything is fully visible at rest; reduced-motion turns it all off. ===== */
+:root{--ease:cubic-bezier(.22,.8,.24,1);--spring:cubic-bezier(.34,1.4,.5,1)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{from{opacity:0;transform:translateY(28px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.96);opacity:0}60%{transform:scale(1.01);opacity:1}100%{transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 0 6px rgba(61,123,255,.14),0 10px 30px var(--glow)}50%{box-shadow:0 0 0 9px rgba(61,123,255,.08),0 12px 36px var(--glow)}}
+@keyframes growUp{from{transform:scaleY(0)}to{transform:none}}
+@keyframes growRight{from{transform:scaleX(0)}to{transform:none}}
+/* page load: header, gauge, bars and entries rise in one after another */
+.top{animation:rise .5s var(--ease) both}
+.gauge{animation:rise .55s var(--ease) .05s both}
+.pro{animation:rise .55s var(--ease) .12s both}
+.minor{animation:rise .55s var(--ease) .18s both}
+.log{animation:rise .55s var(--ease) .24s both}
+.dock .composer{animation:rise .55s var(--ease) .2s both}
+/* the camera button breathes gently */
+.cam{animation:glowPulse 3.2s ease-in-out infinite}
+/* taps feel physical */
+button{transition:transform .16s var(--ease),background-color .2s,color .2s,opacity .2s,box-shadow .2s}
+button:active{transform:scale(.96)}
+.cam:active{transform:scale(.92)}
+.entry:active,.hr:active,.starter:active{transform:scale(.985)}
+/* popups: backdrop fades, panel glides up */
+.scrim:not([hidden]){animation:fade .22s ease-out both}
+.scrim:not([hidden]) .sheet{animation:sheetUp .34s var(--ease) both}
+#chat.scrim:not([hidden]) .chatsheet{animation:rise .3s var(--ease) both}
+/* popup contents settle in a beat after the panel */
+.scrim:not([hidden]) .hall{animation:pop .32s var(--ease) both}
+.scrim:not([hidden]) .hall:nth-child(2){animation-delay:.03s}.scrim:not([hidden]) .hall:nth-child(3){animation-delay:.06s}
+.scrim:not([hidden]) .hall:nth-child(4){animation-delay:.09s}.scrim:not([hidden]) .hall:nth-child(5){animation-delay:.12s}
+.scrim:not([hidden]) .hall:nth-child(6){animation-delay:.15s}.scrim:not([hidden]) .hall:nth-child(7){animation-delay:.18s}
+.scrim:not([hidden]) .hall:nth-child(8){animation-delay:.21s}
+.scrim:not([hidden]) .ritem,.scrim:not([hidden]) .wkstats div{animation:rise .36s var(--ease) .06s both}
+.wkcol .b i{animation:growUp .7s var(--ease) .15s both;transform-origin:bottom}
+.wkpro .t i{animation:growRight .7s var(--ease) .2s both;transform-origin:left}
+/* new entries and messages slide in */
+.entry.new{animation:slideIn .45s var(--ease) both}
+.bub{animation:rise .32s var(--ease) both}
+.note:not([hidden]){animation:rise .28s var(--ease) both}
+.starter{animation:rise .4s var(--ease) both}
+.starter:nth-child(2){animation-delay:.05s}.starter:nth-child(3){animation-delay:.1s}
+.hr .wk{animation:fade .25s ease-out both}
+/* smooth bar and arc changes */
+.track i{transition:width .8s var(--ease)}
+.arcfill{transition:stroke-dashoffset 1s var(--ease)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -565,6 +615,16 @@ const ICONS={
 const icon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||ICONS.Snack}</svg>`;
 // Older entries stored a longer title in `meal` ("Lunch at Rand"); pull the short name out of it.
 function entryName(e){if(NAMES.includes(e.name))return e.name;const m=String(e.meal||'').toLowerCase();return NAMES.find(n=>m.includes(n.toLowerCase()))||'Snack'}
+// Numbers glide to their new value instead of jumping (skipped when the viewer prefers reduced motion).
+const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countTo(el,target){
+  target=Math.round(+target||0);const from=+el.dataset.v||0;el.dataset.v=target;
+  if(calm||from===target){el.textContent=target.toLocaleString();return}
+  const t0=performance.now(),dur=Math.min(900,350+Math.abs(target-from)*0.4);cancelAnimationFrame(el._raf);
+  const step=now=>{const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=Math.round(from+(target-from)*e).toLocaleString();if(p<1)el._raf=requestAnimationFrame(step)};
+  el._raf=requestAnimationFrame(step);
+}
+let seenEntries=null;   // entry ids already on screen, so only newly logged ones slide in
 function renderToday(){
   const t=dayTot(),G=goals();
   const pct=G.k?Math.min(1,t.k/G.k):0;
@@ -573,16 +633,18 @@ function renderToday(){
   // stretch the blue→cyan gradient over the filled part only, so a short fill still ends in cyan like the protein bar
   const endX=130-110*Math.cos(Math.PI*pct);
   $('#gg').setAttribute('x2',String(Math.max(40,endX+6)));
-  $('#kcal').textContent=fmt(t.k);
+  countTo($('#kcal'),t.k);
   $('#kcalOf').textContent=G.k?`of ${fmt(G.k)} calories`:'calories';
-  $('#proNum').textContent=fmt(t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
+  countTo($('#proNum'),t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
   $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=` / ${fmt(G.c)} g carbs`;
   $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=` / ${fmt(G.f)} g fat`;
   const es=entries().slice().sort((a,b)=>a.t<b.t?-1:1);
   $('#log').hidden=!es.length;
-  $('#entries').innerHTML=es.map(e=>{const n=entryName(e);return `<button type="button" class="entry" data-edit="${esc(e.id)}">
+  const fresh=seenEntries?es.filter(e=>!seenEntries.has(e.id)).map(e=>e.id):[];
+  seenEntries=new Set(es.map(e=>e.id));
+  $('#entries').innerHTML=es.map(e=>{const n=entryName(e);return `<button type="button" class="entry${fresh.includes(e.id)?' new':''}" data-edit="${esc(e.id)}">
     <span class="ic">${icon(n)}</span>
     <span class="t"><b>${esc(n)}</b><small>${new Date(e.t).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}${e.hall?' · '+esc(e.hall):''} · ${esc(e.items.map(i=>i.n).join(', '))}</small></span>
     <span class="n"><b>${fmt(e.tot.k)}</b><small>${fmt(e.tot.p)} g protein</small></span>
