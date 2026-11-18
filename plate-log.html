@@ -71,16 +71,13 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .entry .n small{display:block;color:var(--muted);font-size:.74rem}
 .entry .chev{color:var(--faint);flex:none}
 
-/* Thread */
-.thread{display:flex;flex-direction:column;gap:10px}
-.msg{max-width:86%;border-radius:18px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;font-size:.94rem}
-.me{align-self:flex-end;background:linear-gradient(135deg,var(--blue),#2f62d9);border-bottom-right-radius:6px}
-.bot{align-self:flex-start;background:var(--panel);border-bottom-left-radius:6px}
-.msg img{border-radius:12px;max-height:220px;width:auto;max-width:100%;object-fit:cover}
-.msg .code{font-size:.78rem;opacity:.85}
-.state{font-size:.78rem;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.state .ok{color:var(--good)}
-.state button{border:0;background:transparent;color:var(--ink);text-decoration:underline;padding:0;font-size:.78rem}
+/* Status note (replaces a chat log: one line at a time, above the composer) */
+.note{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:16px;font-size:.88rem;
+  background:rgba(30,35,51,.92);border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.note .msgtext{flex:1;min-width:0}
+.note .ok{color:var(--good);font-weight:600}
+.note button{flex:none;border:0;background:transparent;color:var(--ink);text-decoration:underline;padding:0;font-size:.82rem}
+.note .close{text-decoration:none;color:var(--faint);font-size:.9rem}
 .typing{display:flex;gap:5px;align-items:center;padding:4px 0}
 .typing i{width:7px;height:7px;border-radius:50%;background:var(--blue-2);animation:b 1s infinite ease-in-out}
 .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
@@ -200,11 +197,11 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="entries" id="entries"></div>
   </section>
 
-  <section class="thread" id="thread" aria-live="polite"></section>
 </main>
 
 <div class="dock">
   <form class="composer" id="form" autocomplete="off">
+    <div class="note" id="note" role="status" aria-live="polite" hidden></div>
     <div class="halls" id="halls" role="group" aria-label="Where are you eating? Press and hold to reorder."></div>
     <div class="hint" id="reorderHint" hidden>Drag to reorder, then tap Done</div>
     <div class="att" id="att" hidden><img id="attImg" alt="Photo to send"><div class="meta" id="attMeta"></div><button type="button" id="attX">Remove</button></div>
@@ -403,7 +400,7 @@ $('#rvItems').addEventListener('click',e=>{
 });
 for(const k of ['k','p','c','f'])$('#t'+k).addEventListener('input',()=>{state.draft.manual=true});
 function closeReview(){$('#review').hidden=true;state.draft=null}
-$('#rvCancel').addEventListener('click',()=>{const D=state.draft;if(D&&D.bubble&&D.mode==='new'){const st=D.bubble.querySelector('.state');if(st)st.innerHTML='Not logged <button type="button" data-reopen>Review again</button>';D.bubble._meal={...D,items:D.items}}closeReview()});
+$('#rvCancel').addEventListener('click',()=>{const D=state.draft;if(D&&D.mode==='new')note('Not logged.');closeReview()});
 $('#review').addEventListener('click',e=>{if(e.target.id==='review')$('#rvCancel').click()});
 $('#rvDelete').addEventListener('click',async()=>{const D=state.draft;if(!D)return;if($('#rvDelete').dataset.armed!=='1'){$('#rvDelete').dataset.armed='1';$('#rvDelete').textContent='Tap to confirm';return}
   $('#rvDelete').dataset.armed='';$('#rvDelete').textContent='Delete';closeReview();await removeEntry(D.id)});
@@ -411,12 +408,12 @@ $('#reviewForm').addEventListener('submit',async e=>{
   e.preventDefault();const D=state.draft;if(!D)return;
   const tot={k:Math.max(0,r1($('#tk').value)),p:Math.max(0,r1($('#tp').value)),c:Math.max(0,r1($('#tc').value)),f:Math.max(0,r1($('#tf').value))};
   const entry={id:D.id||Date.now().toString(36)+Math.random().toString(36).slice(2,6),t:D.t||new Date().toISOString(),name:D.name,hall:D.hall,items:D.items,tot,manual:!!D.manual};
-  const replace=D.mode==='edit'?D.id:D.replaceId;const bubble=D.bubble;
-  closeReview();$('#rvDelete').textContent='Delete';$('#rvDelete').dataset.armed='';
+  const replace=D.mode==='edit'?D.id:D.replaceId;
+  closeReview();
   try{
     await upsertEntry(entry,replace);
-    if(D.mode==='new'){state.lastLogged=entry.id;state.lastMeal=entry}
-    if(bubble){const st=bubble.querySelector('.state');if(st)st.innerHTML=`<span class="ok">${replace?'Updated':'Logged'} ${fmt(tot.k)} cal ✓</span><button type="button" data-undo="${entry.id}">Undo</button>`}
+    if(D.mode==='new'){state.lastLogged=entry.id;note(`<span class="ok">${replace?'Updated':'Logged'} ${esc(entry.name)} · ${fmt(tot.k)} cal</span>`,{html:true,undo:replace?null:entry.id})}
+    else note(`<span class="ok">Saved ${esc(entry.name)}</span>`,{html:true});
   }catch(err){sys(err&&err.code==='no_store'?'Not saved: open this page in Claude while signed in.':"Couldn't save. Try again.")}
 });
 
@@ -479,14 +476,20 @@ function updateSend(){
   if(cam.dataset.mode!==(sendMode?'send':'cam')){cam.dataset.mode=sendMode?'send':'cam';cam.innerHTML=sendMode?SEND_ICON:CAM_ICON;cam.setAttribute('aria-label',sendMode?'Log it':'Take a photo or scan a code')}
 }
 
-/* ---------- thread ---------- */
-function add(html,cls){const d=document.createElement('div');d.className='msg '+cls;d.innerHTML=html;$('#thread').append(d);d.scrollIntoView({behavior:'smooth',block:'end'});return d}
-function sys(t){add(esc(t),'bot')}
-$('#thread').addEventListener('click',async e=>{
+/* ---------- status note: one line above the composer, no running log ---------- */
+let noteT=null;
+function note(content,{html=false,undo=null,sticky=false}={}){
+  const el=$('#note');clearTimeout(noteT);
+  el.innerHTML=`<span class="msgtext">${html?content:esc(content)}</span>${undo?`<button type="button" data-undo="${esc(undo)}">Undo</button>`:''}${sticky?'':'<button type="button" class="close" aria-label="Dismiss">✕</button>'}`;
+  el.hidden=false;
+  if(!sticky)noteT=setTimeout(()=>{el.hidden=true},undo?7000:9000);
+}
+function hideNote(){clearTimeout(noteT);$('#note').hidden=true}
+function sys(t){note(t)}
+$('#note').addEventListener('click',async e=>{
+  if(e.target.closest('.close')){hideNote();return}
   const u=e.target.closest('[data-undo]');
-  if(u){const id=u.dataset.undo;await removeEntry(id);if(state.lastLogged===id)state.lastLogged=null;u.parentElement.textContent='Removed';return}
-  const r=e.target.closest('[data-reopen]');
-  if(r){const bubble=r.closest('.msg');const m=bubble&&bubble._meal;if(m)openReview({mode:'new',meal:{name:m.name,hall:m.hall,items:m.items,tot:m.tot},replaceId:m.replaceId,bubble})}
+  if(u){const id=u.dataset.undo;await removeEntry(id);if(state.lastLogged===id)state.lastLogged=null;note('Removed.')}
 });
 
 /* ---------- Claude ---------- */
@@ -519,16 +522,14 @@ $('#form').addEventListener('submit',async e=>{
   const text=$('#txt').value.trim();const photo=state.photo;const code=state.code;if(!text&&!photo)return;
   if(!sample){sys('Open this page in the Claude app or on claude.ai to log food.');return}
   rollDay();
-  add(`${photo?`<img alt="Your photo" src="${URL.createObjectURL(photo)}">`:''}${code?`<span class="code">Scanned: ${esc(code.text)}</span>`:''}${text?`<span>${esc(text)}</span>`:''}`,'me');
   $('#txt').value='';state.photo=null;state.code=null;$('#att').hidden=true;
   const userTurn=(photo?'[Photo attached] ':'')+(code?`[The page decoded a ${code.format||'code'} in the photo: "${code.text}"] `:'')+(text||'Photo only. Log what is in it.');
-  const typing=add('<div class="typing"><i></i><i></i><i></i></div>','bot');
+  note('<span class="typing"><i></i><i></i><i></i></span>',{html:true,sticky:true});
   state.busy=true;updateSend();
   ctl=new AbortController();const items=menuList();
   try{
     const turns=[{role:'user',content:instructions()},...state.turns.slice(-10),{role:'user',content:userTurn}];
     const res=await sample.json(turns,{images:photo?[photo]:undefined,signal:ctl.signal,cache:false});
-    typing.remove();
     const reply=String((res&&res.reply)||'Here is what I found.');
     let meal=null;
     if(res&&res.meal&&Array.isArray(res.meal.items)&&res.meal.items.length){
@@ -540,15 +541,14 @@ $('#form').addEventListener('submit',async e=>{
       const T=itemsTot(its);
       meal={name:NAMES.includes(res.meal.name)?res.meal.name:timeName(),hall:state.hall?hallName():'',items:its,tot:{k:Math.round(T.k),p:r1(T.p),c:r1(T.c),f:r1(T.f)}};
     }
-    const bubble=add(`<span>${esc(reply)}</span>${meal?'<div class="state">Review it to log</div>':''}`,'bot');
+    if(meal)hideNote();else note(reply);
     state.turns.push({role:'user',content:userTurn});
     state.turns.push({role:'assistant',content:JSON.stringify({reply,meal:meal&&{name:meal.name,items:meal.items.map(i=>({label:i.n,servings:i.sv,calories:Math.round(i.k*i.sv),protein_g:r1(i.p*i.sv)}))}})});
     if(meal){
       const replaceId=res.meal.replaces_last&&state.lastLogged&&entries().some(x=>x.id===state.lastLogged)?state.lastLogged:null;
-      bubble._meal={...meal,replaceId};
-      openReview({mode:'new',meal,replaceId,bubble});
+      openReview({mode:'new',meal,replaceId});
     }
-  }catch(err){typing.remove();if(!err||err.code!=='cancelled')sys(errCopy(err&&err.code))}
+  }catch(err){if(err&&err.code==='cancelled')hideNote();else sys(errCopy(err&&err.code))}
   finally{state.busy=false;updateSend()}
 });
 $('#stop').addEventListener('click',()=>ctl&&ctl.abort());
