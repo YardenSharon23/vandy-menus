@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;500&family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: one navy column. Calorie gauge, protein bar, slim carbs/fat line, then today's entries (tap to edit). Chat thread below; pinned composer led by a big camera button. Every log goes through a review sheet. */
 :root{
@@ -38,7 +38,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .gauge{position:relative;width:100%;max-width:330px;margin:0 auto}
 .gauge svg{display:block;width:100%;height:auto;overflow:visible}
 .gauge .center{position:absolute;left:0;right:0;bottom:2%;text-align:center}
-.gauge .kcal{font-family:var(--display);font-weight:700;font-size:clamp(2.8rem,14vw,3.5rem);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.gauge .kcal{font-family:"Outfit","Segoe UI",system-ui,sans-serif;font-weight:300;font-size:clamp(3.2rem,16vw,4.1rem);line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg,#ffffff 30%,#b9d6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.gauge .of{font-family:"Outfit","Segoe UI",system-ui,sans-serif;font-weight:300;letter-spacing:.02em}
 .gauge .of{font-size:.84rem;color:var(--muted);margin-top:8px}
 .gauge .left{font-size:.8rem;font-weight:600;color:var(--cyan);min-height:1.2em}
 .gauge .left.over{color:var(--bad)}
@@ -94,6 +96,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .hall{flex:none;border:1px solid var(--edge);background:rgba(23,27,40,.8);border-radius:99px;padding:6px 13px;font-size:.8rem;font-weight:600;color:var(--muted);
   -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);touch-action:pan-x;-webkit-user-select:none;user-select:none}
 .hall[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 12px var(--glow)}
+.halls.need .hall{animation:need .7s ease 2;border-color:var(--cyan);color:var(--ink)}
+@keyframes need{0%,100%{transform:none}30%{transform:translateY(-3px)}60%{transform:translateY(1px)}}
 .editing .hall{animation:jig .28s ease-in-out infinite alternate;cursor:grab}
 .editing .hall.drag{animation:none;transform:scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.5);border-color:var(--cyan);color:var(--ink);cursor:grabbing}
 .hall.done{background:var(--ink);color:var(--bg);border-color:var(--ink);animation:none!important}
@@ -173,7 +177,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
         <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="14" stroke-linecap="round"/>
-        <path id="arc" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" filter="url(#glow)" style="transition:stroke-dashoffset .8s ease"/>
+        <path id="arc" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="14" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58"filter="url(#glow)" style="transition:stroke-dashoffset .8s ease"/>
         <circle id="knob" cx="20" cy="135" r="8.5" fill="#ffffff" filter="url(#glow)" hidden/>
       </svg>
       <div class="center">
@@ -271,7 +275,8 @@ const r1=n=>Math.round((+n||0)*10)/10;
 const fmt=n=>Math.round(+n||0).toLocaleString();
 const timeName=()=>{const h=new Date().getHours()+new Date().getMinutes()/60;return h>=5&&h<10.5?'Breakfast':h>=11&&h<14.5?'Lunch':h>=17&&h<21?'Dinner':'Snack'};
 
-const state={date:dstr(),hall:LS.get('hall',1),menu:null,uid:null,logs:{},settings:null,photo:null,code:null,busy:false,turns:[],lastLogged:null,editing:false,draft:null};
+// No hall is preselected: hall stays null until the person taps one (0 = Elsewhere), and resets after each log.
+const state={date:dstr(),hall:null,menu:null,uid:null,logs:{},settings:null,photo:null,code:null,busy:false,turns:[],lastLogged:null,editing:false,draft:null};
 let db=null,sample=null,ctl=null;
 
 /* ---------- hall chips: tap to pick, press and hold to reorder ---------- */
@@ -331,7 +336,9 @@ function menuList(){if(!state.menu)return[];const out=[];let i=0;for(const m of 
 const logId=()=>'log-'+state.date;
 function entries(){return ((state.logs[logId()]||{}).entries)||[]}
 function dayTot(){return entries().reduce((t,e)=>({k:t.k+e.tot.k,p:t.p+e.tot.p,c:t.c+e.tot.c,f:t.f+e.tot.f}),{k:0,p:0,c:0,f:0})}
-function goals(){return (state.settings&&state.settings.goals)||{}}
+// Calories and protein always have a target so the gauge and bar fill; change them in settings.
+const DEFAULT_GOALS={k:2000,p:120};
+function goals(){return {...DEFAULT_GOALS,...((state.settings&&state.settings.goals)||{})}}
 const ICONS={
   Breakfast:'<path d="M12 3v2M5.6 5.6l1.4 1.4M3 12h2M19 12h2M17 7l1.4-1.4"/><path d="M6 16a6 6 0 0 1 12 0"/><path d="M3 19h18"/>',
   Lunch:'<circle cx="12" cy="12" r="7"/><path d="M12 8v4l2.5 2"/>',
@@ -344,7 +351,8 @@ function entryName(e){if(NAMES.includes(e.name))return e.name;const m=String(e.m
 function renderToday(){
   const t=dayTot(),G=goals();
   const pct=G.k?Math.min(1,t.k/G.k):0;
-  $('#arc').setAttribute('stroke-dashoffset',String(100-pct*100));
+  // Real arc length (π·r), not pathLength, which some phone browsers ignore for dashes.
+  $('#arc').style.strokeDashoffset=String(345.58*(1-pct));
   const a=Math.PI*(1-pct),x=130+110*Math.cos(a),y=135-110*Math.sin(a);
   const knob=$('#knob');knob.setAttribute('cx',x.toFixed(1));knob.setAttribute('cy',y.toFixed(1));knob.toggleAttribute('hidden',!(G.k&&t.k>0));
   $('#kcal').textContent=fmt(t.k);
@@ -445,7 +453,12 @@ async function saveGoals(g){const c=col();if(!c)throw {code:'no_store'};await qu
 /* ---------- photo, QR & barcodes ---------- */
 const CAM_ICON=$('#camBtn').innerHTML;
 const SEND_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-$('#camBtn').addEventListener('click',()=>{if(state.busy)return;if(state.photo)$('#form').requestSubmit();else $('#file').click()});
+function needHall(){
+  note("Pick where you're eating first.");
+  const h=$('#halls');h.classList.remove('need');void h.offsetWidth;h.classList.add('need');
+  setTimeout(()=>h.classList.remove('need'),1400);
+}
+$('#camBtn').addEventListener('click',()=>{if(state.busy)return;if(state.hall==null){needHall();return}if(state.photo)$('#form').requestSubmit();else $('#file').click()});
 let zx=null;
 function loadZXing(){
   if(zx)return zx;
@@ -519,6 +532,7 @@ meal may be null. Labels are short food names.`;
 }
 $('#form').addEventListener('submit',async e=>{
   e.preventDefault();if(state.busy)return;
+  if(state.hall==null){needHall();return}
   const text=$('#txt').value.trim();const photo=state.photo;const code=state.code;if(!text&&!photo)return;
   if(!sample){sys('Open this page in the Claude app or on claude.ai to log food.');return}
   rollDay();
@@ -547,6 +561,7 @@ $('#form').addEventListener('submit',async e=>{
     if(meal){
       const replaceId=res.meal.replaces_last&&state.lastLogged&&entries().some(x=>x.id===state.lastLogged)?state.lastLogged:null;
       openReview({mode:'new',meal,replaceId});
+      state.hall=null;renderHalls();watchMenu();   // pick again for the next log
     }
   }catch(err){if(err&&err.code==='cancelled')hideNote();else sys(errCopy(err&&err.code))}
   finally{state.busy=false;updateSend()}
