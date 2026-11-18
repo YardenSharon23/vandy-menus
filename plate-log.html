@@ -501,6 +501,8 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 .pbody{padding:0 6px 8px}
 .pbody .ilist{background:transparent;padding:0}
 .pweek{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;padding:2px 14px 12px 32px;font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.noserve{font-size:.86rem;color:var(--muted);padding:4px 10px 8px}
+.noservebtns{display:flex;flex-wrap:wrap;gap:4px;margin:2px -10px 0}
 .pweek .td{color:var(--ink);font-weight:600}
 /* "Munchies & cafés" and "Closed": same card and heading font as a dining hall, so every place reads the same */
 .closedtoggle{display:flex;align-items:center;justify-content:space-between;width:100%;border:0;background:var(--panel);border-radius:16px;padding:12px 14px;text-align:left}
@@ -635,7 +637,7 @@ html.finder .irow .n,html.finder .prow .n{display:none}
       <button type="button" data-meal="Breakfast">Breakfast</button><button type="button" data-meal="Lunch">Lunch</button><button type="button" data-meal="Dinner">Dinner</button>
     </div>
     <div class="pickblock" id="pickBlock">
-      <button type="button" class="picktoggle" id="pickToggle" aria-expanded="true" aria-controls="picks">
+      <button type="button" class="picktoggle" id="pickToggle" aria-expanded="false" aria-controls="picks">
         <span class="lab picklab">Top picks for you</span><span class="gs" id="pickToggleTxt">Hide</span>
       </button>
       <div class="picks" id="picks"></div>
@@ -1254,10 +1256,17 @@ function placeRow(u,st){
       const mains=sortForYou(items.filter(i=>i.kind==='main'),st),sides=sortForYou(items.filter(i=>i.kind==='side'),st);
       // Sauces, toppings and drinks never show here (search still finds them). Sides fold behind one row that opens and closes in place.
       const showS=!!(eat.showSides||{})[u.id];
-      body=`<div class="pbody">${mains.length||sides.length?`<div class="ilist">${mains.map(i=>itemRow(i,false)).join('')}
+      // A place that doesn't serve the chosen meal (e.g. Café Carmichael has no dinner) says so and offers the meals it does serve.
+      const served=[...new Set((eat.menus[u.id]||[]).map(i=>i.meal))].filter(m=>m!=='Daily Offerings');
+      const servesThis=served.includes(eat.meal)||(eat.meal!=='Dinner'&&served.includes('Brunch'));
+      const other=served.filter(m=>m!==eat.meal&&['Breakfast','Brunch','Lunch','Dinner'].includes(m));
+      const notServed=!servesThis&&!mains.length
+        ?`<div class="noserve">${esc(shortName(u.name))} doesn't serve ${eat.meal.toLowerCase()} today.${other.length?` It serves ${other.map(m=>m.toLowerCase()).join(' and ')}.`:''}
+          ${other.length?`<div class="noservebtns">${other.map(m=>`<button type="button" class="sidestoggle" data-seemeal="${m==='Brunch'?'Lunch':m}">See ${m.toLowerCase()} menu</button>`).join('')}</div>`:''}</div>`:'';
+      body=`<div class="pbody">${notServed||(mains.length||sides.length?`<div class="ilist">${mains.map(i=>itemRow(i,false)).join('')}
         ${sides.length?`<button type="button" class="sidestoggle" data-sides="${u.id}" aria-expanded="${showS}">${showS?'− Hide sides':`+ Show ${sides.length} side${sides.length===1?'':'s'}`}</button>`:''}
         ${showS?`<div class="sides">${sides.map(i=>itemRow(i,false)).join('')}</div>`:''}</div>`
-        :`<div class="pickempty">No ${eat.meal.toLowerCase()} menu posted here today.</div>`}</div>`;
+        :`<div class="pickempty">No ${eat.meal.toLowerCase()} menu posted here today.</div>`)}</div>`;
     }
     // Weekly hours fold behind one small row, closed by default.
     // Dining halls fold their hours behind a button (the menu comes first). Munchies and cafés have no menu here,
@@ -1301,10 +1310,10 @@ $('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]
 // Top picks can fold away; the choice is remembered on this device.
 function setPicksOpen(open){
   const p=$('#picks'),t=$('#pickToggle');p.classList.toggle('folded',!open);t.setAttribute('aria-expanded',String(open));
-  $('#pickToggleTxt').textContent=open?'Hide':'Show';LS.set('picksOpen',open);
+  $('#pickToggleTxt').textContent=open?'Hide':'Show';LS.set('picksOpen2',open);
 }
 $('#pickToggle').addEventListener('click',()=>setPicksOpen($('#pickToggle').getAttribute('aria-expanded')!=='true'));
-setPicksOpen(LS.get('picksOpen',true));
+setPicksOpen(LS.get('picksOpen2',false));   // collapsed until you open it
 $('#eatQ').addEventListener('input',()=>{eat.q=$('#eatQ').value;renderResults();if($('#eatResults').hidden)renderPlaces()});
 // Filter chips show only while you're searching: open on focus, stay while there's text or you're adding a filter,
 // and fold away once you leave an empty search box.
@@ -1351,6 +1360,7 @@ $('#pEat').addEventListener('click',e=>{
   const pk=e.target.closest('[data-pick]');if(pk){const c=eat.pickList&&eat.pickList[+pk.dataset.pick];if(c)tapFood(c.items,c.hall);return}
   const lg=e.target.closest('[data-log]');if(lg){const [h,n,v]=lg.dataset.log.split('|');const it=(eat.menus[+h]||[]).find(i=>i.n===n&&(i.v||'')===v);if(it)tapFood([it],+h);return}
   const pl=e.target.closest('[data-place]');if(pl){const id=+pl.dataset.place;eat.open=eat.open===id?null:id;renderPlaces();return}
+  const sm=e.target.closest('[data-seemeal]');if(sm){eat.meal=sm.dataset.seemeal;renderEat();return}
   const hr=e.target.closest('[data-hours]');if(hr){const id=+hr.dataset.hours;eat.showHours=eat.showHours||{};eat.showHours[id]=!eat.showHours[id];renderPlaces();return}
   const sd=e.target.closest('[data-sides]');if(sd){const id=+sd.dataset.sides;eat.showSides=eat.showSides||{};eat.showSides[id]=!eat.showSides[id];renderPlaces();return}
   if(e.target.closest('#closedToggle')){eat.showClosed=!eat.showClosed;renderPlaces();return}
