@@ -48,8 +48,15 @@ input,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!importa
 .hr:first-child{border-top-color:transparent}
 .hr .row{display:flex;align-items:center;gap:10px}
 .hr .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--faint)}
-.hr.open .dot{background:var(--good);box-shadow:0 0 8px rgba(61,220,132,.6)}
-.hr.soon .dot{background:var(--carb);box-shadow:0 0 8px rgba(242,196,107,.5)}
+.hr.open .dot{background:var(--good);box-shadow:0 0 0 3px rgba(61,220,132,.18),0 0 12px rgba(61,220,132,.8);animation:live 2.2s ease-in-out infinite}
+@keyframes live{50%{box-shadow:0 0 0 5px rgba(61,220,132,.08),0 0 16px rgba(61,220,132,.9)}}
+.hrrows.lit{background:linear-gradient(180deg,rgba(61,220,132,.09),rgba(61,220,132,.04));border:1px solid rgba(61,220,132,.22)}
+.hrrows.lit .hr{border-top-color:rgba(61,220,132,.1)}
+.hrrows.lit .hr:first-child{border-top-color:transparent}
+.hr.open .nm{color:var(--ink);font-weight:600}
+@media (prefers-reduced-motion: reduce){.hr.open .dot{animation:none}}
+.hr.soon .dot{background:var(--carb);box-shadow:0 0 0 3px rgba(242,196,107,.15),0 0 10px rgba(242,196,107,.6)}
+.hr.soon .nm{color:var(--ink);font-weight:600}
 .hr .nm{flex:1;min-width:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hr:not(.open):not(.soon) .nm{color:var(--muted)}
 .hr .st{flex:none;font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -625,21 +632,24 @@ const shortName=n=>n==='E. Bronson Ingram Dining Center'?'EBI':String(n).replace
 function ranges(u,dayIx){return ((u.days||{})[DAYS[dayIx]]||[]).map(r=>{const s=mins(r.o),e0=mins(r.c);if(s==null||e0==null)return null;return {s,e:e0<=s?e0+1440:e0,o:r.o,c:r.c}}).filter(Boolean)}
 function status(u,now=new Date()){
   const d=now.getDay(),m=now.getHours()*60+now.getMinutes();
-  for(const r of ranges(u,(d+6)%7))if(r.e>1440&&m<r.e-1440)return {open:true,soon:r.e-1440-m<=30,label:'Until '+tshort(r.c)};
-  for(const r of ranges(u,d))if(m>=r.s&&m<r.e)return {open:true,soon:r.e-m<=30,label:'Until '+tshort(r.c)};
+  // wait = minutes until it closes (open) or opens (closed), used for sorting
+  for(const r of ranges(u,(d+6)%7))if(r.e>1440&&m<r.e-1440)return {open:true,soon:r.e-1440-m<=30,wait:r.e-1440-m,label:'Until '+tshort(r.c)};
+  for(const r of ranges(u,d))if(m>=r.s&&m<r.e)return {open:true,soon:r.e-m<=30,wait:r.e-m,label:'Until '+tshort(r.c)};
   for(let i=0;i<7;i++){const rs=ranges(u,(d+i)%7).filter(r=>i>0||r.s>m);if(rs.length){
-    const t=tshort(rs[0].o);return {open:false,label:i===0?'Opens '+t:i===1?'Tomorrow '+t:'Opens '+DAYS[(d+i)%7].slice(0,3)+' '+t}}}
-  return {open:false,label:'Closed this week'};
+    const t=tshort(rs[0].o);return {open:false,wait:i*1440+rs[0].s-m,label:i===0?'Opens '+t:i===1?'Tomorrow '+t:'Opens '+DAYS[(d+i)%7].slice(0,3)+' '+t}}}
+  return {open:false,wait:1e9,label:'Closed this week'};
 }
 function renderHours(){
   const now=new Date();$('#hrNow').textContent=now.toLocaleDateString(undefined,{weekday:'long'})+', '+now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
   if(!hoursData){$('#hrList').innerHTML='<div class="fine">Hours aren\'t loaded yet. They refresh with the morning menus.</div>';return}
-  const groups=['Dining halls','Munchie Marts','Cafés & more'];
-  $('#hrList').innerHTML=groups.map(g=>{
-    const us=hoursData.units.filter(u=>u.group===g).map(u=>({u,st:status(u,now)}));
-    if(!us.length)return '';
-    us.sort((a,b)=>(b.st.open-a.st.open));
-    return `<div class="hrgroup"><span class="lab">${esc(g)}</span><div class="hrrows">${us.map(({u,st})=>`
+  // Two sections: everything open right now (dining halls first), then everything closed, soonest to open first.
+  const all=hoursData.units.map(u=>({u,st:status(u,now),hall:u.group==='Dining halls'}));
+  const openNow=all.filter(x=>x.st.open).sort((a,b)=>(b.hall-a.hall)||(b.st.wait-a.st.wait));
+  const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.st.wait-b.st.wait)||(b.hall-a.hall));
+  const sections=[[`Open now · ${openNow.length}`,openNow,true],['Closed',closed,false]];
+  $('#hrList').innerHTML=sections.map(([title,us,isOpen])=>{
+    if(!us.length)return isOpen?'<div class="hrgroup"><span class="lab">Open now</span><div class="fine">Nothing is open right now.</div></div>':'';
+    return `<div class="hrgroup"><span class="lab">${esc(title)}</span><div class="hrrows${isOpen?' lit':''}">${us.map(({u,st})=>`
       <button type="button" class="hr${st.open?(st.soon?' soon':' open'):''}" data-u="${u.id}" aria-expanded="${hrOpen===u.id}">
         <span class="row"><span class="dot"></span><span class="nm">${esc(shortName(u.name))}</span><span class="st">${esc(st.label)}</span></span>
         ${hrOpen===u.id?`<span class="wk">${[1,2,3,4,5,6,0].map(i=>{const rs=ranges(u,i);const td=i===now.getDay()?' class="td"':'';
