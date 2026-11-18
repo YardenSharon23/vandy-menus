@@ -411,6 +411,12 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 .echips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
 .echip{border:1px solid var(--pill-edge);background:transparent;border-radius:99px;padding:6px 12px;font-size:.78rem;font-weight:600;color:var(--muted)}
 .echip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+/* Search: a squared-off, filled input so it doesn't read as a second tab bar (the tab bar is an outlined pill) */
+.esearch{border-radius:14px;height:46px;background:var(--panel-2);border:1px solid transparent;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.35);padding:0 8px 0 12px;transition:border-color .2s,background-color .2s}
+.esearch svg{color:var(--blue-2)}
+.esearch:focus-within{border-color:rgba(95,160,255,.55);background:#222842}
+.esearch input{font-size:16px}
 /* Settings toggle (Food finder mode) */
 .toggle{display:flex;align-items:center;gap:14px;background:var(--panel-2);border:1px solid var(--edge);border-radius:14px;padding:12px 14px;cursor:pointer}
 .toggle span{flex:1;min-width:0}
