@@ -656,19 +656,24 @@ function status(u,now=new Date()){
 function renderHours(){
   const now=new Date();$('#hrNow').textContent=now.toLocaleDateString(undefined,{weekday:'long'})+', '+now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
   if(!hoursData){$('#hrList').innerHTML='<div class="fine">Hours aren\'t loaded yet. They refresh with the morning menus.</div>';return}
-  // Two sections: everything open right now (dining halls first), then everything closed, soonest to open first.
-  const all=hoursData.units.map(u=>({u,st:status(u,now),hall:u.group==='Dining halls'}));
-  const openNow=all.filter(x=>x.st.open).sort((a,b)=>(b.hall-a.hall)||(b.st.wait-a.st.wait));
-  const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.st.wait-b.st.wait)||(b.hall-a.hall));
+  // Two sections: open right now, then closed. Inside each, places are clustered (unlabelled) by kind:
+  // main dining halls, Munchie Marts, Suzie's cafés, then the smaller spots. Each cluster is its own card.
+  const kind=id=>[1,2,3,11,20,21,19].includes(id)?0:[12,13,14,15].includes(id)?1:[6,7,8,9].includes(id)?2:3;
+  const all=hoursData.units.map(u=>({u,st:status(u,now),k:kind(u.id)}));
+  const openNow=all.filter(x=>x.st.open).sort((a,b)=>(a.k-b.k)||(b.st.wait-a.st.wait));
+  const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
   const sections=[[`Open now · ${openNow.length}`,openNow,true],['Closed',closed,false]];
-  $('#hrList').innerHTML=sections.map(([title,us,isOpen])=>{
-    if(!us.length)return isOpen?'<div class="hrgroup"><span class="lab">Open now</span><div class="fine">Nothing is open right now.</div></div>':'';
-    return `<div class="hrgroup"><span class="lab">${esc(title)}</span><div class="hrrows${isOpen?' lit':''}">${us.map(({u,st})=>`
+  const row=({u,st})=>`
       <button type="button" class="hr${st.open?(st.soon?' soon':' open'):''}" data-u="${u.id}" aria-expanded="${hrOpen===u.id}">
         <span class="row"><span class="dot"></span><span class="nm">${esc(shortName(u.name))}</span><span class="st">${esc(st.label)}</span></span>
         ${hrOpen===u.id?`<span class="wk">${[1,2,3,4,5,6,0].map(i=>{const rs=ranges(u,i);const td=i===now.getDay()?' class="td"':'';
           return `<span${td}>${DAYS[i].slice(0,3)}</span><span${td}>${rs.length?rs.map(r=>tshort(r.o)+'–'+tshort(r.c)).join(', '):'Closed'}</span>`}).join('')}</span>`:''}
-      </button>`).join('')}</div></div>`}).join('');
+      </button>`;
+  $('#hrList').innerHTML=sections.map(([title,us,isOpen])=>{
+    if(!us.length)return isOpen?'<div class="hrgroup"><span class="lab">Open now</span><div class="fine">Nothing is open right now.</div></div>':'';
+    const clusters=[0,1,2,3].map(k=>us.filter(x=>x.k===k)).filter(c=>c.length);
+    return `<div class="hrgroup"><span class="lab">${esc(title)}</span>${clusters.map(c=>`<div class="hrrows${isOpen?' lit':''}">${c.map(row).join('')}</div>`).join('')}</div>`;
+  }).join('');
 }
 async function openHours(){
   $('#hours').hidden=false;renderHours();
