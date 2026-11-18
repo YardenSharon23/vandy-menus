@@ -31,7 +31,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 html,body,button,input,label,.entry,.hall,.name,.starter{touch-action:manipulation}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!important}
-#gprefs{width:100%;resize:vertical;min-height:58px;background:var(--panel-2);border:1px solid var(--edge);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;line-height:1.4}
+#gprefs{width:100%;resize:vertical;min-height:120px;background:var(--panel-2);border:1px solid var(--edge);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;line-height:1.4}
 #gprefs::placeholder{color:var(--faint)}
 :focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
 
@@ -446,8 +446,10 @@ html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:no
 .toggle input:checked+i{background:var(--blue)}
 .toggle input:checked+i::after{transform:translateX(18px)}
 .toggle input:focus-visible+i{outline:2px solid var(--blue-2);outline-offset:2px}
-#goalForm.finder .trackonly{display:none}
-.trackonly{display:flex;flex-direction:column;gap:16px}
+/* finder mode folds the tracking fields away smoothly instead of jumping */
+#goalForm.finder .trackonly{max-height:0;opacity:0;margin-top:-16px;transform:translateY(-6px);pointer-events:none}
+.trackonly{display:flex;flex-direction:column;gap:16px;max-height:420px;overflow:hidden;
+  transition:max-height .4s var(--ease),opacity .25s ease,margin-top .4s var(--ease),transform .4s var(--ease)}
 /* Food finder mode: only Eat and Ask, no numbers in lists, no camera bar */
 html.finder .tabs{grid-template-columns:repeat(2,1fr)}
 html.finder .tabhl{width:calc((100% - 8px) / 2)}
@@ -762,14 +764,14 @@ html.finder .irow .n,html.finder .prow .n{display:none}
         <button type="button" class="name" data-dir="gain">Gain weight</button>
       </div>
       <div class="fields goals">
-        <label class="wide">Calories<input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200"></label>
-        <label class="wide">Protein (g)<input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150"></label>
+        <label>Calories<input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200"></label>
+        <label>Protein (g)<input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150"></label>
         <label>Carbs (g)<input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250"></label>
         <label>Fat (g)<input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70"></label>
       </div>
     </div>
     <div class="fields goals">
-      <label class="wide">Foods you like (for recommendations)<textarea id="gprefs" rows="2" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
+      <label class="wide">Foods you like (for recommendations)<textarea id="gprefs" rows="5" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
     </div>
     <div class="actions">
       <button type="button" class="btn" id="closeSettings">Cancel</button>
