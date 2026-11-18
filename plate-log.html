@@ -35,6 +35,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.06);display:grid;place-items:center;color:var(--muted)}
 .iconbtn svg{width:19px;height:19px}
 .topbtns{display:flex;gap:8px}
+.est{color:var(--carb)}
 
 /* This week */
 .wkstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -459,7 +460,7 @@ function renderReview(fillTotals){
   $('#rvItems').innerHTML=D.items.length?D.items.map((i,ix)=>`<div class="ritem">
       <span class="nm">${esc(i.n)}</span>
       <span class="step" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">−</button><span>${i.sv}×</span><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
-      <span class="sub">${fmt(i.k*i.sv)} cal · ${r1(i.p*i.sv)} g protein${i.v&&i.v!=='estimate'?' · '+esc(i.v):''}</span>
+      <span class="sub">${fmt(i.k*i.sv)} cal · ${r1(i.p*i.sv)} g protein${i.v==='estimate'?' · <span class="est">estimate</span>':i.v?' · '+esc(i.v):''}</span>
       <button type="button" class="x" data-x="${ix}">Remove</button></div>`).join('')
     :'<div class="empty">No items. Type the totals below.</div>';
   if(fillTotals){const T=D.manual?D.tot:itemsTot(D.items);for(const k of ['k','p','c','f'])$('#t'+k).value=k==='k'?Math.round(T[k]):r1(T[k])}
@@ -602,7 +603,9 @@ The student tells you what they ate with a photo, a text message, or both. A pho
 ${where}
 
 How to estimate:
-- Dining-hall food: match each food to the menu item it most likely is and give menu_id plus servings (decimals like 0.5, 1.5), judging the amount against the serving size and grams. Use the plate (about 10 in), bowls, cups and utensils for scale. Include visible sauces, dressings, toppings and drinks.
+- Plates almost always hold several foods. Scan the WHOLE photo: every section of the plate, every bowl, cup, side dish and anything at the edges. List each distinct food as its own item: grilled chicken, Brussels sprouts and fries are three items, not one. Break built dishes into their parts the way the menu lists them (a bowl or wrap becomes its base, protein, toppings and sauce; a salad becomes greens, each topping and the dressing).
+- Match each item separately to the menu item it most likely is, and give menu_id plus servings (decimals like 0.5, 1.5) judged against that item's serving size and grams. Use station names to tell similar items apart, and prefer items from the meal being served now. Use the plate (about 10 in), bowls, cups and utensils for scale. Include visible sauces, dressings, toppings, bread and drinks.
+- If one food on the plate isn't on the menu, still include it: set menu_id null and estimate its calories, protein_g, carbs_g and fat_g from what you see in the photo (typical portion size for how much is there). Never drop a food because you can't match it.
 - A nutrition label in the photo: use its numbers exactly, times the servings they ate (assume 1 unless told).
 - A barcode or QR code: use the product name and label visible in the photo. If you recognise the product from the code or packaging, use its usual label values. If you can't tell what the product is, say so in reply, ask them to type the product name, and set meal to null.
 - Anything else (snacks, packaged food, takeout, drinks, home food): set menu_id null, servings 1, and give calories, protein_g, carbs_g and fat_g as TOTALS for the amount eaten, using typical nutrition-label values.
@@ -612,8 +615,8 @@ How to estimate:
 So far today: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein.
 
 Reply with only JSON:
-{"reply":"one short, friendly sentence","meal":{"name":"Lunch","items":[{"menu_id":"i12","label":"Al Pastor","servings":1.5},{"menu_id":null,"label":"Cheez-It, small handful","servings":1,"calories":75,"protein_g":1.5,"carbs_g":8.5,"fat_g":4}],"replaces_last":false}}
-meal may be null. Labels are short food names.`;
+{"reply":"one short, friendly sentence","meal":{"name":"Dinner","items":[{"menu_id":"i12","label":"Grilled Chicken Breast","servings":1.5},{"menu_id":"i30","label":"Roasted Brussels Sprouts","servings":1},{"menu_id":"i41","label":"French Fries","servings":0.75},{"menu_id":null,"label":"Ranch dip, small cup","servings":1,"calories":110,"protein_g":0.5,"carbs_g":2,"fat_g":11}],"replaces_last":false}}
+meal may be null. Labels are short food names. Before answering, check that every food visible in the photo appears in items.`;
 }
 $('#form').addEventListener('submit',async e=>{
   e.preventDefault();if(state.busy)return;
