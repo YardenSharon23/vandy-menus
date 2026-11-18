@@ -1358,7 +1358,7 @@ const CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 function renderPlaces(){
   const box=$('#eatPlaces');
   if(!hoursData){box.innerHTML='<div class="pickempty">Hours aren\'t loaded yet.</div>';return}
-  const now=new Date();const kind=id=>DINING.includes(id)?0:[12,13,14,15].includes(id)?1:[6,7,8,9].includes(id)?2:3;
+  const now=new Date();const kind=id=>DINING.includes(id)||id===4?0:[12,13,14,15].includes(id)?1:[6,7,8,9].includes(id)?2:3;
   const all=hoursData.units.map(u=>({u,st:status(u,now),k:kind(u.id)}));
   const open=all.filter(x=>x.st.open).sort((a,b)=>(a.k-b.k)||(b.st.wait-a.st.wait));
   const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
