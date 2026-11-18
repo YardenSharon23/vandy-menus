@@ -48,4 +48,13 @@ foreach ($date in $index.dates) {
     $manifest += [ordered]@{ doc_id = $docId; file = (Resolve-Path $file).Path; date = $date; hallId = [int]$h.id; items = $count; kb = [math]::Round($json.Length / 1KB, 1) }
   }
 }
+# Opening hours for every location: one document, id "hours" (no date; never deleted).
+try {
+  $hours = Invoke-RestMethod ($Base -replace '/menus$', '/hours.json')
+  $hjson = $hours | ConvertTo-Json -Depth 8 -Compress
+  $hfile = (Resolve-Path $OutDir).Path + "\hours.json"
+  [IO.File]::WriteAllText($hfile, $hjson, (New-Object Text.UTF8Encoding $false))
+  $manifest += [ordered]@{ doc_id = 'hours'; file = $hfile; date = ''; hallId = 0; items = @($hours.units).Count; kb = [math]::Round($hjson.Length / 1KB, 1) }
+} catch { Write-Warning "No hours file yet: $($_.Exception.Message)" }
+
 $manifest | ConvertTo-Json -Compress

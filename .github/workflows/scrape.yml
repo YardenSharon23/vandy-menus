@@ -37,6 +37,10 @@ jobs:
           @{ updated = (Get-Date).ToUniversalTime().ToString('o'); dates = @($dates) } |
             ConvertTo-Json -Compress | Out-File -Encoding utf8 docs/menus/index.json
 
+      - name: Scrape opening hours
+        shell: pwsh
+        run: ./scrape-hours.ps1 -Out docs/hours.json
+
       - name: Commit updated menus
         run: |
           git config user.name "github-actions[bot]"
