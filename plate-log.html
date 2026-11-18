@@ -118,6 +118,8 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .wkcol.over .b i{background:linear-gradient(0deg,#2f62d9,var(--blue-2) 55%,#ff8a95)}
 .wkcol .d{font-size:.72rem;color:var(--muted);font-weight:600}
 .wkcol.today .d{color:var(--ink)}
+.wkgoal{display:flex;align-items:baseline;justify-content:space-between;gap:12px;background:var(--panel-2);border-radius:14px;padding:12px 14px}
+.wkgoal b{font-family:var(--display);font-weight:600;font-size:1.25rem;font-variant-numeric:tabular-nums}
 /* tile labels that wrap ("AVG / CALORIES") sit tight together */
 .wkstats .lab{display:block;line-height:1.1}
 .wkcol.hit .d{color:var(--good)}
@@ -501,11 +503,7 @@ button:active{transform:scale(.96)}
 <div class="scrim" id="week" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wkTitle">
     <div><h2 id="wkTitle">This week</h2><div class="fine" id="wkRange"></div></div>
-    <div class="wkstats">
-      <div><span class="lab">Avg calories</span><b id="wkK">0</b></div>
-      <div><span class="lab">Avg protein</span><b id="wkP">0 g</b></div>
-      <div><span class="lab" id="wkHitLab">Goal hit</span><b id="wkHit">0 / 0</b></div>
-    </div>
+    <div class="wkgoal"><span class="lab">Goals hit</span><b id="wkHit">0 / 0 days</b></div>
     <div>
       <div class="wkhead"><span class="lab">Calories</span></div>
       <div class="wkchart" id="wkChart"></div>
@@ -749,8 +747,6 @@ function renderWeek(){
   const f=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
   $('#wkRange').textContent=`${f(days[0])} – ${f(days[6])}`;
   const logged=rows.filter(r=>r.n>0);
-  $('#wkK').textContent=logged.length?fmt(logged.reduce((s,r)=>s+r.k,0)/logged.length):'—';
-  $('#wkP').textContent=logged.length?fmt(logged.reduce((s,r)=>s+r.p,0)/logged.length)+' g':'—';
   // A day counts as "goal hit" when protein reached its target AND calories fit the direction:
   // lose = at or under the target (5% leeway), gain = at or over it (5% leeway), maintain = within 10% either way.
   const dir=goalDir();
