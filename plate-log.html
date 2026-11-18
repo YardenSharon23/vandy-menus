@@ -34,7 +34,7 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
 #gprefs::placeholder{color:var(--faint)}
 :focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
 
-.app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding-block:22px 140px;display:flex;flex-direction:column;gap:22px}
+.app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding-block:22px 160px;display:flex;flex-direction:column;gap:22px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .top h1{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
 .top .sub{font-size:.8rem;color:var(--muted)}
@@ -178,7 +178,7 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
 
 /* Composer */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:5;
-  padding:24px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  padding:24px max(16px, env(safe-area-inset-right, 0px)) calc(34px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   background:linear-gradient(180deg,rgba(15,18,27,0),rgba(15,18,27,.94) 34%)}
 .composer{max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 .halls{display:grid;grid-template-columns:1fr 1fr;gap:10px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -319,7 +319,7 @@ input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16p
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
       </button>
     </div>
-    <input type="file" id="file" accept="image/*" hidden>
+    <input type="file" id="file" accept="image/*" capture="environment" hidden>
   </form>
 </div>
 
