@@ -1127,18 +1127,40 @@ function hallItems(id,meal){
   const seen=new Set();return list.filter(i=>{const k=i.n+'|'+i.v;if(seen.has(k))return false;seen.add(k);return true}).map(i=>({...i,hall:id,kind:kindOf(i)}));
 }
 // Your stated preferences, turned into liked words, disliked words and diet tags.
+// Each clause becomes a phrase ("nashville hot chicken", "ground beef"), so a dish that matches the whole phrase
+// beats one that only shares a word with it, and "not ground beef" hates ground beef, not all beef.
+const stemW=w=>w.length>3?w.replace(/(es|s)$/,m=>m==='es'&&/(ch|sh|x|o)es$/.test(w)?'':m==='es'?'e':''):w;
+const wordsOf=s=>(String(s).toLowerCase().match(/[a-z]{2,}/g)||[]).map(stemW);
 function prefModel(){
-  const P=prefs().toLowerCase();const like=new Set(),hate=new Set(),diet=new Set();
-  const stop=new Set(['love','loves','like','likes','really','food','foods','eat','eating','with','and','the','but','also','prefer','into','spicy-ish','stuff','things','dont','don\'t','not','no','hate','hates','dislike','dislikes','avoid','allergic','allergy','to','any','i','im','i\'m','very','much','more','less','kind','of']);
-  for(const clause of P.split(/[,.;\n]|\bbut\b/)){
+  const P=prefs().toLowerCase();const like=[],hate=[],diet=new Set();
+  const stop=new Set(['love','loves','loved','like','likes','liked','really','food','foods','eat','eating','with','and','the','but','also','prefer','into','stuff','things','dont','don','not','no','hate','hates','dislike','dislikes','avoid','allergic','allergy','to','any','im','very','much','more','less','kind','of','is','are','my','me','too','so','a','an','or','favorite','favourite','fave','best','all','some','lot','lots','especially','big','fan','enjoy','enjoys','want','usually','always','never','without','would','rather','pretty','good','great','lb','lbs','oz','kg','cm','ft']);
+  for(const sentence of P.split(/[.;!?\n]/)){
+  // "Buffalo chicken is my favorite food, and Nashville hot chicken": every dish in a "favorite" sentence counts as a favorite.
+  const fav=/\b(favou?rite|fave|obsessed)\b/.test(sentence);
+  for(const clause of sentence.split(/[,:()]|\bbut\b|\band\b|\bor\b/)){
     const neg=/\b(no|not|don'?t|hate|hates|dislike|dislikes|avoid|allergic|without|never)\b/.test(clause);
-    for(const w of clause.match(/[a-z]{4,}/g)||[]){if(stop.has(w))continue;(neg?hate:like).add(w.replace(/s$/,''))}
-  }
+    const ws=wordsOf(clause).filter(w=>!stop.has(w)&&!/^\d/.test(w));
+    if(!ws.length||ws.length>4)continue;      // long clauses are about you (age, lifting…), not a dish
+    (neg?hate:like).push({words:ws,label:clause.replace(/\b(i|i'm|im|loves?|likes?|really|also|too|is|my|favou?rite|food|not|no|don'?t|hates?|avoid)\b/g,'').replace(/[^a-z' -]/g,'').replace(/\s+/g,' ').trim()||ws.join(' '),fav});
+  }}
   if(/\bvegan\b/.test(P))diet.add('Vegan');else if(/\bvegetarian\b/.test(P))diet.add('Vegetarian');
   if(/\bhalal\b/.test(P))diet.add('Halal');
   return {like,hate,diet};
 }
-const nameHas=(it,set)=>{const n=(it.n+' '+(it.s||'')).toLowerCase();for(const w of set)if(n.includes(w))return w;return null};
+// Best match between a dish and your phrases: a full phrase match scores by its length (favorites count extra);
+// sharing only the main word ("chicken" from "orange chicken") is a small nudge. Returns {label,bonus} or null.
+function nameHas(it,list){
+  const toks=new Set(wordsOf(it.n+' '+(it.s||'')));let best=null;
+  for(const ph of list){
+    let bonus=0;
+    if(ph.words.every(w=>toks.has(w)))bonus=(6+5*ph.words.length)*(ph.fav?1.4:1);
+    else if(ph.words.length>1&&toks.has(ph.words[ph.words.length-1]))bonus=3;
+    if(bonus&&(!best||bonus>best.bonus))best={label:bonus>3?ph.label:ph.words[ph.words.length-1],bonus,full:bonus>3};
+  }
+  return best;
+}
+const hates=(it,list)=>{const b=nameHas(it,list);return !!(b&&b.full)};
+const bestLike=(a,b)=>!a?b:!b?a:(b.bonus>a.bonus?b:a);
 const fitsDiet=(it,diet)=>{if(!diet.size)return true;const t=String(it.t||'');if(diet.has('Vegan'))return /vegan/i.test(t);if(diet.has('Vegetarian'))return /vegan|vegetarian/i.test(t);if(diet.has('Halal'))return /halal|vegan|vegetarian/i.test(t);return true};
 // Score a dish (or plate) for you right now: protein per calorie, room left in today's calories, your goal, your tastes, and whether it's open.
 function scoreFor(k,p,ctx,liked,st){
@@ -1148,7 +1170,7 @@ function scoreFor(k,p,ctx,liked,st){
   if(ctx.dir==='lose')s-=Math.max(0,k-650)/90;
   if(ctx.dir==='gain')s+=Math.min(k,950)/320+p/25;
   if(ctx.proLeft>20)s+=Math.min(p,ctx.proLeft)/12;
-  if(liked)s+=8;   // foods you said you like win ties and most close calls
+  if(liked)s+=liked.bonus;   // a dish matching a food you named (a favorite most of all) beats leaner dishes
   if(st){if(!st.open&&st.wait>240)s-=3;else if(!st.open)s-=0.8;if(st.open&&st.soon)s-=1.5}
   return s;
 }
@@ -1159,14 +1181,14 @@ function topPicks(meal){
   const ctx=eatContext();const out=[];
   for(const id of MENU_UNITS){
     const st=hallStatus(id);const items=hallItems(id,meal);
-    const mains=items.filter(i=>i.kind==='main'&&!nameHas(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet));
-    const sides=items.filter(i=>i.kind==='side'&&!nameHas(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet)&&(+i.k||0)>=60);
+    const mains=items.filter(i=>i.kind==='main'&&!hates(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet));
+    const sides=items.filter(i=>i.kind==='side'&&!hates(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet)&&(+i.k||0)>=60);
     for(const m of mains){
       const liked=nameHas(m,ctx.pm.like);
       out.push({type:'dish',hall:id,st,items:[m],k:+m.k,p:+m.p,liked,score:scoreFor(+m.k,+m.p,ctx,liked,st)});
       // A full plate only when a matching side (same station family) makes it clearly better.
       const fam=stationFamily(m.s);const best=sides.filter(s=>stationFamily(s.s)===fam)
-        .map(s=>({s,sc:scoreFor(+m.k+ +s.k,+m.p+ +s.p,ctx,liked||nameHas(s,ctx.pm.like),st)})).sort((a,b)=>b.sc-a.sc)[0];
+        .map(s=>({s,sc:scoreFor(+m.k+ +s.k,+m.p+ +s.p,ctx,bestLike(liked,nameHas(s,ctx.pm.like)),st)})).sort((a,b)=>b.sc-a.sc)[0];
       if(best&&+m.k+ +best.s.k<=ctx.room+150)out.push({type:'plate',hall:id,st,items:[m,best.s],k:+m.k+ +best.s.k,p:+m.p+ +best.s.p,liked,score:best.sc});
     }
   }
@@ -1179,7 +1201,7 @@ function topPicks(meal){
   return picks;
 }
 function whyLine(c,ctx){
-  if(c.liked)return `You like ${c.liked}`;
+  if(c.liked)return `You like ${c.liked.label}`;
   const dens=c.k>0?c.p/(c.k/100):0;
   if(dens>=9)return `${Math.round(c.p)} g protein for ${fmt(c.k)} cal`;
   if(ctx.dir==='gain'&&c.k>=600)return 'Big plate for your gain goal';
@@ -1196,7 +1218,7 @@ function itemRow(it,showHall){
 // Sort a hall's dishes the way you'd want them: things you like first, then best fit for your day.
 function sortForYou(list,st){
   const ctx=eatContext();
-  return list.filter(i=>!nameHas(i,ctx.pm.hate)).map(i=>({i,s:scoreFor(+i.k,+i.p,ctx,nameHas(i,ctx.pm.like),st)+(fitsDiet(i,ctx.pm.diet)?0:-20)}))
+  return list.filter(i=>!hates(i,ctx.pm.hate)).map(i=>({i,s:scoreFor(+i.k,+i.p,ctx,nameHas(i,ctx.pm.like),st)+(fitsDiet(i,ctx.pm.diet)?0:-20)}))
     .sort((a,b)=>b.s-a.s).map(x=>x.i);
 }
 // Top picks: three slim cards, name on the left, calories and protein on the right, hall and closing time underneath.
