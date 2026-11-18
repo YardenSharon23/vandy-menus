@@ -34,6 +34,30 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .top .sub{font-size:.8rem;color:var(--muted)}
 .iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.06);display:grid;place-items:center;color:var(--muted)}
 .iconbtn svg{width:19px;height:19px}
+.topbtns{display:flex;gap:8px}
+
+/* This week */
+.wkstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.wkstats div{background:var(--panel-2);border-radius:14px;padding:10px 12px;min-width:0}
+.wkstats b{display:block;font-family:var(--display);font-weight:600;font-size:1.1rem;margin-top:2px;font-variant-numeric:tabular-nums}
+.wkhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.wkchart{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;height:150px;align-items:end;padding-top:16px}
+.wkcol .b .gl{position:absolute;left:0;right:0;border-top:1.5px dashed rgba(255,255,255,.45);z-index:1}
+.wkcol{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;min-width:0}
+.wkcol .v{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wkcol .b{width:100%;max-width:30px;border-radius:8px;background:rgba(255,255,255,.06);position:relative;overflow:hidden;flex:none}
+.wkcol .b i{position:absolute;left:0;right:0;bottom:0;border-radius:8px;
+  background:linear-gradient(90deg,rgba(255,255,255,.18),rgba(255,255,255,0) 60%),linear-gradient(0deg,#2f62d9,var(--blue-2) 70%,var(--cyan));box-shadow:0 0 10px var(--glow)}
+.wkcol.over .b i{background:linear-gradient(0deg,#2f62d9,var(--blue-2) 55%,#ff8a95)}
+.wkcol .d{font-size:.72rem;color:var(--muted);font-weight:600}
+.wkcol.today .d{color:var(--ink)}
+.wkcol.future .b{opacity:.4}
+.wkpro{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.wkpro div{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.wkpro .t{width:100%;height:6px;border-radius:99px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.wkpro .t i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#2f62d9,var(--blue-2) 70%,var(--cyan))}
+.wkpro small{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.wkpro .hit small{color:var(--good)}
 
 /* Gauge */
 .hero{display:flex;flex-direction:column;gap:22px;padding:8px 4px 0}
@@ -164,9 +188,14 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 <main class="app">
   <div class="top">
     <div><h1>Today</h1><div class="sub" id="day"></div></div>
-    <button class="iconbtn" id="openSettings" aria-label="Daily targets">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
-    </button>
+    <div class="topbtns">
+      <button class="iconbtn" id="openWeek" aria-label="This week's progress">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg>
+      </button>
+      <button class="iconbtn" id="openSettings" aria-label="Daily targets">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+      </button>
+    </div>
   </div>
 
   <section class="hero" aria-label="Today's macros">
@@ -253,6 +282,27 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <button type="submit" class="btn primary" id="rvSave">Add</button>
     </div>
   </form>
+</div>
+
+<!-- This week -->
+<div class="scrim" id="week" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wkTitle">
+    <div><h2 id="wkTitle">This week</h2><div class="fine" id="wkRange"></div></div>
+    <div class="wkstats">
+      <div><span class="lab">Avg calories</span><b id="wkK">0</b></div>
+      <div><span class="lab">Avg protein</span><b id="wkP">0 g</b></div>
+      <div><span class="lab">Protein goal</span><b id="wkHit">0 / 0</b></div>
+    </div>
+    <div>
+      <div class="wkhead"><span class="lab">Calories</span><span class="fine">dashed line = target</span></div>
+      <div class="wkchart" id="wkChart"></div>
+    </div>
+    <div>
+      <div class="wkhead"><span class="lab">Protein</span></div>
+      <div class="wkpro" id="wkPro"></div>
+    </div>
+    <button type="button" class="btn" id="closeWeek">Close</button>
+  </div>
 </div>
 
 <!-- Targets -->
@@ -448,7 +498,36 @@ function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
 $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')closeSettings()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#review').hidden)$('#rvCancel').click()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
+
+/* ---------- this week (Mon–Sun) ---------- */
+function weekDates(){
+  const now=new Date();const mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-((now.getDay()+6)%7));
+  return Array.from({length:7},(_,i)=>new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i));
+}
+function totFor(ds){return ((state.logs['log-'+ds]||{}).entries||[]).reduce((t,e)=>{const T=e.tot||{};return {k:t.k+(+T.k||0),p:t.p+(+T.p||0),n:t.n+1}},{k:0,p:0,n:0})}
+function renderWeek(){
+  const days=weekDates(),G=goals(),today=dstr();
+  const rows=days.map(d=>{const ds=dstr(d);return {d,ds,...totFor(ds),future:ds>today,today:ds===today}});
+  const f=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  $('#wkRange').textContent=`${f(days[0])} – ${f(days[6])}`;
+  const logged=rows.filter(r=>r.n>0);
+  $('#wkK').textContent=logged.length?fmt(logged.reduce((s,r)=>s+r.k,0)/logged.length):'—';
+  $('#wkP').textContent=logged.length?fmt(logged.reduce((s,r)=>s+r.p,0)/logged.length)+' g':'—';
+  const past=rows.filter(r=>!r.future);
+  $('#wkHit').textContent=`${past.filter(r=>r.p>=G.p).length} / ${past.length} days`;
+  const max=Math.max(G.k*1.2,...rows.map(r=>r.k),1);const H=110;
+  $('#wkChart').innerHTML=rows.map(r=>{
+    const h=Math.max(r.k>0?6:0,r.k/max*H);
+    return `<div class="wkcol${r.today?' today':''}${r.future?' future':''}${r.k>G.k?' over':''}" title="${f(r.d)}: ${fmt(r.k)} cal">
+      <span class="v">${r.k?fmt(r.k):''}</span>
+      <span class="b" style="height:${H}px"><i style="height:${h}px"></i><span class="gl" style="bottom:${(G.k/max*H).toFixed(1)}px"></span></span>
+      <span class="d">${r.d.toLocaleDateString(undefined,{weekday:'narrow'})}</span></div>`}).join('');
+  $('#wkPro').innerHTML=rows.map(r=>`<div class="${r.p>=G.p&&r.p>0?'hit':''}"><span class="t"><i style="width:${G.p?Math.min(100,r.p/G.p*100):0}%"></i></span><small>${r.p?fmt(r.p)+'g':'–'}</small></div>`).join('');
+}
+$('#openWeek').addEventListener('click',()=>{renderWeek();$('#week').hidden=false});
+$('#closeWeek').addEventListener('click',()=>{$('#week').hidden=true});
+$('#week').addEventListener('click',e=>{if(e.target.id==='week')$('#week').hidden=true});
 $('#goalForm').addEventListener('submit',async e=>{
   e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=r1($('#g'+k).value);if(v>0)g[k]=v}
   try{await saveGoals(g);closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
@@ -601,7 +680,7 @@ renderDay();renderHalls();renderToday();
     col().onSnapshot(snap=>{
       state.logs={};state.settings=null;
       for(const doc of snap.docs){if(doc.id==='settings')state.settings=doc.data();else if(doc.id.startsWith('log-'))state.logs[doc.id]=doc.data()}
-      renderToday();
+      renderToday();if(!$('#week').hidden)renderWeek();
     },()=>{});
   }
 })();
