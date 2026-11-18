@@ -36,6 +36,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .iconbtn svg{width:19px;height:19px}
 .topbtns{display:flex;gap:8px}
 .est{color:var(--carb)}
+.rnote{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--edge);border-radius:14px;padding:5px 5px 5px 14px}
+.rnote[hidden]{display:none}
+.rnote input{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:8px 0}
+.rnote input::placeholder{color:var(--faint)}
+.rnote button{flex:none;border:0;border-radius:10px;background:rgba(61,123,255,.18);color:var(--blue-2);font-weight:600;padding:8px 12px}
+.rnote button:disabled{opacity:.6}
 
 /* This week */
 .wkstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -239,7 +245,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="note" id="note" role="status" aria-live="polite" hidden></div>
     <div class="bar">
       <div class="field">
-        <input class="txt" id="txt" placeholder="Add a note or describe it…" aria-label="Describe what you ate">
+        <input class="txt" id="txt" placeholder="Describe something you ate…" aria-label="Describe what you ate">
         <button type="submit" class="send" id="send" aria-label="Log it" hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
@@ -270,6 +276,10 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
     <div class="where" id="rvWhere"></div>
     <div class="names" id="rvNames" role="group" aria-label="Name"></div>
     <div class="ritems" id="rvItems"></div>
+    <div class="rnote" id="rvNoteRow" hidden>
+      <input id="rvNote" placeholder="Add a note: no dressing, ate half…" aria-label="Add a note for Claude" autocomplete="off">
+      <button type="button" id="rvUpdate">Update</button>
+    </div>
     <div class="fields">
       <label>Calories<input type="number" inputmode="decimal" min="0" step="any" id="tk"></label>
       <label>Protein g<input type="number" inputmode="decimal" min="0" step="any" id="tp"></label>
@@ -443,9 +453,10 @@ $('#entries').addEventListener('click',e=>{const b=e.target.closest('[data-edit]
 
 /* ---------- review / edit sheet ---------- */
 function itemsTot(items){return items.reduce((t,i)=>({k:t.k+i.k*i.sv,p:t.p+i.p*i.sv,c:t.c+i.c*i.sv,f:t.f+i.f*i.sv}),{k:0,p:0,c:0,f:0})}
-function openReview({mode,entry,meal,replaceId,bubble}){
+function openReview({mode,entry,meal,replaceId,ctx}){
   const src=mode==='edit'?entry:meal;
-  state.draft={mode,id:mode==='edit'?entry.id:null,replaceId:replaceId||null,bubble:bubble||null,
+  $('#rvNoteRow').hidden=!ctx;$('#rvNote').value='';
+  state.draft={mode,id:mode==='edit'?entry.id:null,replaceId:replaceId||null,ctx:ctx||null,
     name:entryName(src),hall:src.hall||'',t:mode==='edit'?entry.t:null,
     items:src.items.map(i=>({...i})),tot:{...src.tot},manual:!!(mode==='edit'&&entry.manual)};
   $('#rvTitle').textContent=mode==='edit'?'Edit entry':replaceId?'Update entry':'Add to today';
@@ -592,11 +603,24 @@ $('#note').addEventListener('click',async e=>{
 });
 
 /* ---------- Claude ---------- */
-function instructions(){
-  const items=menuList();const t=dayTot();
-  const where=state.hall&&items.length?`They're at ${hallName()} dining hall. Its menu for today, from the official NetNutrition data (id | meal | station | item | one serving | kcal per serving):\n`+
+// Typed messages never ask where you are: a hall named in the text ("chicken at roth") is picked up here.
+const HALL_WORDS=[[1,/\brand\b/i],[2,/\bcommons\b/i],[3,/\bkissam\b/i],[11,/\b(ebi|e\.?\s?bronson|ingram)\b/i],[20,/\broth(schild|s)?\b/i],[21,/\b(carmichael|carm)\b/i],[19,/\bzeppos\b/i]];
+function detectHall(text){for(const [id,re] of HALL_WORDS)if(re.test(text||''))return id;return null}
+async function menuFor(hallId){
+  if(!hallId||!db)return[];
+  let data=null;
+  if(hallId===state.hall&&state.menu)data=state.menu;
+  else{try{const s=await db.doc(`menus/${state.date}__${hallId}`).get();data=s.exists?s.data():null}catch(e){data=null}}
+  if(!data)return[];
+  const out=[];let i=0;for(const m of data.meals)for(const it of m.items)out.push({...it,meal:m.meal,id:'i'+(i++)});return out;
+}
+function instructions(hallId,items){
+  const t=dayTot();const hn=hallId?hallName(hallId):'';
+  const where=hallId&&items.length?`They're eating from ${hn} dining hall. Its menu for today, from the official NetNutrition data (id | meal | station | item | one serving | kcal per serving):\n`+
     items.map(c=>`${c.id} | ${c.meal} | ${c.s||''} | ${c.n} | ${c.v}${c.g?` (${c.g}g)`:''} | ${Math.round(c.k)}`).join('\n')
-    :state.hall?`They picked ${hallName()} dining hall, but its menu isn't loaded today.`:`They're not eating at a dining hall right now.`;
+    :hallId?`They're eating from ${hn} dining hall, but its menu isn't loaded today.`
+    :hallId===0?`They're not eating at a dining hall.`
+    :`They didn't say where the food is from. If it sounds like Vanderbilt dining-hall food, estimate it from typical dining-hall portions.`;
   return `You are the food logger inside Plate Log, a Vanderbilt student's personal macro tracker. Today is ${state.date}, local time ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.
 The student tells you what they ate with a photo, a text message, or both. A photo may show a plate, a package, a nutrition label, or a QR code or barcode; the page decodes codes and tells you what it read. Work out what they ate and how much. They review and adjust your numbers before anything is logged.
 
@@ -618,42 +642,68 @@ Reply with only JSON:
 {"reply":"one short, friendly sentence","meal":{"name":"Dinner","items":[{"menu_id":"i12","label":"Grilled Chicken Breast","servings":1.5},{"menu_id":"i30","label":"Roasted Brussels Sprouts","servings":1},{"menu_id":"i41","label":"French Fries","servings":0.75},{"menu_id":null,"label":"Ranch dip, small cup","servings":1,"calories":110,"protein_g":0.5,"carbs_g":2,"fat_g":11}],"replaces_last":false}}
 meal may be null. Labels are short food names. Before answering, check that every food visible in the photo appears in items.`;
 }
+// One call to Claude. ctx = {text, photo, code, hallId}; `history` adds the recent conversation (for "actually two bags").
+async function ask(ctx,{history=true,signal}={}){
+  const items=await menuFor(ctx.hallId);
+  const userTurn=(ctx.photo?'[Photo attached] ':'')+(ctx.code?`[The page decoded a ${ctx.code.format||'code'} in the photo: "${ctx.code.text}"] `:'')+(ctx.text||'Photo only. Log what is in it.');
+  const turns=[{role:'user',content:instructions(ctx.hallId,items)},...(history?state.turns.slice(-10):[]),{role:'user',content:userTurn}];
+  const res=await sample.json(turns,{images:ctx.photo?[ctx.photo]:undefined,signal,cache:false});
+  const reply=String((res&&res.reply)||'Here is what I found.');
+  let meal=null;
+  if(res&&res.meal&&Array.isArray(res.meal.items)&&res.meal.items.length){
+    const its=res.meal.items.map(it=>{
+      const c=it.menu_id?items.find(x=>x.id===String(it.menu_id)):null;
+      if(c)return {n:c.n,v:c.v||'',sv:Math.max(0.25,Math.round((+it.servings||1)*4)/4),k:r1(c.k),p:r1(c.p),c:r1(c.c),f:r1(c.f)};
+      return {n:String(it.label||'Food'),v:'estimate',sv:1,k:r1(it.calories),p:r1(it.protein_g),c:r1(it.carbs_g),f:r1(it.fat_g)};
+    });
+    const T=itemsTot(its);
+    meal={name:NAMES.includes(res.meal.name)?res.meal.name:timeName(),hall:ctx.hallId?hallName(ctx.hallId):'',items:its,tot:{k:Math.round(T.k),p:r1(T.p),c:r1(T.c),f:r1(T.f)}};
+  }
+  return {res,reply,meal,userTurn};
+}
+function remember(userTurn,reply,meal){
+  state.turns.push({role:'user',content:userTurn});
+  state.turns.push({role:'assistant',content:JSON.stringify({reply,meal:meal&&{name:meal.name,items:meal.items.map(i=>({label:i.n,servings:i.sv,calories:Math.round(i.k*i.sv),protein_g:r1(i.p*i.sv)}))}})});
+}
 $('#form').addEventListener('submit',async e=>{
   e.preventDefault();if(state.busy)return;
-  if(state.hall==null){openWhere('send');return}
   const text=$('#txt').value.trim();const photo=state.photo;const code=state.code;if(!text&&!photo)return;
   if(!sample){sys('Open this page in the Claude app or on claude.ai to log food.');return}
   rollDay();
-  $('#txt').value='';state.photo=null;state.code=null;
-  const userTurn=(photo?'[Photo attached] ':'')+(code?`[The page decoded a ${code.format||'code'} in the photo: "${code.text}"] `:'')+(text||'Photo only. Log what is in it.');
+  // Photos carry the hall picked in the popup; typed messages use a hall named in the text, if any.
+  const hallId=photo?state.hall:detectHall(text);
+  const ctx={text,photo,code,hallId};
+  $('#txt').value='';state.photo=null;state.code=null;state.hall=null;watchMenu();
   note('<span class="typing"><i></i><i></i><i></i></span>',{html:true,sticky:true});
   state.busy=true;updateSend();
-  ctl=new AbortController();const items=menuList();
+  ctl=new AbortController();
   try{
-    const turns=[{role:'user',content:instructions()},...state.turns.slice(-10),{role:'user',content:userTurn}];
-    const res=await sample.json(turns,{images:photo?[photo]:undefined,signal:ctl.signal,cache:false});
-    const reply=String((res&&res.reply)||'Here is what I found.');
-    let meal=null;
-    if(res&&res.meal&&Array.isArray(res.meal.items)&&res.meal.items.length){
-      const its=res.meal.items.map(it=>{
-        const c=it.menu_id?items.find(x=>x.id===String(it.menu_id)):null;
-        if(c)return {n:c.n,v:c.v||'',sv:Math.max(0.25,Math.round((+it.servings||1)*4)/4),k:r1(c.k),p:r1(c.p),c:r1(c.c),f:r1(c.f)};
-        return {n:String(it.label||'Food'),v:'estimate',sv:1,k:r1(it.calories),p:r1(it.protein_g),c:r1(it.carbs_g),f:r1(it.fat_g)};
-      });
-      const T=itemsTot(its);
-      meal={name:NAMES.includes(res.meal.name)?res.meal.name:timeName(),hall:state.hall?hallName():'',items:its,tot:{k:Math.round(T.k),p:r1(T.p),c:r1(T.c),f:r1(T.f)}};
-    }
-    if(meal)hideNote();else note(reply);
-    state.turns.push({role:'user',content:userTurn});
-    state.turns.push({role:'assistant',content:JSON.stringify({reply,meal:meal&&{name:meal.name,items:meal.items.map(i=>({label:i.n,servings:i.sv,calories:Math.round(i.k*i.sv),protein_g:r1(i.p*i.sv)}))}})});
+    const {res,reply,meal,userTurn}=await ask(ctx,{signal:ctl.signal});
+    remember(userTurn,reply,meal);
     if(meal){
+      hideNote();
       const replaceId=res.meal.replaces_last&&state.lastLogged&&entries().some(x=>x.id===state.lastLogged)?state.lastLogged:null;
-      openReview({mode:'new',meal,replaceId});
-      state.hall=null;renderHalls();watchMenu();   // pick again for the next log
-    }
+      openReview({mode:'new',meal,replaceId,ctx});
+    }else note(reply);
   }catch(err){if(err&&err.code==='cancelled')hideNote();else sys(errCopy(err&&err.code))}
   finally{state.busy=false;updateSend()}
 });
+// Note in the review popup: re-estimate the same photo/message with the note added.
+$('#rvUpdate').addEventListener('click',async()=>{
+  const D=state.draft;const extra=$('#rvNote').value.trim();if(!D||!D.ctx||!extra||state.busy)return;
+  const ctx={...D.ctx,text:[D.ctx.text,`Note from the student: ${extra}`].filter(Boolean).join('\n')};
+  const btn=$('#rvUpdate');btn.disabled=true;btn.textContent='Updating…';state.busy=true;
+  try{
+    const {reply,meal,userTurn}=await ask(ctx,{history:false});
+    if(state.draft!==D)return;
+    if(meal){D.items=meal.items.map(i=>({...i}));D.manual=false;D.ctx=ctx;
+      if(!D.hall&&meal.hall)D.hall=meal.hall;renderReview(true);$('#rvNote').value='';
+      state.turns.splice(-2,2);remember(userTurn,reply,meal);}
+    else $('#rvNote').value=extra, note(reply);
+  }catch(err){if(!err||err.code!=='cancelled')note(errCopy(err&&err.code))}
+  finally{state.busy=false;btn.disabled=false;btn.textContent='Update';updateSend()}
+});
+$('#rvNote').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#rvUpdate').click()}});
 $('#stop').addEventListener('click',()=>ctl&&ctl.abort());
 function errCopy(code){
   return ({not_granted:"Claude isn't allowed on this page yet. Allow it from the page's Permissions menu.",
