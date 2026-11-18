@@ -35,6 +35,22 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.06);display:grid;place-items:center;color:var(--muted)}
 .iconbtn svg{width:19px;height:19px}
 .topbtns{display:flex;gap:8px}
+
+/* Ask Claude */
+.chatsheet{height:min(640px,calc(100% - 40px));padding:16px 16px 12px;gap:12px;overflow:hidden}
+.chathead{display:flex;align-items:center;justify-content:space-between}
+.msgs{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:2px}
+.bub{max-width:86%;border-radius:18px;padding:10px 14px;font-size:.92rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.bub.me{align-self:flex-end;background:linear-gradient(135deg,var(--blue),#2f62d9);border-bottom-right-radius:6px}
+.bub.ai{align-self:flex-start;background:var(--panel-2);border-bottom-left-radius:6px}
+.bub .apply{display:block;margin-top:10px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:600;padding:8px 12px;font-size:.85rem}
+.bub .apply:disabled{background:rgba(61,220,132,.16);color:var(--good)}
+.starters{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+.starter{border:1px solid var(--edge);background:transparent;border-radius:14px;padding:10px 14px;text-align:left;color:var(--muted);font-size:.88rem}
+.chatbar{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--edge);border-radius:24px;padding:5px 5px 5px 16px}
+.chatbar input{flex:1;min-width:0;border:0;background:transparent;outline:none;padding:9px 0}
+.chatbar input::placeholder{color:var(--faint)}
+.chatbar .send:disabled{opacity:.4}
 .est{color:var(--carb)}
 .rnote{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--edge);border-radius:14px;padding:5px 5px 5px 14px}
 .rnote[hidden]{display:none}
@@ -196,6 +212,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   <div class="top">
     <div><h1>Today</h1><div class="sub" id="day"></div></div>
     <div class="topbtns">
+      <button class="iconbtn" id="openChat" aria-label="Ask Claude">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18.5V6.8A1.8 1.8 0 0 1 6.8 5h10.4A1.8 1.8 0 0 1 19 6.8v7.4a1.8 1.8 0 0 1-1.8 1.8H8.5z"/><path d="M9 10h6M9 12.8h3.5"/></svg>
+      </button>
       <button class="iconbtn" id="openWeek" aria-label="This week's progress">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg>
       </button>
@@ -293,6 +312,27 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <button type="submit" class="btn primary" id="rvSave">Add</button>
     </div>
   </form>
+</div>
+
+<!-- Ask Claude -->
+<div class="scrim" id="chat" hidden>
+  <div class="sheet chatsheet" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+    <div class="chathead"><h2 id="chatTitle">Ask Claude</h2><button type="button" class="iconbtn" id="closeChat" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="msgs" id="msgs" aria-live="polite">
+      <div class="starters" id="starters">
+        <button type="button" class="starter">What should my daily targets be?</button>
+        <button type="button" class="starter">How am I doing this week?</button>
+        <button type="button" class="starter">What's high in protein at Rand today?</button>
+      </div>
+    </div>
+    <form class="chatbar" id="chatForm" autocomplete="off">
+      <input id="chatIn" placeholder="Ask about goals, food, your week…" aria-label="Message Claude">
+      <button type="submit" class="send" id="chatSend" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+  </div>
 </div>
 
 <!-- This week -->
@@ -510,7 +550,7 @@ function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
 $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')closeSettings()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#chat').hidden)$('#chat').hidden=true;else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
 
 /* ---------- this week (Mon–Sun) ---------- */
 function weekDates(){
@@ -540,6 +580,68 @@ function renderWeek(){
 $('#openWeek').addEventListener('click',()=>{renderWeek();$('#week').hidden=false});
 $('#closeWeek').addEventListener('click',()=>{$('#week').hidden=true});
 $('#week').addEventListener('click',e=>{if(e.target.id==='week')$('#week').hidden=true});
+
+/* ---------- Ask Claude: a real back-and-forth chat (goals, food questions, your week) ---------- */
+const chatTurns=[];let chatBusy=false;
+function bub(text,who){const d=document.createElement('div');d.className='bub '+who;d.textContent=text;$('#msgs').append(d);$('#msgs').scrollTop=$('#msgs').scrollHeight;return d}
+function coachPrompt(hallId,items){
+  const G=goals();const saved=(state.settings&&state.settings.goals)||{};const t=dayTot();
+  const days=weekDates().map(d=>{const ds=dstr(d);const x=totFor(ds);return `${d.toLocaleDateString(undefined,{weekday:'short'})} ${ds}: ${x.n?`${Math.round(x.k)} kcal, ${Math.round(x.p)} g protein`:'nothing logged'}`}).join('\n');
+  const tg=k=>`${G[k]}${saved[k]?'':' (default, not set by them)'}`;
+  const menu=hallId&&items.length?`\n${hallName(hallId)}'s menu today (meal | station | item | serving | kcal | protein g):\n`+items.map(c=>`${c.meal} | ${c.s||''} | ${c.n} | ${c.v} | ${Math.round(c.k)} | ${r1(c.p)}`).join('\n'):'';
+  return `You are the friendly nutrition helper inside Plate Log, a Vanderbilt student's personal macro tracker. Today is ${state.date}, ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.
+Their current daily targets: ${tg('k')} kcal, ${tg('p')} g protein, ${tg('c')} g carbs, ${tg('f')} g fat.
+Today so far: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein, ${Math.round(t.c)} g carbs, ${Math.round(t.f)} g fat. Entries: ${entries().map(e=>`${entryName(e)} (${e.items.map(i=>i.n).join(', ')}) ${Math.round(e.tot.k)} kcal`).join('; ')||'none'}.
+This week:
+${days}${menu}
+
+How to answer:
+- Plain text, no markdown, usually under 120 words. Be direct and practical.
+- Recommending daily targets: if you don't know their weight, height, age, sex, activity level and goal (lose, maintain, gain), give a sensible starting range and ask for what's missing. Once you know enough, give specific numbers and say in one line how you got them.
+- Whenever you give specific daily targets, also put them in "goals" so the app can offer a one-tap "set these" button.
+- Food questions: use the menu above when there is one. You can't log food from this chat; for that they use the camera or the box on the main screen.
+- You're not a doctor. For medical conditions, pregnancy or signs of disordered eating, gently suggest Vanderbilt's campus dietitian or the Student Health Center.
+
+Reply with only JSON: {"reply":"your answer","goals":null}
+or with targets: {"reply":"your answer","goals":{"k":2300,"p":160,"c":260,"f":75}} (k = calories, others in grams).`;
+}
+async function chatSend(text){
+  text=String(text||'').trim();if(!text||chatBusy)return;
+  if(!sample){bub('Open this page in the Claude app or on claude.ai to chat.','ai');return}
+  $('#starters').hidden=true;$('#chatIn').value='';
+  bub(text,'me');
+  const wait=bub('','ai');wait.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';
+  chatBusy=true;$('#chatSend').disabled=true;
+  try{
+    const hallId=detectHall(text);const items=hallId?await menuFor(hallId):[];
+    const turns=[{role:'user',content:coachPrompt(hallId,items)},...chatTurns.slice(-12),{role:'user',content:text}];
+    const res=await sample.json(turns,{cache:false});
+    const reply=String((res&&res.reply)||"Sorry, I didn't catch that. Try asking again.");
+    wait.textContent=reply;
+    const g=res&&res.goals;
+    if(g&&typeof g==='object'){
+      const clean={};for(const k of ['k','p','c','f'])if(+g[k]>0)clean[k]=Math.round(+g[k]);
+      if(Object.keys(clean).length){
+        const b=document.createElement('button');b.type='button';b.className='apply';
+        b.textContent='Set as my targets: '+[clean.k&&`${fmt(clean.k)} cal`,clean.p&&`${clean.p} g protein`,clean.c&&`${clean.c} g carbs`,clean.f&&`${clean.f} g fat`].filter(Boolean).join(' · ');
+        b.addEventListener('click',async()=>{
+          b.disabled=true;
+          try{await saveGoals({...((state.settings&&state.settings.goals)||{}),...clean});b.textContent='Targets saved ✓'}
+          catch(e){b.disabled=false;b.textContent=e&&e.code==='no_store'?'Open this page in Claude to save targets':"Couldn't save. Tap to try again"}
+        });
+        wait.append(b);
+      }
+    }
+    $('#msgs').scrollTop=$('#msgs').scrollHeight;
+    chatTurns.push({role:'user',content:text},{role:'assistant',content:reply});
+  }catch(e){wait.textContent=errCopy(e&&e.code)}
+  finally{chatBusy=false;$('#chatSend').disabled=false}
+}
+$('#openChat').addEventListener('click',()=>{$('#chat').hidden=false;setTimeout(()=>$('#chatIn').focus(),50)});
+$('#closeChat').addEventListener('click',()=>{$('#chat').hidden=true});
+$('#chat').addEventListener('click',e=>{if(e.target.id==='chat')$('#chat').hidden=true});
+$('#starters').addEventListener('click',e=>{const b=e.target.closest('.starter');if(b)chatSend(b.textContent)});
+$('#chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend($('#chatIn').value)});
 $('#goalForm').addEventListener('submit',async e=>{
   e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=r1($('#g'+k).value);if(v>0)g[k]=v}
   try{await saveGoals(g);closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
