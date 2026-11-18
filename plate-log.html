@@ -516,8 +516,11 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 .closedtoggle .gs svg{width:14px;height:14px;transition:transform .25s var(--ease)}
 .closedtoggle[aria-expanded="true"] .gs svg{transform:rotate(180deg)}
 .phead .t b{font-family:var(--display);font-size:1rem;letter-spacing:.01em;color:var(--ink)}
-.closedlist{display:flex;flex-direction:column;gap:18px}
+.closedlist{display:flex;flex-direction:column;gap:12px}
 .pgroup{display:flex;flex-direction:column;gap:8px}
+/* a faint, slightly inset line between halls, quick spots and Munchies */
+.pgroup+.pgroup{position:relative;padding-top:12px}
+.pgroup+.pgroup::before{content:"";position:absolute;top:0;left:14px;right:14px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12) 15%,rgba(255,255,255,.12) 85%,transparent)}
 /* slim top picks: two lines each, same size, the first one just softly tinted */
 .picks{gap:6px}
 .pick{padding:10px 14px;border-radius:14px;gap:1px 12px}
