@@ -850,6 +850,10 @@ html.finder .irow .n,html.finder .prow .n{display:none}
         <label>Carbs (g)<input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250"></label>
         <label>Fat (g)<input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70"></label>
       </div>
+      <label class="toggle" for="gbeer">
+        <span><b>Room for beer</b><small>Set aside calories for drinks you're planning on later.</small></span>
+        <input type="checkbox" id="gbeer"><i aria-hidden="true"></i>
+      </label>
     </div>
     <div class="fields goals">
       <label class="wide">Foods you like (for recommendations)<textarea id="gprefs" rows="5" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
@@ -944,7 +948,10 @@ function menuList(){if(!state.menu)return[];const out=[];let i=0;for(const m of 
 const logId=()=>'log-'+state.date;
 function entries(){return ((state.logs[logId()]||{}).entries)||[]}
 // Planned beer for today: {n: how many (halves allowed), per: calories each}; null when none.
-function planBeer(){const b=(state.logs[logId()]||{}).beer;return b&&+b.n>0&&+b.per>0?{n:+b.n,per:+b.per}:null}
+// Room for beer can be turned off in settings: the button, arc and row disappear and nothing is set aside
+// (a saved plan is kept, so turning it back on brings it back).
+const beerOn=()=>!(state.settings&&state.settings.beer===false);
+function planBeer(){if(!beerOn())return null;const b=(state.logs[logId()]||{}).beer;return b&&+b.n>0&&+b.per>0?{n:+b.n,per:+b.per}:null}
 function beerK(){const b=planBeer();return b?Math.round(b.n*b.per):0}
 const fmtBeer=n=>Number.isInteger(n)?String(n):n.toFixed(1).replace(/\.0$/,'');
 function dayTot(){return entries().reduce((t,e)=>{const T=e.tot||{};return {k:t.k+(+T.k||0),p:t.p+(+T.p||0),c:t.c+(+T.c||0),f:t.f+(+T.f||0)}},{k:0,p:0,c:0,f:0})}
@@ -1018,7 +1025,7 @@ function renderToday(){
   const bk=beerK(),bp=G.k?Math.min(1,bk/G.k):0,ba=$('#beerArc');
   ba.style.strokeDasharray=`${(345.58*bp).toFixed(2)} 400`;ba.setAttribute('opacity',bp>0?'1':'0');
   $('#bg').setAttribute('x2',String(Math.min(220,130+110*Math.cos(Math.PI*bp)-6)));
-  const B=planBeer();$('#beerBtn').classList.toggle('on',!!B);
+  const B=planBeer();$('#beerBtn').classList.toggle('on',!!B);$('#beerBtn').hidden=!beerOn();
   $('#beerBtnTxt').textContent=B?`${fmtBeer(B.n)} ${B.n===1?'beer':'beers'} · ${fmt(bk)} cal`:'Room for beer';
   const foodK=Math.max(1,G.k-bk);
   renderPace(t,G,G.k?Math.min(1,t.k/foodK):0,pp/100);
@@ -1108,7 +1115,7 @@ const goalDir=()=>{const d=state.settings&&state.settings.dir;return d==='lose'|
 let dirDraft='maintain';
 function renderDir(){for(const b of document.querySelectorAll('#gdir [data-dir]'))b.setAttribute('aria-pressed',String(b.dataset.dir===dirDraft))}
 $('#gdir').addEventListener('click',e=>{const b=e.target.closest('[data-dir]');if(!b)return;dirDraft=b.dataset.dir;renderDir()});
-function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';$('#gprefs').value=prefs();$('#gfinder').checked=finderOn();$('#goalForm').classList.toggle('finder',finderOn());$('#settings').hidden=false}
+function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';$('#gprefs').value=prefs();$('#gfinder').checked=finderOn();$('#gbeer').checked=beerOn();$('#goalForm').classList.toggle('finder',finderOn());$('#settings').hidden=false}
 $('#gfinder').addEventListener('change',()=>$('#goalForm').classList.toggle('finder',$('#gfinder').checked));
 function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
@@ -1716,15 +1723,15 @@ $('#starters').addEventListener('click',e=>{const b=e.target.closest('.starter')
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend($('#chatIn').value)});
 $('#goalForm').addEventListener('submit',async e=>{
   e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=r1($('#g'+k).value);if(v>0)g[k]=v}
-  const fin=$('#gfinder').checked;state.settings={...(state.settings||{}),finder:fin};applyFinder();
-  try{await saveSettingsPatch({goals:g,dir:dirDraft,finder:fin,prefs:$('#gprefs').value.trim().slice(0,600)});closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
+  const fin=$('#gfinder').checked,beer=$('#gbeer').checked;state.settings={...(state.settings||{}),finder:fin,beer};applyFinder();renderToday();
+  try{await saveSettingsPatch({goals:g,dir:dirDraft,finder:fin,beer,prefs:$('#gprefs').value.trim().slice(0,600)});closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
 });
 
 /* ---------- storage ---------- */
 let chain=Promise.resolve();
 const queue=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p};
 const col=()=>db&&state.uid?db.collection('data/users/'+state.uid):null;
-function writeEntries(list){const c=col();if(!c)return Promise.reject({code:'no_store'});const b=planBeer();return queue(()=>c.doc(logId()).set({date:state.date,entries:list,...(b?{beer:b}:{})}))}
+function writeEntries(list){const c=col();if(!c)return Promise.reject({code:'no_store'});const b=(state.logs[logId()]||{}).beer;return queue(()=>c.doc(logId()).set({date:state.date,entries:list,...(b?{beer:b}:{})}))}
 // Saving the beer plan keeps the day's entries as they are.
 function writeBeer(b){const c=col();if(!c)return Promise.reject({code:'no_store'});const cur=state.logs[logId()]||{};
   const doc={date:state.date,entries:cur.entries||[],...(b?{beer:b}:{})};state.logs[logId()]=doc;renderToday();
