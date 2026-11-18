@@ -808,9 +808,18 @@ function renderHours(){
     return `<div class="hrgroup"><span class="lab">${esc(title)}</span>${clusters.map(c=>`<div class="hrrows${isOpen?' lit':''}">${c.map(row).join('')}</div>`).join('')}</div>`;
   }).join('');
 }
+// Hours are fetched once when the app starts (and again only if that failed), so the panel opens
+// already filled in and the slide-up animation never has its contents swapped mid-way.
+let hoursLoading=null;
+function loadHours(){
+  if(hoursData||!db)return Promise.resolve(hoursData);
+  if(!hoursLoading)hoursLoading=db.doc('menus/hours').get().then(s=>{if(s.exists)hoursData=s.data();return hoursData}).catch(()=>null).finally(()=>{hoursLoading=null});
+  return hoursLoading;
+}
 async function openHours(){
-  $('#hours').hidden=false;renderHours();
-  if(db){try{const s=await db.doc('menus/hours').get();if(s.exists){hoursData=s.data();renderHours()}else if(!hoursData)renderHours()}catch(e){}}
+  if(!hoursData)await Promise.race([loadHours(),new Promise(r=>setTimeout(r,1500))]);
+  renderHours();$('#hours').hidden=false;
+  if(!hoursData)loadHours().then(()=>{if(hoursData&&!$('#hours').hidden)renderHours()});
   clearInterval(hrTimer);hrTimer=setInterval(()=>{if($('#hours').hidden)clearInterval(hrTimer);else renderHours()},60000);
 }
 $('#openHours').addEventListener('click',openHours);
@@ -1121,7 +1130,7 @@ renderDay();renderHalls();renderToday();
   const [d,s,u]=await Promise.all([use('db'),use('sample'),use('user')]);
   db=d;sample=s;
   if(!sample||!db)sys('Open this page in the Claude app or on claude.ai to log food.');
-  watchMenu();
+  watchMenu();loadHours();
   if(u&&db){try{state.uid=await u.id()}catch(e){state.uid=null}}
   if(state.uid){
     col().onSnapshot(snap=>{
