@@ -518,6 +518,7 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 .phead .t b{font-family:var(--display);font-size:1rem;letter-spacing:.01em;color:var(--ink)}
 .closedlist{display:flex;flex-direction:column;gap:12px}
 .pgroup{display:flex;flex-direction:column;gap:8px}
+.glab{font-size:.72rem;font-weight:500;color:var(--faint);padding:0 6px;margin-bottom:-2px;letter-spacing:.02em}
 /* a faint, slightly inset line between halls, quick spots and Munchies */
 .pgroup+.pgroup{position:relative;padding-top:12px}
 .pgroup+.pgroup::before{content:"";position:absolute;top:0;left:14px;right:14px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12) 15%,rgba(255,255,255,.12) 85%,transparent)}
@@ -1369,7 +1370,7 @@ function renderPlaces(){
   const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
   // Each group is its own stack; a slightly larger gap between stacks shows where one kind of place ends.
   const groups=list=>[0,1,2].map(k=>list.filter(x=>x.k===k)).filter(g=>g.length)
-    .map(g=>`<div class="pgroup">${g.map(x=>placeRow(x.u,x.st)).join('')}</div>`).join('');
+    .map(g=>`<div class="pgroup"><span class="glab">${['Dining halls','Quick bites','Munchie Marts'][g[0].k]}</span>${g.map(x=>placeRow(x.u,x.st)).join('')}</div>`).join('');
   const showOpen=eat.showOpen!==false;
   box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">Open <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
     +(showOpen?`<div class="closedlist">${open.length?groups(open):'<div class="pickempty">Nothing is open right now.</div>'}</div>`:'')
