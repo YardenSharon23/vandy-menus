@@ -198,6 +198,8 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
   font-family:var(--display);-webkit-user-select:none;user-select:none}
 .hall:active{background:var(--blue);border-color:var(--blue)}
 .hall.done{grid-column:1/-1;text-align:center}
+.hall.else{grid-column:1/-1;text-align:center;background:rgba(61,123,255,.1);border:1px dashed rgba(95,160,255,.45);color:var(--blue-2);font-weight:600}
+.hall.else:active{background:rgba(61,123,255,.22);border-style:solid}
 .hall[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 12px var(--glow)}
 .halls.need .hall{animation:need .7s ease 2;border-color:var(--cyan);color:var(--ink)}
 @keyframes need{0%,100%{transform:none}30%{transform:translateY(-3px)}60%{transform:translateY(1px)}}
@@ -601,10 +603,14 @@ html.finder .irow .n,html.finder .prow .n{display:none}
         <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#trackShade)" stroke-width="24" stroke-linecap="round"/>
         <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
         <!-- Inner protein ring: green when protein keeps pace with calories, yellow when a little behind, red when well behind -->
-        <filter id="pglow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow id="pglowShadow" dx="0" dy="0" stdDeviation="4" flood-color="#3ddc84" flood-opacity=".55"/></filter>
-        <path d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="#1b2031" stroke-width="10" stroke-linecap="round"/>
-        <path d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="url(#trackShade)" stroke-width="10" stroke-linecap="round"/>
-        <path id="proArc" class="arcfill" d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="#5fa0ff" stroke-width="10" stroke-linecap="round" stroke-dasharray="257.61" stroke-dashoffset="257.61" filter="url(#pglow)" style="transition:stroke-dashoffset 1s var(--ease),stroke .4s"/>
+        <!-- like the calorie arc: a deep-to-light gradient over just the filled part, so a short fill still ends bright -->
+        <linearGradient id="pg" gradientUnits="userSpaceOnUse" x1="48" y1="0" x2="212" y2="0">
+          <stop id="pgA" offset="0" stop-color="#2f62d9"/><stop id="pgB" offset="1" stop-color="#8fd8ff"/>
+        </linearGradient>
+        <filter id="pglow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow id="pglowShadow" dx="0" dy="0" stdDeviation="3" flood-color="#5fa0ff" flood-opacity=".38"/></filter>
+        <path d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="#171c2b" stroke-width="9" stroke-linecap="round"/>
+        <path d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="url(#trackShade)" stroke-width="9" stroke-linecap="round"/>
+        <path id="proArc" class="arcfill" d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="url(#pg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="257.61" stroke-dashoffset="257.61" filter="url(#pglow)" style="transition:stroke-dashoffset 1s var(--ease)"/>
         <line id="paceTick" x1="130" y1="53" x2="130" y2="53" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" opacity="0" style="transition:opacity .3s"/>
       </svg>
       <div class="center">
@@ -815,8 +821,9 @@ function hallOrder(){
 function renderHalls(){
   const box=$('#halls');box.classList.toggle('editing',state.editing);
   $('#reorderHint').textContent=state.editing?'Drag to reorder, then tap Done.':'Press and hold to reorder.';
-  box.innerHTML=hallOrder().map(id=>{const h=HALLS.find(x=>x.id===id);return `<button type="button" class="hall" data-h="${id}">${h.name}</button>`}).join('')
-    +(state.editing?'<button type="button" class="hall done" id="doneReorder">Done</button>':'');
+  // "Elsewhere" always sits last, full width and styled apart from the dining halls.
+  box.innerHTML=hallOrder().filter(id=>id!==0).map(id=>{const h=HALLS.find(x=>x.id===id);return `<button type="button" class="hall" data-h="${id}">${h.name}</button>`}).join('')
+    +(state.editing?'<button type="button" class="hall done" id="doneReorder">Done</button>':'<button type="button" class="hall else" data-h="0">Elsewhere</button>');
 }
 /* The hall popup opens on every camera tap (then the camera opens) and on sending text without a hall picked. */
 let pending=null;
@@ -897,17 +904,21 @@ let seenEntries=null;   // entry ids already on screen, so only newly logged one
 // Protein pace: compare how far along protein is with how far along calories are (both as % of target).
 // On pace or ahead (≤5 points behind) = green, 5–20 behind = yellow, 20+ behind = red.
 // Before ~300 calories the ring stays neutral blue, so a small breakfast doesn't flash red.
-const PACE={good:{c:'#3ddc84',bar:'linear-gradient(90deg,#1fae66,#3ddc84 70%,#8ff0bf)',lab:'On pace'},
-  warn:{c:'#f2c46b',bar:'linear-gradient(90deg,#c9962f,#f2c46b 70%,#ffe0a1)',lab:'A bit behind'},
-  bad:{c:'#ff6b78',bar:'linear-gradient(90deg,#d8434f,#ff6b78 70%,#ffa3ab)',lab:'Behind'},
-  idle:{c:'#5fa0ff',bar:'',lab:''}};
+// a = deep start of the ring, b = bright tip; slightly softened tones so they sit well beside the blue calorie arc
+const PACE={good:{c:'#3ddc84',a:'#1a9a62',b:'#7df0b5',bar:'linear-gradient(90deg,#1fae66,#3ddc84 70%,#8ff0bf)',lab:'On pace'},
+  warn:{c:'#f2c46b',a:'#b8862a',b:'#ffd98e',bar:'linear-gradient(90deg,#c9962f,#f2c46b 70%,#ffe0a1)',lab:'A bit behind'},
+  bad:{c:'#ff6b78',a:'#c43a48',b:'#ff9aa3',bar:'linear-gradient(90deg,#d8434f,#ff6b78 70%,#ffa3ab)',lab:'Behind'},
+  idle:{c:'#5fa0ff',a:'#2f62d9',b:'#8fd8ff',bar:'',lab:''}};
 function renderPace(t,G,calPct,proPct){
   const arc=$('#proArc');if(!arc)return;
   arc.style.strokeDashoffset=String(257.61*(1-Math.min(1,proPct)));
   const gap=(proPct-calPct)*100;
   const st=!(G.k&&G.p)||t.k<300?'idle':gap>=-5?'good':gap>=-20?'warn':'bad';
   const P=PACE[st];
-  arc.style.stroke=P.c;$('#pglowShadow').setAttribute('flood-color',P.c);
+  // gradient runs deep → light along the filled part, in the pace color; glow is soft so the two rings blend
+  $('#pgA').setAttribute('stop-color',P.a);$('#pgB').setAttribute('stop-color',P.b);
+  const endX=130-82*Math.cos(Math.PI*Math.min(1,proPct));$('#pg').setAttribute('x2',String(Math.max(60,endX+5)));
+  $('#pglowShadow').setAttribute('flood-color',P.c);
   // protein bar under the gauge takes the same color, so the two always agree
   const bar=$('#proBar');
   bar.style.background=P.bar?'linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0) 55%),'+P.bar:'';
