@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;500&family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: one navy column. Calorie gauge, protein bar, slim carbs/fat line, then today's entries (tap to edit). Chat thread below; pinned composer led by a big camera button. Every log goes through a review sheet. */
 :root{
@@ -38,9 +38,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .gauge{position:relative;width:100%;max-width:330px;margin:0 auto}
 .gauge svg{display:block;width:100%;height:auto;overflow:visible}
 .gauge .center{position:absolute;left:0;right:0;bottom:2%;text-align:center}
-.gauge .kcal{font-family:"Outfit","Segoe UI",system-ui,sans-serif;font-weight:300;font-size:clamp(3.2rem,16vw,4.1rem);line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums;
-  background:linear-gradient(180deg,#ffffff 30%,#b9d6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.gauge .of{font-family:"Outfit","Segoe UI",system-ui,sans-serif;font-weight:300;letter-spacing:.02em}
+.gauge .kcal{font-family:var(--display);font-weight:600;font-size:clamp(2.9rem,14vw,3.6rem);line-height:1;letter-spacing:-.025em;font-variant-numeric:tabular-nums;color:var(--ink)}
 .gauge .of{font-size:.84rem;color:var(--muted);margin-top:8px}
 .gauge .left{font-size:.8rem;font-weight:600;color:var(--cyan);min-height:1.2em}
 .gauge .left.over{color:var(--bad)}
@@ -183,7 +181,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div class="center">
         <div class="kcal" id="kcal">0</div>
         <div class="of" id="kcalOf">calories</div>
-        <div class="left" id="kcalLeft"></div>
       </div>
     </div>
     <div class="pro">
@@ -357,8 +354,6 @@ function renderToday(){
   const knob=$('#knob');knob.setAttribute('cx',x.toFixed(1));knob.setAttribute('cy',y.toFixed(1));knob.toggleAttribute('hidden',!(G.k&&t.k>0));
   $('#kcal').textContent=fmt(t.k);
   $('#kcalOf').textContent=G.k?`of ${fmt(G.k)} calories`:'calories';
-  const left=$('#kcalLeft');left.classList.toggle('over',!!G.k&&t.k>G.k);
-  left.textContent=G.k?(t.k<=G.k?`${fmt(G.k-t.k)} left`:`${fmt(t.k-G.k)} over`):'';
   $('#proNum').textContent=fmt(t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   $('#proBar').style.width=(G.p?Math.min(100,t.p/G.p*100):0)+'%';
   $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=G.c?` / ${fmt(G.c)} g carbs`:' g carbs';
