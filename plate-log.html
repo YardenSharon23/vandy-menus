@@ -330,8 +330,12 @@ button:active{transform:scale(.96)}
 .scrim:not([hidden]) .hall:nth-child(6){animation-delay:.15s}.scrim:not([hidden]) .hall:nth-child(7){animation-delay:.18s}
 .scrim:not([hidden]) .hall:nth-child(8){animation-delay:.21s}
 .scrim:not([hidden]) .ritem,.scrim:not([hidden]) .wkstats div{animation:rise .36s var(--ease) .06s both}
-.wkcol .b i{animation:growUp .7s var(--ease) .15s both;transform-origin:bottom}
-.wkpro .t i{animation:growRight .7s var(--ease) .2s both;transform-origin:left}
+/* Week bars are drawn ahead of time and grow once, the first time you reach the Week page.
+   Later updates just change their size, so they never vanish and re-grow. */
+.wkcol .b i{transform-origin:bottom;transition:transform .7s var(--ease) .1s,height .5s var(--ease)}
+.wkpro .t i{transform-origin:left;transition:transform .7s var(--ease) .15s,width .5s var(--ease)}
+.wkchart:not(.shown) .b i{transform:scaleY(0)}
+.wkpro:not(.shown) .t i{transform:scaleX(0)}
 /* new entries and messages slide in */
 .entry.new{animation:slideIn .45s var(--ease) both}
 .bub{animation:rise .32s var(--ease) both}
@@ -863,7 +867,7 @@ function setPage(i){
   document.documentElement.classList.toggle('on-today',i===0);
   tabs.querySelectorAll('[data-p]').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.p===i)));
   if(i!==0)$('#txt').blur();
-  if(i===1)renderWeek();
+  if(i===1&&!$('#wkChart').classList.contains('shown'))requestAnimationFrame(()=>{$('#wkChart').classList.add('shown');$('#wkPro').classList.add('shown')});
   if(i===2)enterOpen();
   if(i===3){const m=$('#msgs');m.scrollTop=m.scrollHeight}
 }
@@ -1169,7 +1173,7 @@ function rollDay(){const d=dstr();if(d!==state.date){state.date=d;state.lastLogg
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)rollDay()});
 
 /* ---------- boot ---------- */
-renderDay();renderHalls();renderToday();
+renderDay();renderHalls();renderToday();renderWeek();
 (async()=>{
   const use=n=>(window.claude&&window.claude.use)?window.claude.use(n).catch(()=>null):Promise.resolve(null);
   const [d,s,u]=await Promise.all([use('db'),use('sample'),use('user')]);
@@ -1181,7 +1185,7 @@ renderDay();renderHalls();renderToday();
     col().onSnapshot(snap=>{
       state.logs={};state.settings=null;
       for(const doc of snap.docs){if(doc.id==='settings')state.settings=doc.data();else if(doc.id.startsWith('log-'))state.logs[doc.id]=doc.data()}
-      renderToday();if(curPage===1)renderWeek();
+      renderToday();renderWeek();
     },()=>{});
   }
 })();
