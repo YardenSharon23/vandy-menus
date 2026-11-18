@@ -508,7 +508,7 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 .pweek .td{color:var(--ink);font-weight:600}
 /* Three levels: section headings ("Open now", "Munchies & cafés", "Closed") are small caps labels with no card;
    place names are the bold Poppins titles on cards; dishes inside are plain text. */
-#eatPlaces>.lab{display:block;padding:2px 4px 0}
+#eatPlaces>.closedtoggle:first-child{border-top:0;margin-top:0;padding-top:4px}
 .closedtoggle{display:flex;align-items:center;gap:8px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;border-radius:0;padding:16px 4px 4px;margin-top:6px;text-align:left}
 .closedtoggle .gt{flex:1;display:flex;align-items:center;gap:8px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .closedtoggle .gt small{font-size:.68rem;letter-spacing:0;text-transform:none;font-weight:600;color:var(--ink);background:rgba(255,255,255,.07);border-radius:999px;padding:2px 8px}
@@ -1364,8 +1364,9 @@ function renderPlaces(){
   const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
   // Dining halls that are open show by default; open Munchie Marts and cafés fold into one row; closed places fold into another.
   const openHalls=open.filter(x=>x.k===0),openOther=open.filter(x=>x.k!==0);
-  box.innerHTML=`<span class="lab">Open now</span>`
-    +(openHalls.length?openHalls.map(x=>placeRow(x.u,x.st)).join(''):'<div class="pickempty">No dining halls are open right now.</div>')
+  const showHalls=eat.showHalls!==false;
+  box.innerHTML=`<button type="button" class="closedtoggle" id="hallsToggle" aria-expanded="${showHalls}"><span class="gt">Main dining halls <small>${openHalls.length} open</small></span><span class="gs">${showHalls?'Hide':'Show'}${CHEV}</span></button>`
+    +(showHalls?`<div class="closedlist">${openHalls.length?openHalls.map(x=>placeRow(x.u,x.st)).join(''):'<div class="pickempty">No dining halls are open right now.</div>'}</div>`:'')
     +(openOther.length?`<button type="button" class="closedtoggle" id="moreToggle" aria-expanded="${!!eat.showMore}"><span class="gt">Munchies &amp; cafés <small>${openOther.length} open</small></span><span class="gs">${eat.showMore?'Hide':'Show'}${CHEV}</span></button>`
       +(eat.showMore?`<div class="closedlist">${openOther.map(x=>placeRow(x.u,x.st)).join('')}</div>`:''):'')
     +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${eat.showClosed}"><span class="gt">Closed <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}${CHEV}</span></button>`
@@ -1440,6 +1441,7 @@ $('#pEat').addEventListener('click',e=>{
   const hr=e.target.closest('[data-hours]');if(hr){const id=+hr.dataset.hours;eat.showHours=eat.showHours||{};eat.showHours[id]=!eat.showHours[id];renderPlaces();return}
   const sd=e.target.closest('[data-sides]');if(sd){const id=+sd.dataset.sides;eat.showSides=eat.showSides||{};eat.showSides[id]=!eat.showSides[id];renderPlaces();return}
   if(e.target.closest('#closedToggle')){eat.showClosed=!eat.showClosed;renderPlaces();return}
+  if(e.target.closest('#hallsToggle')){eat.showHalls=eat.showHalls===false;renderPlaces();return}
   if(e.target.closest('#moreToggle')){eat.showMore=!eat.showMore;renderPlaces()}
 });
 
