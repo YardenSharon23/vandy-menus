@@ -26,6 +26,10 @@ body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);-webkit-fon
     radial-gradient(120% 80% at -20% 60%, rgba(143,216,255,.07) 0%, rgba(143,216,255,.03) 35%, rgba(143,216,255,0) 65%),
     linear-gradient(180deg,#131829 0%,#10131d 45%,#0f121b 100%)}button,input{font:inherit;color:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+/* Stop phone zooming: iOS zooms into any text box under 16px, and double-taps zoom the page. */
+html,body,button,input,label,.entry,.hall,.name,.starter{touch-action:manipulation}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+input,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!important}
 :focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
 
 .app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding-block:22px 140px;display:flex;flex-direction:column;gap:22px}
