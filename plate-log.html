@@ -290,6 +290,8 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .starter:active{background:rgba(255,255,255,.05)}
 .starters{margin-top:auto}
 #chat .chatbar{flex:none}
+/* Weekly progress and settings open in the middle of the screen */
+#week.scrim,#settings.scrim{align-items:center;padding-top:calc(16px + env(safe-area-inset-top, 0px))}
 
 /* ===== Motion: small, quick, eased. Everything is fully visible at rest; reduced-motion turns it all off. ===== */
 :root{--ease:cubic-bezier(.22,.8,.24,1);--spring:cubic-bezier(.34,1.4,.5,1)}
