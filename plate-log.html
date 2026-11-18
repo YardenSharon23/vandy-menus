@@ -342,29 +342,67 @@ button:active{transform:scale(.96)}
 /* smooth bar and arc changes */
 .track i{transition:width .8s var(--ease)}
 .arcfill{transition:stroke-dashoffset 1s var(--ease)}
+/* ===== Swipe layout: fixed tab bar on top, a horizontal pager of four full-height pages under it ===== */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{padding-left:0;padding-right:0}
+.appbar{position:fixed;left:0;right:0;top:0;z-index:6;display:flex;align-items:center;gap:10px;
+  padding:calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  background:linear-gradient(180deg,var(--bg) 70%,rgba(15,18,27,0))}
+.appbar .iconbtn{flex:none}
+.tabs{position:relative;flex:1;max-width:440px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);
+  background:rgba(255,255,255,.05);border:1px solid var(--pill-edge);border-radius:99px;padding:4px;--pos:0}
+.tabs button{position:relative;z-index:1;border:0;background:transparent;border-radius:99px;padding:8px 0;font-size:.86rem;font-weight:600;color:var(--muted);transition:color .25s}
+.tabs button[aria-selected="true"]{color:#fff}
+.tabs button:active{transform:none}
+/* the highlight follows your finger while you swipe (--pos goes 0 → 3) */
+.tabhl{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / 4);border-radius:99px;
+  background:linear-gradient(135deg,var(--blue-2),var(--blue));box-shadow:0 4px 16px var(--glow);transform:translateX(calc(var(--pos) * 100%))}
+.pager{position:fixed;z-index:1;left:0;right:0;bottom:0;top:calc(62px + env(safe-area-inset-top, 0px));display:flex;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.pager::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;width:100%;height:100%;overflow-y:auto;overflow-x:hidden;scroll-snap-align:start;scroll-snap-stop:always;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));overscroll-behavior-y:contain}
+.page .app{padding-block:8px 170px}
+.pagein{max-width:500px;margin:0 auto;padding-block:8px calc(40px + env(safe-area-inset-bottom, 0px));display:flex;flex-direction:column;gap:20px}
+.pagein h1{font-family:var(--display);font-weight:600;font-size:1.3rem;margin:0}
+.pagein .sub{font-size:.8rem;color:var(--muted)}
+/* Ask page: messages scroll, chat bar pinned at the bottom of the page */
+.askpage{overflow:hidden}
+.chatpage{height:100%;padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));gap:12px}
+.chatpage .msgs{flex:1;min-height:0}
+.askhead{padding:4px 8px 10px}
+.chatpage .chatbar{flex:none}
+/* camera bar belongs to Today; it slides away on the other pages */
+.dock{transition:transform .35s var(--ease),opacity .25s}
+html:not(.on-today) .dock{transform:translateY(110%);opacity:0;pointer-events:none}
+/* the old load-in on .top would replay inside pages; keep it only for the first page */
+.page:not(#pToday) .pagein{animation:none}
+
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
 </style>
 
 <div class="bg" aria-hidden="true"></div>
+<!-- Swipe app: a tab bar on top, four pages side by side underneath (Today · Week · Open · Ask). -->
+<header class="appbar">
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Pages">
+    <span class="tabhl" aria-hidden="true"></span>
+    <button type="button" role="tab" data-p="0" aria-selected="true">Today</button>
+    <button type="button" role="tab" data-p="1" aria-selected="false">Week</button>
+    <button type="button" role="tab" data-p="2" aria-selected="false">Open</button>
+    <button type="button" role="tab" data-p="3" aria-selected="false">Ask</button>
+  </nav>
+  <button class="iconbtn" id="openSettings" aria-label="Daily targets">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+  </button>
+</header>
+
+<div class="pager" id="pager">
+<section class="page" id="pToday" aria-label="Today">
 <main class="app">
   <div class="top">
-    <div><h1>Today</h1><div class="sub" id="day"></div></div>
-    <div class="topbtns">
-      <button class="iconbtn" id="openHours" aria-label="What's open now">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4.2l2.8 1.8"/></svg>
-      </button>
-      <button class="iconbtn" id="openChat" aria-label="Ask Claude">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18.5V6.8A1.8 1.8 0 0 1 6.8 5h10.4A1.8 1.8 0 0 1 19 6.8v7.4a1.8 1.8 0 0 1-1.8 1.8H8.5z"/><path d="M9 10h6M9 12.8h3.5"/></svg>
-      </button>
-      <button class="iconbtn" id="openWeek" aria-label="This week's progress">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg>
-      </button>
-      <button class="iconbtn" id="openSettings" aria-label="Daily targets">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
-      </button>
-    </div>
+    <div><h1 id="dayH">Today</h1><div class="sub" id="day"></div></div>
   </div>
 
   <section class="hero" aria-label="Today's macros">
@@ -408,6 +446,47 @@ button:active{transform:scale(.96)}
   </section>
 
 </main>
+</section>
+
+<section class="page" id="pWeek" aria-label="This week">
+  <div class="pagein">
+    <div><h1>This week</h1><div class="sub" id="wkRange"></div></div>
+    <div class="wkgoal"><span class="lab">Goals hit</span><b id="wkHit">0 / 0 days</b></div>
+    <div>
+      <div class="wkhead"><span class="lab">Calories</span></div>
+      <div class="wkchart" id="wkChart"></div>
+    </div>
+    <div class="wkpro" id="wkPro"></div>
+  </div>
+</section>
+
+<section class="page" id="pOpen" aria-label="What's open">
+  <div class="pagein">
+    <div><h1>Open now</h1><div class="sub" id="hrNow"></div></div>
+    <div class="hrlist" id="hrList"><div class="fine">Loading hours…</div></div>
+    <div class="fine">Hours from NetNutrition. Tap a place for the week. Holidays may differ.</div>
+  </div>
+</section>
+
+<section class="page askpage" id="pAsk" aria-label="Ask Claude">
+  <div class="pagein chatpage">
+    <div class="msgs" id="msgs" aria-live="polite">
+      <div class="starters" id="starters">
+        <div class="askhead"><h1>Ask Claude</h1><div class="sub">Goals, food, where to eat.</div></div>
+        <button type="button" class="starter">What should my daily targets be?</button>
+        <button type="button" class="starter">How am I doing this week?</button>
+        <button type="button" class="starter">What's good to eat today, and where?</button>
+      </div>
+    </div>
+    <form class="chatbar" id="chatForm" autocomplete="off">
+      <input id="chatIn" placeholder="Ask about goals, food, your week…" aria-label="Message Claude" enterkeyhint="send">
+      <button type="submit" class="send" id="chatSend" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+  </div>
+</section>
+</div>
 
 <div class="dock">
   <form class="composer" id="form" autocomplete="off">
@@ -468,52 +547,6 @@ button:active{transform:scale(.96)}
   </form>
 </div>
 
-<!-- Open now -->
-<div class="scrim" id="hours" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="hrTitle">
-    <div class="chathead"><div><h2 id="hrTitle">Open now</h2><div class="fine" id="hrNow"></div></div>
-      <button type="button" class="iconbtn" id="closeHours" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    <div class="hrlist" id="hrList"><div class="fine">Loading hours…</div></div>
-    <div class="fine">Hours from NetNutrition. Tap a place for the week. Holidays may differ.</div>
-  </div>
-</div>
-
-<!-- Ask Claude -->
-<div class="scrim" id="chat" hidden>
-  <div class="sheet chatsheet" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
-    <div class="chathead"><h2 id="chatTitle">Ask Claude</h2><button type="button" class="iconbtn" id="closeChat" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-    <div class="msgs" id="msgs" aria-live="polite">
-      <div class="starters" id="starters">
-        <button type="button" class="starter">What should my daily targets be?</button>
-        <button type="button" class="starter">How am I doing this week?</button>
-        <button type="button" class="starter">What's good to eat today, and where?</button>
-      </div>
-    </div>
-    <form class="chatbar" id="chatForm" autocomplete="off">
-      <input id="chatIn" placeholder="Ask about goals, food, your week…" aria-label="Message Claude" enterkeyhint="send">
-      <button type="submit" class="send" id="chatSend" aria-label="Send">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </button>
-    </form>
-  </div>
-</div>
-
-<!-- This week -->
-<div class="scrim" id="week" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wkTitle">
-    <div><h2 id="wkTitle">This week</h2><div class="fine" id="wkRange"></div></div>
-    <div class="wkgoal"><span class="lab">Goals hit</span><b id="wkHit">0 / 0 days</b></div>
-    <div>
-      <div class="wkhead"><span class="lab">Calories</span></div>
-      <div class="wkchart" id="wkChart"></div>
-    </div>
-    <div>
-      <div class="wkpro" id="wkPro"></div>
-    </div>
-    <button type="button" class="btn" id="closeWeek">Close</button>
-  </div>
-</div>
 
 <!-- Targets -->
 <div class="scrim" id="settings" hidden>
@@ -605,7 +638,7 @@ function hallName(id=state.hall){return (HALLS.find(h=>h.id===id)||{}).name}
     else if(act==='send')$('#form').requestSubmit();
   });
 })();
-function renderDay(){$('#day').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}
+function renderDay(){const d=new Date();$('#dayH').textContent=d.toLocaleDateString(undefined,{weekday:'long'});$('#day').textContent=d.toLocaleDateString(undefined,{month:'long',day:'numeric'})}
 
 /* ---------- menu ---------- */
 let unsubMenu=null;
@@ -733,7 +766,7 @@ function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
 $('#settings').addEventListener('click',e=>{if(e.target.id==='settings')closeSettings()});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#chat').hidden)closeChat();else if(!$('#hours').hidden)$('#hours').hidden=true;else if(!$('#week').hidden)$('#week').hidden=true;else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#settings').hidden)closeSettings();else if(!$('#where').hidden){pending=null;closeWhere()}else if(!$('#review').hidden)$('#rvCancel').click()});
 
 /* ---------- this week (Mon–Sun) ---------- */
 function weekDates(){
@@ -766,9 +799,6 @@ function renderWeek(){
       <span class="d">${r.d.toLocaleDateString(undefined,{weekday:'narrow'})}</span></div>`}).join('');
   $('#wkPro').innerHTML=rows.map(r=>`<div class="${proHit(r)?'hit':''}"><span class="t"><i style="width:${G.p?Math.min(100,r.p/G.p*100):0}%"></i></span><small>${r.p?fmt(r.p)+' g':'–'}</small></div>`).join('');
 }
-$('#openWeek').addEventListener('click',()=>{renderWeek();$('#week').hidden=false});
-$('#closeWeek').addEventListener('click',()=>{$('#week').hidden=true});
-$('#week').addEventListener('click',e=>{if(e.target.id==='week')$('#week').hidden=true});
 
 /* ---------- Open now: hours for every location (doc menus/hours, refreshed daily) ---------- */
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -816,16 +846,36 @@ function loadHours(){
   if(!hoursLoading)hoursLoading=db.doc('menus/hours').get().then(s=>{if(s.exists)hoursData=s.data();return hoursData}).catch(()=>null).finally(()=>{hoursLoading=null});
   return hoursLoading;
 }
-async function openHours(){
-  if(!hoursData)await Promise.race([loadHours(),new Promise(r=>setTimeout(r,1500))]);
-  renderHours();$('#hours').hidden=false;
-  if(!hoursData)loadHours().then(()=>{if(hoursData&&!$('#hours').hidden)renderHours()});
-  clearInterval(hrTimer);hrTimer=setInterval(()=>{if($('#hours').hidden)clearInterval(hrTimer);else renderHours()},60000);
+// Open page: render when you arrive, then refresh every minute while you're on it.
+function enterOpen(){
+  renderHours();
+  if(!hoursData)loadHours().then(()=>{if(curPage===2)renderHours()});
+  clearInterval(hrTimer);hrTimer=setInterval(()=>{if(curPage!==2)clearInterval(hrTimer);else renderHours()},60000);
 }
-$('#openHours').addEventListener('click',openHours);
-$('#closeHours').addEventListener('click',()=>{$('#hours').hidden=true});
-$('#hours').addEventListener('click',e=>{if(e.target.id==='hours'){$('#hours').hidden=true;return}
-  const b=e.target.closest('[data-u]');if(b){const id=+b.dataset.u;hrOpen=hrOpen===id?null:id;renderHours()}});
+$('#hrList').addEventListener('click',e=>{const b=e.target.closest('[data-u]');if(b){const id=+b.dataset.u;hrOpen=hrOpen===id?null:id;renderHours()}});
+
+/* ---------- Swipe pager: Today · Week · Open · Ask ---------- */
+const pager=$('#pager'),tabs=$('#tabs');
+let curPage=0;
+document.documentElement.classList.add('on-today');
+function setPage(i){
+  if(i===curPage)return;curPage=i;
+  document.documentElement.classList.toggle('on-today',i===0);
+  tabs.querySelectorAll('[data-p]').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.p===i)));
+  if(i!==0)$('#txt').blur();
+  if(i===1)renderWeek();
+  if(i===2)enterOpen();
+  if(i===3){const m=$('#msgs');m.scrollTop=m.scrollHeight}
+}
+let raf=0;
+pager.addEventListener('scroll',()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
+  const p=pager.scrollLeft/Math.max(1,pager.clientWidth);
+  tabs.style.setProperty('--pos',Math.max(0,Math.min(3,p)).toFixed(3));
+  setPage(Math.round(p));
+})},{passive:true});
+function goPage(i){pager.scrollTo({left:i*pager.clientWidth,behavior:calm?'auto':'smooth'})}
+tabs.addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b)goPage(+b.dataset.p)});
+addEventListener('resize',()=>{pager.scrollLeft=curPage*pager.clientWidth});
 
 /* ---------- Ask Claude: a real back-and-forth chat (goals, food questions, your week) ---------- */
 const chatTurns=[];let chatBusy=false;
@@ -932,11 +982,6 @@ async function chatSend(text){
   }catch(e){wait.textContent=errCopy(e&&e.code)}
   finally{chatBusy=false;$('#chatSend').disabled=false}
 }
-function openChat(){$('#chat').hidden=false;const m=$('#msgs');m.scrollTop=m.scrollHeight}
-function closeChat(){$('#chatIn').blur();$('#chat').hidden=true}
-$('#openChat').addEventListener('click',openChat);
-$('#closeChat').addEventListener('click',closeChat);
-$('#chat').addEventListener('click',e=>{if(e.target.id==='chat')closeChat()});
 $('#starters').addEventListener('click',e=>{const b=e.target.closest('.starter');if(b)chatSend(b.textContent)});
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend($('#chatIn').value)});
 $('#goalForm').addEventListener('submit',async e=>{
@@ -1136,7 +1181,7 @@ renderDay();renderHalls();renderToday();
     col().onSnapshot(snap=>{
       state.logs={};state.settings=null;
       for(const doc of snap.docs){if(doc.id==='settings')state.settings=doc.data();else if(doc.id.startsWith('log-'))state.logs[doc.id]=doc.data()}
-      renderToday();if(!$('#week').hidden)renderWeek();
+      renderToday();if(curPage===1)renderWeek();
     },()=>{});
   }
 })();
