@@ -29,7 +29,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 /* Stop phone zooming: iOS zooms into any text box under 16px, and double-taps zoom the page. */
 html,body,button,input,label,.entry,.hall,.name,.starter{touch-action:manipulation}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
-input,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!important}
+input,textarea,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!important}
+#gprefs{width:100%;resize:vertical;min-height:58px;background:var(--panel-2);border:1px solid var(--edge);border-radius:12px;padding:10px 12px;color:var(--ink);font:inherit;line-height:1.4}
+#gprefs::placeholder{color:var(--faint)}
 :focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
 
 .app{position:relative;z-index:1;max-width:500px;margin:0 auto;padding-block:22px 140px;display:flex;flex-direction:column;gap:22px}
@@ -69,7 +71,18 @@ input,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!importa
 .chatsheet{height:min(640px,calc(100% - 40px));padding:16px 16px 12px;gap:12px;overflow:hidden}
 .chathead{display:flex;align-items:center;justify-content:space-between}
 .msgs{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:2px}
-.bub{max-width:86%;border-radius:18px;padding:10px 14px;font-size:.92rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.bub{max-width:88%;border-radius:18px;padding:10px 14px;font-size:.92rem;line-height:1.5;overflow-wrap:anywhere}
+.bub.me{white-space:pre-wrap}
+.bub h4{font-family:var(--display);font-weight:600;font-size:.98rem;margin:6px 0 4px;color:var(--ink)}
+.bub h4:first-child{margin-top:0}
+.bub p{margin:0 0 8px}
+.bub p:last-child{margin-bottom:0}
+.bub ul,.bub ol{margin:2px 0 8px;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.bub ul:last-child,.bub ol:last-child{margin-bottom:0}
+.bub li::marker{color:var(--blue-2)}
+.bub b{color:var(--ink);font-weight:600}
+.bub.ai{color:#d9deea}
+.bub .saved{margin-top:8px;font-size:.78rem;color:var(--good)}
 .bub.me{align-self:flex-end;background:linear-gradient(135deg,var(--blue),#2f62d9);border-bottom-right-radius:6px}
 .bub.ai{align-self:flex-start;background:var(--panel-2);border-bottom-left-radius:6px}
 .bub .apply{display:block;margin-top:10px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:600;padding:8px 12px;font-size:.85rem}
@@ -365,7 +378,7 @@ input,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!importa
       <div class="starters" id="starters">
         <button type="button" class="starter">What should my daily targets be?</button>
         <button type="button" class="starter">How am I doing this week?</button>
-        <button type="button" class="starter">What's high in protein at Rand today?</button>
+        <button type="button" class="starter">What's good to eat today, and where?</button>
       </div>
     </div>
     <form class="chatbar" id="chatForm" autocomplete="off">
@@ -407,6 +420,7 @@ input,input.txt,.rnote input,.chatbar input,.fields input{font-size:16px!importa
       <label class="wide">Protein (g)<input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150"></label>
       <label>Carbs (g)<input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250"></label>
       <label>Fat (g)<input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70"></label>
+      <label class="wide">Foods you like (for recommendations)<textarea id="gprefs" rows="2" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
     </div>
     <div class="actions">
       <button type="button" class="btn" id="closeSettings">Cancel</button>
@@ -587,7 +601,7 @@ $('#reviewForm').addEventListener('submit',async e=>{
 });
 
 /* ---------- settings ---------- */
-function openSettings(){const G=goals();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';$('#settings').hidden=false;setTimeout(()=>$('#gk').focus(),50)}
+function openSettings(){const G=goals();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';$('#gprefs').value=prefs();$('#settings').hidden=false;setTimeout(()=>$('#gk').focus(),50)}
 function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
@@ -669,26 +683,67 @@ $('#hours').addEventListener('click',e=>{if(e.target.id==='hours'){$('#hours').h
 /* ---------- Ask Claude: a real back-and-forth chat (goals, food questions, your week) ---------- */
 const chatTurns=[];let chatBusy=false;
 function bub(text,who){const d=document.createElement('div');d.className='bub '+who;d.textContent=text;$('#msgs').append(d);$('#msgs').scrollTop=$('#msgs').scrollHeight;return d}
-function coachPrompt(hallId,items){
+// Tiny, safe markdown for chat replies: ### headings, **bold**, - bullets, 1. lists, paragraphs. Text is escaped first.
+function md(src){
+  const inline=s=>s.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<i>$2</i>');
+  let html='',list=null;
+  const close=()=>{if(list){html+=`</${list}>`;list=null}};
+  for(const raw of esc(src).split('\n')){
+    const l=raw.trim();let m;
+    if((m=/^#{1,4}\s+(.*)$/.exec(l))){close();html+=`<h4>${inline(m[1])}</h4>`}
+    else if((m=/^[-*•]\s+(.*)$/.exec(l))){if(list!=='ul'){close();html+='<ul>';list='ul'}html+=`<li>${inline(m[1])}</li>`}
+    else if((m=/^\d+[.)]\s+(.*)$/.exec(l))){if(list!=='ol'){close();html+='<ol>';list='ol'}html+=`<li>${inline(m[1])}</li>`}
+    else if(!l){close()}
+    else{close();html+=`<p>${inline(l)}</p>`}
+  }
+  close();return html;
+}
+const prefs=()=>String((state.settings&&state.settings.prefs)||'').trim();
+async function saveSettingsPatch(patch){const c=col();if(!c)throw {code:'no_store'};await queue(()=>c.doc('settings').set({...(state.settings||{}),...patch}))}
+// Menus for the chat: one hall if named, otherwise every hall (for "what's good today and where"), trimmed to one meal.
+const MENU_Q=/\b(menu|eat|food|good|recommend|rec|suggest|where|hungry|breakfast|brunch|lunch|dinner|meal|protein|today|tonight|open)\b/i;
+function chatMeal(text){const m=/\b(breakfast|brunch|lunch|dinner)\b/i.exec(text);if(m)return m[1][0].toUpperCase()+m[1].slice(1).toLowerCase();
+  const h=new Date().getHours()+new Date().getMinutes()/60;return h<10.5?'Breakfast':h<15?'Lunch':'Dinner'}
+async function chatMenus(text){
+  const named=detectHall(text);
+  if(!named&&!MENU_Q.test(text))return '';
+  if(!hoursData&&db){try{const s=await db.doc('menus/hours').get();if(s.exists)hoursData=s.data()}catch(e){}}
+  const meal=chatMeal(text);
+  const ids=named?[named]:HALLS.filter(h=>h.id).map(h=>h.id);
+  const lists=await Promise.all(ids.map(id=>menuFor(id)));
+  const skip=/condiment|beverage|dressing|self-serve|alternative cooler|deli bread|deli cheese|toppings/i;
+  const blocks=ids.map((id,ix)=>{
+    const u=hoursData&&hoursData.units.find(x=>x.id===id);const st=u?status(u):null;
+    const items=lists[ix].filter(c=>(c.meal===meal||c.meal==='Daily Offerings'||named&&!lists[ix].some(x=>x.meal===meal))&&!skip.test(c.s||''));
+    const head=`## ${hallName(id)}${st?` (${st.open?'open now, '+st.label.toLowerCase():'closed, '+st.label.toLowerCase()})`:''}`;
+    return items.length?head+'\n'+items.map(c=>`${c.s||''} | ${c.n} | ${c.v} | ${Math.round(c.k)} kcal | ${r1(c.p)} g protein`).join('\n'):head+'\n(no menu loaded)';
+  });
+  return `\nToday's ${meal.toLowerCase()} menus (station | item | serving | kcal | protein):\n`+blocks.join('\n');
+}
+function coachPrompt(menus){
   const G=goals();const saved=(state.settings&&state.settings.goals)||{};const t=dayTot();
   const days=weekDates().map(d=>{const ds=dstr(d);const x=totFor(ds);return `${d.toLocaleDateString(undefined,{weekday:'short'})} ${ds}: ${x.n?`${Math.round(x.k)} kcal, ${Math.round(x.p)} g protein`:'nothing logged'}`}).join('\n');
   const tg=k=>`${G[k]}${saved[k]?'':' (default, not set by them)'}`;
-  const menu=hallId&&items.length?`\n${hallName(hallId)}'s menu today (meal | station | item | serving | kcal | protein g):\n`+items.map(c=>`${c.meal} | ${c.s||''} | ${c.n} | ${c.v} | ${Math.round(c.k)} | ${r1(c.p)}`).join('\n'):'';
+  const P=prefs();
   return `You are the friendly nutrition helper inside Plate Log, a Vanderbilt student's personal macro tracker. Today is ${state.date}, ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.
 Their current daily targets: ${tg('k')} kcal, ${tg('p')} g protein, ${tg('c')} g carbs, ${tg('f')} g fat.
 Today so far: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein, ${Math.round(t.c)} g carbs, ${Math.round(t.f)} g fat. Entries: ${entries().map(e=>`${entryName(e)} (${e.items.map(i=>i.n).join(', ')}) ${Math.round(e.tot.k)} kcal`).join('; ')||'none'}.
 This week:
-${days}${menu}
+${days}
+Their food preferences: ${P||'not known yet'}
+${menus}
 
 How to answer:
-- Plain text, no markdown, usually under 120 words. Be direct and practical.
-- Recommending daily targets: if you don't know their weight, height, age, sex, activity level and goal (lose, maintain, gain), give a sensible starting range and ask for what's missing. Once you know enough, give specific numbers and say in one line how you got them.
-- Whenever you give specific daily targets, also put them in "goals" so the app can offer a one-tap "set these" button.
-- Food questions: use the menu above when there is one. You can't log food from this chat; for that they use the camera or the box on the main screen.
+- Format with light markdown: a short "### " heading when it helps, **bold** for dish names, places and key numbers, and "- " bullets for options. No tables. Usually under 140 words. Be direct and practical.
+- Recommendations ("what's good today", "where should I eat"): pick 2 to 4 options that fit their preferences and what's left of today's targets. For each: **dish** at **place**, then calories and protein, and a few words on why. Prefer places that are open now or open soonest, and say so. Pair items from the same hall into a plate when that makes sense.
+- If their food preferences aren't known and they ask for recommendations, first ask in one or two quick questions what they like, dislike, and any diet (vegetarian, halal, allergies). You may give one or two safe picks meanwhile.
+- Whenever they tell you what they like, dislike, or how they eat, return "prefs": the FULL updated summary (one or two short sentences merging old and new), so the app remembers it. Otherwise "prefs" is null.
+- Daily targets: if you don't know their weight, height, age, sex, activity level and goal (lose, maintain, gain), give a starting range and ask for what's missing. When you give specific numbers, also put them in "goals".
+- You can't log food from this chat; for that they use the camera or the box on the main screen.
 - You're not a doctor. For medical conditions, pregnancy or signs of disordered eating, gently suggest Vanderbilt's campus dietitian or the Student Health Center.
 
-Reply with only JSON: {"reply":"your answer","goals":null}
-or with targets: {"reply":"your answer","goals":{"k":2300,"p":160,"c":260,"f":75}} (k = calories, others in grams).`;
+Reply with only JSON: {"reply":"your markdown answer","goals":null,"prefs":null}
+goals, when given: {"k":2300,"p":160,"c":260,"f":75} (k = calories, others in grams). prefs, when given: "Loves spicy food and chicken; no pork; dislikes mushrooms."`;
 }
 async function chatSend(text){
   text=String(text||'').trim();if(!text||chatBusy)return;
@@ -698,11 +753,17 @@ async function chatSend(text){
   const wait=bub('','ai');wait.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';
   chatBusy=true;$('#chatSend').disabled=true;
   try{
-    const hallId=detectHall(text);const items=hallId?await menuFor(hallId):[];
-    const turns=[{role:'user',content:coachPrompt(hallId,items)},...chatTurns.slice(-12),{role:'user',content:text}];
+    const menus=await chatMenus(text);
+    const turns=[{role:'user',content:coachPrompt(menus)},...chatTurns.slice(-12),{role:'user',content:text}];
     const res=await sample.json(turns,{cache:false});
     const reply=String((res&&res.reply)||"Sorry, I didn't catch that. Try asking again.");
-    wait.textContent=reply;
+    wait.innerHTML=md(reply);
+    if(res&&typeof res.prefs==='string'&&res.prefs.trim()){
+      const tag=document.createElement('div');tag.className='saved';
+      try{await saveSettingsPatch({prefs:res.prefs.trim().slice(0,600)});tag.textContent='✓ Saved your food preferences'}
+      catch(e){tag.textContent=e&&e.code==='no_store'?'Open this page in Claude to remember preferences':"Couldn't save your preferences"}
+      wait.append(tag);
+    }
     const g=res&&res.goals;
     if(g&&typeof g==='object'){
       const clean={};for(const k of ['k','p','c','f'])if(+g[k]>0)clean[k]=Math.round(+g[k]);
@@ -729,7 +790,7 @@ $('#starters').addEventListener('click',e=>{const b=e.target.closest('.starter')
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend($('#chatIn').value)});
 $('#goalForm').addEventListener('submit',async e=>{
   e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=r1($('#g'+k).value);if(v>0)g[k]=v}
-  try{await saveGoals(g);closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
+  try{await saveSettingsPatch({goals:g,prefs:$('#gprefs').value.trim().slice(0,600)});closeSettings()}catch(err){closeSettings();sys(err&&err.code==='no_store'?'Targets save when this page is open in Claude.':"Couldn't save targets. Try again.")}
 });
 
 /* ---------- storage ---------- */
