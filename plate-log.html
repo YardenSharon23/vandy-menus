@@ -751,10 +751,14 @@ b,strong{font-weight:700}
 .rvtot .dp{background:var(--blue-2)}.rvtot .dc{background:var(--carb)}.rvtot .df{background:var(--fat)}
 /* every number and every label shares one centre line: columns align to the bottom so the four labels sit on one
    baseline under their numbers, and the colour dot hangs outside the word so the word itself is centred */
-.rvtot{align-items:end}
-.rvtot label{justify-content:flex-end}
-.rvtot span{position:relative;justify-content:center;line-height:1.2}
-.rvtot span i{position:absolute;right:calc(100% + 4px);top:50%;margin-top:-3px}
+/* four equal columns, so the dividers are evenly spaced and every number sits over the middle of its column;
+   the dot + word is centred as one unit; numbers and labels each share one baseline across the row */
+.rvtot{grid-template-columns:repeat(4,minmax(0,1fr));align-items:end}
+.rvtot label{min-width:0;justify-content:flex-end;padding:8px 0 7px}
+.rvtot input{-webkit-appearance:none;appearance:none;margin:0;min-width:0;text-indent:0;display:block}
+.rvtot .kc input{font-size:1.6rem!important}
+.rvtot span{justify-content:center;gap:5px;line-height:1.2;white-space:nowrap}
+.rvtot span i{flex:none}
 .rvtot label+label{position:relative}
 .rvtot label+label::before{content:"";position:absolute;left:-2px;top:14px;bottom:14px;width:1px;background:var(--line)}
 /* foods: name + amount on the left, the portion stepper is the big control on the right */
