@@ -180,6 +180,9 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .log{display:flex;flex-direction:column;gap:10px}
 .log[hidden]{display:none}
 .log .lab{padding:0 4px}
+/* a soft divider (fading at both ends) and a bit more room between today's numbers and the entries list */
+.log{position:relative;padding-top:20px;margin-top:6px}
+.log::before{content:"";position:absolute;top:0;left:4px;right:4px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1) 18%,rgba(255,255,255,.1) 82%,transparent)}
 .entries{display:flex;flex-direction:column;gap:7px}
 .entry{display:flex;align-items:center;gap:12px;width:100%;border:1px solid var(--line);background:var(--panel);text-align:left;padding:12px 14px;border-radius:16px}
 .entry:hover{background:rgba(255,255,255,.045)}
