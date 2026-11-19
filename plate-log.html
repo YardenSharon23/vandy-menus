@@ -684,6 +684,11 @@ b,strong{font-weight:700}
 
 /* Eat places: each place is its own card again, open ones with their green glow (the grouped-panel version was undone) */
 .plist{display:flex;flex-direction:column;gap:8px}
+/* the dish preview under each place: name first (ellipsis if long), then its calories · protein a shade fainter,
+   which never get cut off */
+.phead .t small{display:flex;min-width:0}
+.phead .t small .bn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phead .t small .bm{flex:none;margin-left:.3em;white-space:nowrap;color:var(--faint);font-variant-numeric:tabular-nums}
 /* opening a place: its menu fades and drops in a few pixels (opacity + transform only, so it costs nothing) */
 @keyframes pexpIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .pexp.opening{animation:pexpIn .32s var(--spring) both}
@@ -1721,7 +1726,7 @@ function placeRow(u,st){
   const isHall=MENU_UNITS.includes(u.id);const ctx=eatContext();
   let best='';
   if(isHall&&eat.loaded){const m=sortForYou(hallItems(u.id,eat.meal).filter(i=>i.kind==='main'),st)[0];
-    if(m)best=m.n;}   // just the dish; its numbers are one tap away (and in Top picks)
+    if(m)best={n:m.n,mac:finderOn()?'':`${fmt(m.k)} cal · ${Math.round(m.p)} g`};}   // the dish, plus its numbers in a quieter tone
   const cls=st.open?(st.soon?' soon':' open'):'';const isOpen=eat.open===u.id;
   let body='';
   if(isOpen){
@@ -1751,7 +1756,7 @@ function placeRow(u,st){
       return `<span${td}>${DAYS[i].slice(0,3)}</span><span${td}>${rs.length?rs.map(r=>tshort(r.o)+'–'+tshort(r.c)).join(', '):'Closed'}</span>`}).join('')}</div>`:'');
   }
   return `<div class="place${cls}"><button type="button" class="phead" data-place="${u.id}" aria-expanded="${isOpen}">
-    <span class="dot"></span><span class="t"><b>${esc(shortName(u.name))}</b>${best?`<small>${esc(best)}</small>`:''}</span><span class="st">${esc(st.label)}</span></button>${body?`<div class="pexp${eat.justOpened===u.id?' opening':''}">${body}</div>`:''}</div>`;
+    <span class="dot"></span><span class="t"><b>${esc(shortName(u.name))}</b>${best?`<small><span class="bn">${esc(best.n)}</span>${best.mac?`<span class="bm">· ${best.mac}</span>`:''}</small>`:''}</span><span class="st">${esc(st.label)}</span></button>${body?`<div class="pexp${eat.justOpened===u.id?' opening':''}">${body}</div>`:''}</div>`;
 }
 const CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
 function renderPlaces(){
