@@ -187,6 +187,13 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .log{display:flex;flex-direction:column;gap:10px}
 .log[hidden]{display:none}
 .log .lab{padding:0 4px}
+/* Camera button: a crisp glossy-blue disc. Linear light-to-deep gradient, a bright top edge and a soft inner
+   shadow so it reads as a solid, pressable object, one tight coloured drop shadow, no halo ring or breathing glow. */
+.cam{width:72px;height:72px;background:linear-gradient(155deg,#7aa6ff 0%,#4683ff 45%,#2b5bd9 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 8px rgba(12,35,110,.35),0 10px 24px rgba(48,104,245,.42),0 2px 6px rgba(0,0,0,.35)}
+.cam::after{display:none}
+.cam svg{width:30px;height:30px;filter:drop-shadow(0 1px 1.5px rgba(10,30,90,.35))}
+.cam:active{transform:scale(.92);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -2px 6px rgba(12,35,110,.4),0 5px 14px rgba(48,104,245,.38),0 1px 3px rgba(0,0,0,.35)}
 /* Protein line: "PROTEIN  58 / 130 g" reads as one unit on the left; the pace word sits on the right, in its colour */
 .pro .head{align-items:baseline}
 .pro .head .plab{display:flex;align-items:baseline;gap:10px;min-width:0}
@@ -873,6 +880,19 @@ b,strong{font-weight:700}
 .rsug .kc b{font-size:1.4rem}
 .rsug>div+div{position:relative}
 .rsug>div+div::before{content:"";position:absolute;left:-2px;top:14px;bottom:14px;width:1px;background:var(--line)}
+/* age / height / weight: three equal tiles, label on top, value + unit on one line, left aligned */
+.pgrid{background:transparent;gap:8px;border-radius:0}
+.pgrid label.ptile{align-items:flex-start;gap:3px;padding:9px 12px 10px;background:rgba(255,255,255,.045);border-radius:12px;cursor:text}
+.pgrid label.ptile:focus-within{background:rgba(61,123,255,.1);box-shadow:inset 0 0 0 1px rgba(95,160,255,.38)}
+.ptile .pl{font-size:.72rem;color:var(--muted);font-weight:500}
+.ptile .pv{justify-content:flex-start;align-items:baseline;gap:1px}
+.ptile input{text-align:left;font-size:1.15rem!important}
+#page{width:2.3ch}#pft{width:1.2ch}#pin{width:2.3ch}.pgrid #plb{width:3.4ch}
+.ptile em{font-style:normal;font-size:.72rem;color:var(--muted);margin:0 6px 0 2px}
+.ptile em:last-child{margin-right:0}
+/* the chosen goal glows gold (the app's amber family, same as the beer and carbs accents) */
+#gdir button[aria-pressed="true"]{background:linear-gradient(180deg,rgba(246,200,119,.2),rgba(230,170,70,.12));color:#f8d590;
+  box-shadow:inset 0 0 0 1px rgba(246,200,119,.38),inset 0 1px 0 rgba(255,240,200,.15),0 0 16px rgba(240,180,80,.22)}
 #pUse{width:100%;flex:none;background:rgba(61,123,255,.16);color:var(--blue-2);box-shadow:none}   /* secondary: Save stays the one primary */
 #pUse:disabled{background:rgba(61,220,132,.14);color:var(--good)}
 .stpane{display:flex;flex-direction:column;gap:14px}
@@ -1147,7 +1167,8 @@ b,strong{font-weight:700}
         <button type="button" class="stop" id="stop" hidden>Stop</button>
       </div>
       <button type="button" class="cam" id="camBtn" aria-label="Take a photo or scan a code">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <!-- rounded camera body with a soft top bump, a clean lens ring and a small flash dot -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.2A2.2 2.2 0 0 1 5.7 7h1.8l1.3-1.9A1.5 1.5 0 0 1 10 4.5h4a1.5 1.5 0 0 1 1.2.6L16.5 7h1.8a2.2 2.2 0 0 1 2.2 2.2v8.1a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z"/><circle cx="12" cy="13.2" r="3.4"/><circle cx="17.3" cy="10" r=".5" fill="currentColor" stroke="none"/></svg>
       </button>
     </div>
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
@@ -1258,17 +1279,10 @@ b,strong{font-weight:700}
             <button type="button" data-sex="f">Female</button>
           </div>
           <div class="pgrid">
-          <label><span class="pv"><input type="number" inputmode="numeric" min="13" max="99" id="page" placeholder="18" aria-label="Age"></span><span class="pl">age</span></label>
-          <label><span class="pv"><input type="number" inputmode="numeric" min="3" max="7" id="pft" placeholder="5" aria-label="Height, feet"><em>ft</em><input type="number" inputmode="numeric" min="0" max="11" id="pin" placeholder="7" aria-label="Height, inches"><em>in</em></span><span class="pl">height</span></label>
-          <label><span class="pv"><input type="number" inputmode="decimal" min="70" max="500" id="plb" placeholder="160" aria-label="Weight in pounds"><em>lb</em></span><span class="pl">weight</span></label>
-          </div>
-        </div>
-        <div class="pgrp">
-          <span class="sect">Goal</span>
-          <div class="seg5 three" id="gdir" role="group" aria-label="Your goal">
-            <button type="button" data-dir="lose">Lose weight</button>
-            <button type="button" data-dir="maintain">Maintain</button>
-            <button type="button" data-dir="gain">Gain weight</button>
+          <!-- three equal tiles: small label on top, the value with its unit underneath -->
+          <label class="ptile"><span class="pl">Age</span><span class="pv"><input type="number" inputmode="numeric" min="13" max="99" id="page" placeholder="18" aria-label="Age"><em>yrs</em></span></label>
+          <label class="ptile"><span class="pl">Height</span><span class="pv"><input type="number" inputmode="numeric" min="3" max="7" id="pft" placeholder="5" aria-label="Height, feet"><em>ft</em><input type="number" inputmode="numeric" min="0" max="11" id="pin" placeholder="7" aria-label="Height, inches"><em>in</em></span></label>
+          <label class="ptile"><span class="pl">Weight</span><span class="pv"><input type="number" inputmode="decimal" min="70" max="500" id="plb" placeholder="160" aria-label="Weight in pounds"><em>lb</em></span></label>
           </div>
         </div>
         <div class="pgrp">
@@ -1280,6 +1294,14 @@ b,strong{font-weight:700}
             <button type="button" data-act="v">Athlete</button>
           </div>
           <span class="pdesc" id="pactDesc"></span>
+        </div>
+        <div class="pgrp">
+          <span class="sect">Goal</span>
+          <div class="seg5 three" id="gdir" role="group" aria-label="Your goal">
+            <button type="button" data-dir="lose">Lose weight</button>
+            <button type="button" data-dir="maintain">Maintain</button>
+            <button type="button" data-dir="gain">Gain weight</button>
+          </div>
         </div>
         <!-- appears once everything above is filled in; same four-number layout as your targets -->
         <div class="pgrp" id="pRec" hidden></div>
