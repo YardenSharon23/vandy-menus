@@ -919,6 +919,14 @@ b,strong{font-weight:700}
 #pRec.reveal .rsug::after{animation:recSweep 1s ease .3s both}
 @keyframes recBtn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #pRec.reveal #pUse{animation:recBtn .45s var(--spring) .35s both}
+/* a calmer finish: the rail stops at the last step, a little air before the result, and "Use these" is a small pill
+   on the label line instead of a third big button above Cancel / Save */
+.chk.last::before{display:none}
+#pRec{margin-top:6px}
+.rhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rhead .sect{margin:0}
+#pRec #pUse{width:auto;flex:none;border:0;border-radius:99px;padding:6px 13px;font-size:.78rem;font-weight:650;background:rgba(61,123,255,.16);color:var(--blue-2);box-shadow:none}
+#pRec #pUse:disabled{background:rgba(61,220,132,.14);color:var(--good)}
 /* the chosen goal glows gold (the app's amber family, same as the beer and carbs accents) */
 #gdir button[aria-pressed="true"]{background:linear-gradient(180deg,rgba(246,200,119,.2),rgba(230,170,70,.12));color:#f8d590;
   box-shadow:inset 0 0 0 1px rgba(246,200,119,.38),inset 0 1px 0 rgba(255,240,200,.15),0 0 16px rgba(240,180,80,.22)}
@@ -1704,22 +1712,22 @@ function renderRec(){
   const cur=done.indexOf(false);
   if(!profDraft.goalSet)for(const b of document.querySelectorAll('#gdir [data-dir]'))b.setAttribute('aria-pressed','false');   // nothing pre-picked
   steps.forEach((s,i)=>{
-    if(!s.classList.contains('chk')){s.classList.add('chk');s.querySelector('.sect').insertAdjacentHTML('afterbegin',`<i class="sn" aria-hidden="true"><b>${i+1}</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i>`)}
+    if(!s.classList.contains('chk')){s.classList.add('chk');if(i===steps.length-1)s.classList.add('last');s.querySelector('.sect').insertAdjacentHTML('afterbegin',`<i class="sn" aria-hidden="true"><b>${i+1}</b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i>`)}
     s.classList.toggle('done',done[i]);s.classList.toggle('current',i===cur);s.classList.toggle('todo',cur>=0&&i>cur);
   });
   // The suggestion's space is always reserved (so nothing jumps); it reveals with a spring, numbers counting up and a
   // light sweep the moment the last step is done, and quietly updates after that.
   const box=$('#pRec');
-  if(!box.children.length)box.innerHTML=`<span class="sect">Suggested daily targets</span>
-    <div class="rvtot rsug"><div class="kc"><b id="rk">0</b><span>calories</span></div><div><b id="rp">0</b><span><i class="dp"></i>protein</span></div><div><b id="rc">0</b><span><i class="dc"></i>carbs</span></div><div><b id="rf">0</b><span><i class="df"></i>fat</span></div></div>
-    <button type="button" class="btn primary" id="pUse">Use these targets</button>`;
+  // the "Use" action sits on the label line (one small pill), so the end of the list isn't a stack of big buttons
+  if(!box.children.length)box.innerHTML=`<div class="rhead"><span class="sect">Suggested daily targets</span><button type="button" id="pUse">Use these</button></div>
+    <div class="rvtot rsug"><div class="kc"><b id="rk">0</b><span>calories</span></div><div><b id="rp">0</b><span><i class="dp"></i>protein</span></div><div><b id="rc">0</b><span><i class="dc"></i>carbs</span></div><div><b id="rf">0</b><span><i class="df"></i>fat</span></div></div>`;
   box.hidden=false;
   const was=box.classList.contains('shown'),ready=!!r&&done.every(Boolean);   // only after all three steps are checked
   box.classList.toggle('shown',ready);box.setAttribute('aria-hidden',String(!ready));
   if(ready){
     if(!was){box.classList.remove('reveal');void box.offsetWidth;box.classList.add('reveal');for(const id of ['rk','rp','rc','rf'])$('#'+id).dataset.v=0}
     countTo($('#rk'),r.k);countTo($('#rp'),r.p);countTo($('#rc'),r.c);countTo($('#rf'),r.f);
-    const u=$('#pUse');if(u.dataset.k!==String(r.k+'/'+r.p)){u.dataset.k=r.k+'/'+r.p;u.disabled=false;u.textContent='Use these targets'}
+    const u=$('#pUse');if(u.dataset.k!==String(r.k+'/'+r.p)){u.dataset.k=r.k+'/'+r.p;u.disabled=false;u.textContent='Use these'}
   }
 }
 // Settings tabs: Targets / Personal info
@@ -1737,7 +1745,7 @@ $('#stPersonal').addEventListener('click',e=>{
   if(a){profDraft.act=a.dataset.act;renderRec();return}
   if(e.target.closest('#pUse')){const r=recommend(readProf(),dirDraft);if(!r)return;
     $('#gk').value=r.k;$('#gp').value=r.p;$('#gc').value=r.c;$('#gf').value=r.f;
-    const b=$('#pUse');b.disabled=true;b.textContent='Targets updated ✓';setTimeout(()=>setTab('t'),550)}   // show the filled-in targets
+    const b=$('#pUse');b.disabled=true;b.textContent='Applied ✓';setTimeout(()=>setTab('t'),550)}   // show the filled-in targets
 });
 for(const id of ['page','pft','pin','plb'])$('#'+id).addEventListener('input',renderRec);
 // feet is one digit, so typing it jumps straight to inches
