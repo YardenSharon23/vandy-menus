@@ -1164,6 +1164,13 @@ h2.stitle{display:block;padding:0 2px}
 .kinds em{display:block;margin:2px 0 0;font-size:.7rem;font-weight:500;color:var(--faint)}
 .kinds button[aria-pressed="true"] em{color:rgba(246,200,119,.8)}
 
+/* Today's bottom bar: a taller, smoother dark fade rises behind it, so entries scrolling underneath melt away instead
+   of colliding with the text box and camera. The fade itself lets taps through to whatever is under it. */
+.dock{padding-top:56px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(15,18,27,0) 0%,rgba(15,18,27,.55) 22%,rgba(15,18,27,.88) 42%,var(--bg) 62%)}
+.dock .composer{pointer-events:auto}
+html:not(.on-today) .dock .composer{pointer-events:none}
+
 /* consistent vertical rhythm between blocks on every page */
 .pagein{gap:22px}
 .page .app{gap:22px}
