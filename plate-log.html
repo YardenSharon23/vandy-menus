@@ -1421,7 +1421,39 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .pgprohead b small{font-size:.8rem;color:var(--muted);font-weight:600}
 .pgprohead span{font-size:.74rem;color:var(--muted);text-align:right}
 .pgpro .track{margin-top:8px}
-#pgHero.mswap,#pgStats.mswap,#pgChart.mswap,#pgCal.mswap,#pgPro.mswap{animation:mswap .38s var(--spring) both}
+
+/* Progress, polished: hero label + streak chip; bars are solid, rounded columns on a quiet baseline */
+.pghead{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:26px}
+.pghead .lab{font-size:.8rem;font-weight:650;color:var(--muted)}
+.pgstreak{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:99px;background:rgba(255,160,70,.11);box-shadow:inset 0 0 0 1px rgba(255,160,70,.2);color:#ffc28a;font-size:.74rem;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pgstreak svg{width:14px;height:14px;color:#ffb35c}
+.pgchart{position:relative}
+.pgbars{gap:8px;padding-right:38px;margin-top:12px;height:136px}
+.pgbars::after{content:"";position:absolute;left:0;right:38px;bottom:0;height:1px;background:rgba(255,255,255,.1)}
+.pgchart.w .pgbars{margin-top:26px}
+.pgchart.m .pgbars{gap:3px}.pgchart.q .pgbars{gap:6px}
+.pgb,.pgb.fut{background:none;border-radius:0;justify-content:center}
+.pgb i{width:100%;max-width:30px;border-radius:7px 7px 2px 2px;background:rgba(255,255,255,.1);box-shadow:none}
+.pgchart.m .pgb i{border-radius:3px 3px 1px 1px}
+.pgchart.q .pgb i{max-width:22px;border-radius:5px 5px 2px 2px}
+.pgb.hit i{background:linear-gradient(180deg,#6aa8ff,#3d7bff 85%);box-shadow:inset 0 1px 0 rgba(255,255,255,.28);filter:none}
+.pgb.miss i{background:linear-gradient(180deg,#f2c46b,#c8913a 85%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);opacity:.9}
+.pgb.part i{background:repeating-linear-gradient(135deg,rgba(255,255,255,.13) 0 3px,rgba(255,255,255,.05) 3px 6px)}
+.pgb.now i{background:rgba(95,160,255,.28);box-shadow:inset 0 0 0 1px rgba(95,160,255,.45)}
+.pgb.off::after,.pgb.fut::after{content:"";position:absolute;bottom:-2px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:rgba(255,255,255,.14)}
+.pgb.fut::after{background:rgba(255,255,255,.07)}
+.pgb em{top:-17px;font-size:.62rem;font-weight:650;color:var(--faint)}
+.pgb.hit em,.pgb.miss em{color:var(--muted)}
+.pgline{right:38px;border-top:1px solid rgba(255,255,255,.26);z-index:1}
+.pgline b{position:absolute;right:-38px;top:-8px;width:34px;text-align:right;font-size:.62rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1}
+.pgx{gap:8px;padding-right:38px;margin-top:8px}
+.pgchart.m .pgx{gap:3px}.pgchart.q .pgx{gap:6px}
+.pgkey i{border-top:1px solid rgba(255,255,255,.4)}
+/* protein uses the same chart, in green */
+#pgPro .pgb.hit i{background:linear-gradient(180deg,#7df0b5,#2fbf73 85%)}
+#pgPro .pgb.miss i{background:rgba(61,220,132,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);opacity:1}
+#pgPro .pgchart{margin-top:4px}
+#pgHero.mswap,#pgChart.mswap,#pgCal.mswap,#pgPro.mswap{animation:mswap .38s var(--spring) both}
 
 /* consistent vertical rhythm between blocks on every page */
 .pagein{gap:26px}
@@ -1570,7 +1602,6 @@ header.appbar .iconbtn svg{width:18px;height:18px}
       <button type="button" role="tab" data-r="q" aria-pressed="false">3 months</button>
     </div>
     <div class="pghero" id="pgHero"></div>
-    <div class="pgstats" id="pgStats"></div>
     <div>
       <div class="wkhead"><h2 class="stitle">Calories</h2><span class="pgkey" id="pgKey"></span></div>
       <div class="pgchart" id="pgChart"></div>
@@ -2237,72 +2268,76 @@ const FLAME='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><pa
 function renderWeek(){
   const G=goals(),dir=goalDir(),today=dstr();
   const rows=progressDays(pgRange).map(d=>dayRow(d,today));
-  const past=rows.filter(r=>!r.future&&!r.today),logged=past.filter(r=>r.n>0);
+  // A day only counts once it was really tracked: something logged AND at least ~40% of the target (min 800 cal).
+  // A day with just a coffee logged would otherwise look like a huge deficit.
+  const tracked=r=>r.n>0&&r.k>=Math.max(800,G.k*.4);
+  const past=rows.filter(r=>!r.future&&!r.today),logged=past.filter(tracked);
   // on target: lose = at or under (5% leeway) · gain = at or over (5% leeway) · maintain = within 10%
-  const calHit=r=>r.n>0&&(dir==='lose'?r.k<=G.k*1.05:dir==='gain'?r.k>=G.k*0.95:Math.abs(r.k-G.k)<=G.k*0.1);
-  const proHit=r=>r.n>0&&r.p>=G.p;
+  const onT=k=>dir==='lose'?k<=G.k*1.05:dir==='gain'?k>=G.k*0.95:Math.abs(k-G.k)<=G.k*0.1;
+  const calHit=r=>tracked(r)&&onT(r.k);
+  const proHit=r=>tracked(r)&&r.p>=G.p;
   // the real deficit is measured against maintenance (from Personal info) when we know it, otherwise against the target
   const P=(state.settings&&state.settings.profile)||{};
   const rec=P.sex&&P.age&&P.ft&&P.lb&&P.act?recommend(P,dir):null,base=rec?rec.tdee:G.k;
   const net=logged.reduce((s,r)=>s+(base-r.k),0);   // + = ate under the baseline
-  // streak: finished days in a row on target, counting back from yesterday (looks past the chosen range)
+  // streak: finished, tracked days in a row on target, counting back from yesterday (looks past the chosen range)
   let streak=0;for(let i=1;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);if(calHit(dayRow(d,today)))streak++;else break}
   const f=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
   const goalWord={lose:'Losing weight',gain:'Gaining weight',maintain:'Maintaining'}[dir];
   $('#pgSub').textContent=(pgRange==='w'?`${f(rows[0].d)} – ${f(rows[6].d)}`:pgRange==='m'?rows[0].d.toLocaleDateString(undefined,{month:'long'}):'Last 13 weeks')+' · '+goalWord;
   for(const b of document.querySelectorAll('#pgRange [data-r]'))b.setAttribute('aria-pressed',String(b.dataset.r===pgRange));
 
-  // hero: the number that matters for your goal
+  // hero: the number that matters for your goal, with the streak in its corner
   const vs=rec?`vs your maintenance of ${fmt(base)}`:`vs your ${fmt(base)} target`;
+  const streakChip=streak?`<span class="pgstreak">${FLAME}${streak}-day streak</span>`:'';
   let hero;
-  if(!logged.length)hero=`<div class="pgempty"><b>Nothing to show yet</b><span>Finish a logged day and your ${pgRange==='w'?'week':pgRange==='m'?'month':'trend'} starts here.</span></div>`;
+  if(!logged.length)hero=`<div class="pghead"><span class="lab">${dir==='maintain'?'Average day':dir==='gain'?'Calorie surplus':'Calorie deficit'}</span>${streakChip}</div><div class="pgempty"><b>Nothing to show yet</b><span>Track a full day and your ${pgRange==='w'?'week':pgRange==='m'?'month':'trend'} starts here.</span></div>`;
   else if(dir==='maintain'){const avg=logged.reduce((s,r)=>s+r.k,0)/logged.length,d=avg-G.k;
-    hero=`<span class="lab">Average day</span><div class="pgbig"><b>${fmt(avg)}</b><span>cal</span></div><div class="pgfoot"><span class="pgpill ${Math.abs(d)<=G.k*.1?'good':'warn'}">${Math.abs(d)<10?'Right on target':fmt(Math.abs(d))+' cal '+(d>0?'over':'under')+' target'}</span><span>${logged.length} logged ${logged.length===1?'day':'days'}</span></div>`}
+    hero=`<div class="pghead"><span class="lab">Average day</span>${streakChip}</div><div class="pgbig"><b>${fmt(avg)}</b><span>cal</span></div><div class="pgfoot"><span class="pgpill ${Math.abs(d)<=G.k*.1?'good':'warn'}">${Math.abs(d)<10?'Right on target':fmt(Math.abs(d))+' cal '+(d>0?'over':'under')+' target'}</span><span>${logged.length} tracked ${logged.length===1?'day':'days'}</span></div>`}
   else{const want=dir==='lose'?net:-net,good=want>0,lb=Math.abs(net)/3500;
-    hero=`<span class="lab">${dir==='lose'?(net>=0?'Calorie deficit':'Over your maintenance'):(net<=0?'Calorie surplus':'Under your maintenance')}</span>
+    hero=`<div class="pghead"><span class="lab">${dir==='lose'?(net>=0?'Calorie deficit':'Over your maintenance'):(net<=0?'Calorie surplus':'Under your maintenance')}</span>${streakChip}</div>
       <div class="pgbig ${good?'good':'warn'}"><b>${fmt(Math.abs(net))}</b><span>cal</span></div>
-      <div class="pgfoot"><span class="pgpill ${good?'good':'warn'}">≈ ${lb<0.1?'<0.1':lb.toFixed(1)} lb ${net>=0?'lost':'gained'}</span><span>${vs}</span></div>`}
+      <div class="pgfoot"><span class="pgpill ${good?'good':'warn'}">≈ ${lb<0.1?'<0.1':lb.toFixed(1)} lb ${net>=0?'lost':'gained'}</span><span>${vs} · ${logged.length} tracked ${logged.length===1?'day':'days'}</span></div>`}
   $('#pgHero').innerHTML=hero;$('#pgHero').classList.toggle('good',/class="pgbig good"/.test(hero));
 
-  // consistency at a glance
-  $('#pgStats').innerHTML=`<div><b>${logged.length}<small>/${past.length}</small></b><span>days logged</span></div>
-    <div><b>${logged.filter(calHit).length}</b><span>on target</span></div>
-    <div class="${streak?'hot':''}"><b>${streak?FLAME:''}${streak}</b><span>day streak</span></div>`;
-
-  // calories chart: days (week, month) or weekly averages (3 months), dashed line at your target
+  // series: days (week, month) or weekly averages of tracked days (3 months)
   let series;
-  if(pgRange==='q'){series=[];for(let w=0;w<13;w++){const wk=rows.slice(w*7,w*7+7),lg=wk.filter(r=>r.n>0&&!r.future&&!r.today);
-    const k=lg.length?lg.reduce((s,r)=>s+r.k,0)/lg.length:0;series.push({k,n:lg.length,d:wk[0].d,future:wk[0].ds>today,today:wk.some(r=>r.today)&&!lg.length})}}
-  else series=rows;
-  const max=Math.max(G.k*1.25,...series.map(x=>x.k||0),1);
-  const hitS=x=>x.n>0&&(dir==='lose'?x.k<=G.k*1.05:dir==='gain'?x.k>=G.k*0.95:Math.abs(x.k-G.k)<=G.k*0.1);
+  if(pgRange==='q'){series=[];for(let w=0;w<13;w++){const wk=rows.slice(w*7,w*7+7),lg=wk.filter(r=>tracked(r)&&!r.future&&!r.today);
+    const avg=k=>lg.length?lg.reduce((s,r)=>s+r[k],0)/lg.length:0;
+    series.push({k:avg('k'),p:avg('p'),n:lg.length,t:lg.length>0,d:wk[0].d,future:wk[0].ds>today,today:false})}}
+  else series=rows.map(r=>({...r,t:tracked(r)}));
   const lab=(x,i)=>pgRange==='w'?x.d.toLocaleDateString(undefined,{weekday:'narrow'}):pgRange==='m'?((i===0||(i+1)%5===0)?String(i+1):''):(i%3===0?`${x.d.getMonth()+1}/${x.d.getDate()}`:'');
-  $('#pgChart').className='pgchart '+pgRange+($('#pgChart').classList.contains('shown')?' shown':'');
-  $('#pgChart').innerHTML=`<div class="pgbars">${series.map(x=>{
-      const cls=(x.future?' fut':'')+(x.today?' now':'')+(x.n>0&&!x.today?(hitS(x)?' hit':' miss'):'');
-      return `<div class="pgb${cls}" title="${f(x.d)}${x.k?': '+fmt(x.k)+' cal':''}">${pgRange==='w'&&x.k?`<em>${fmt(x.k)}</em>`:''}<i style="height:${x.k?Math.max(4,x.k/max*100):0}%"></i></div>`}).join('')}
-      <span class="pgline" style="bottom:${(G.k/max*100).toFixed(1)}%"></span></div>
-    <div class="pgx">${series.map((x,i)=>`<span class="${x.today?'now':''}">${lab(x,i)}</span>`).join('')}</div>`;
-  $('#pgKey').innerHTML=`<i></i>target ${fmt(G.k)}`;
+  // one chart builder for both: clean rounded bars on a quiet baseline, a thin target line with its value on the right
+  const chart=(el,key,target,hit,unit)=>{
+    const max=Math.max(target*1.25,...series.map(x=>x[key]||0),1);
+    el.className='pgchart '+pgRange+(el.classList.contains('shown')||$('#pgChart').classList.contains('shown')?' shown':'');
+    el.innerHTML=`<div class="pgbars">${series.map(x=>{
+        const v=x[key]||0,state=x.future?' fut':x.today?' now':!x.t?(v?' part':' off'):hit(x)?' hit':' miss';
+        return `<div class="pgb${state}" title="${f(x.d)}${v?': '+fmt(v)+unit:''}">${pgRange==='w'&&v?`<em>${fmt(v)}</em>`:''}<i style="height:${v?Math.max(3,v/max*100):0}%"></i></div>`}).join('')}
+        <span class="pgline" style="bottom:${(target/max*100).toFixed(1)}%"><b>${fmt(target)}</b></span></div>
+      <div class="pgx">${series.map((x,i)=>`<span class="${x.today?'now':''}">${lab(x,i)}</span>`).join('')}</div>`;
+  };
+  chart($('#pgChart'),'k',G.k,x=>onT(x.k),' cal');
+  $('#pgKey').innerHTML=`<i></i>target`;
 
   // consistency map: a calendar for the month, a 13-week grid for 3 months (the week view already shows each day)
   $('#pgCalWrap').hidden=pgRange==='w';
   if(pgRange!=='w'){
-    const cell=r=>{const c=r.future?'fut':r.today?'now':r.n===0?'off':calHit(r)?'hit':'miss';return `<span class="${c}" title="${f(r.d)}">${pgRange==='m'?r.d.getDate():''}</span>`};
+    const cell=r=>{const c=r.future?'fut':r.today?'now':!tracked(r)?'off':calHit(r)?'hit':'miss';return `<span class="${c}" title="${f(r.d)}">${pgRange==='m'?r.d.getDate():''}</span>`};
     if(pgRange==='m'){const lead=(rows[0].d.getDay()+6)%7;
       $('#pgCal').className='pgcal month';
       $('#pgCal').innerHTML=['M','T','W','T','F','S','S'].map(x=>`<em>${x}</em>`).join('')+'<i></i>'.repeat(lead)+rows.map(cell).join('');}
     else{$('#pgCal').className='pgcal heat';$('#pgCal').innerHTML=rows.map(cell).join('');}
-    $('#pgCal').insertAdjacentHTML('beforeend','');
   }
 
-  // protein: your average on logged days, and how many days you reached the target
-  const avgP=logged.length?logged.reduce((s,r)=>s+r.p,0)/logged.length:0,pPct=G.p?Math.min(100,avgP/G.p*100):0;
-  $('#pgPro').innerHTML=logged.length?`<div class="pgprohead"><b>${fmt(avgP)}<small> / ${fmt(G.p)} g</small></b><span>avg per day · hit ${logged.filter(proHit).length} of ${logged.length} ${logged.length===1?'day':'days'}</span></div>
-    <div class="track"><i style="width:${pPct}%;${pPct>=100?'':''}"></i></div>`:`<div class="pgprohead"><span>Protein shows up once you've logged a full day.</span></div>`;
+  // protein: average on tracked days + the same bar chart, so it reads exactly like calories
+  const avgP=logged.length?logged.reduce((s,r)=>s+r.p,0)/logged.length:0;
+  $('#pgPro').innerHTML=logged.length?`<div class="pgprohead"><b>${fmt(avgP)}<small> g avg</small></b><span>hit ${logged.filter(proHit).length} of ${logged.length} ${logged.length===1?'day':'days'}</span></div><div class="pgprochart"></div>`
+    :`<div class="pgprohead"><span>Protein shows up once you've tracked a full day.</span></div>`;
+  if(logged.length)chart($('#pgPro .pgprochart'),'p',G.p,x=>x.p>=G.p,' g');
 }
 $('#pgRange').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b||b.dataset.r===pgRange)return;pgRange=b.dataset.r;renderWeek();
-  for(const el of [$('#pgHero'),$('#pgStats'),$('#pgChart'),$('#pgCal'),$('#pgPro')]){el.classList.remove('mswap');void el.offsetWidth;el.classList.add('mswap')}});
+  for(const el of [$('#pgHero'),$('#pgChart'),$('#pgCal'),$('#pgPro')]){el.classList.remove('mswap');void el.offsetWidth;el.classList.add('mswap')}});
 
 /* ---------- Open now: hours for every location (doc menus/hours, refreshed daily) ---------- */
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -2887,7 +2922,7 @@ function enterPage(i){
   if(i===enteredPage)return;enteredPage=i;
   if(i!==0)$('#txt').blur();
   if(i===1)enterEat();
-  if(i===2&&!$('#pgChart').classList.contains('shown'))requestAnimationFrame(()=>$('#pgChart').classList.add('shown'));
+  if(i===2&&!$('#pgChart').classList.contains('shown'))requestAnimationFrame(()=>{for(const c of document.querySelectorAll('#pWeek .pgchart'))c.classList.add('shown')});
   if(i===3){const m=$('#msgs');m.scrollTop=m.scrollHeight}
 }
 function setPage(i){markTab(i);enterPage(i)}
