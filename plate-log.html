@@ -687,6 +687,14 @@ b,strong{font-weight:700}
 /* opening a place: its menu fades and drops in a few pixels (opacity + transform only, so it costs nothing) */
 @keyframes pexpIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .pexp.opening{animation:pexpIn .32s var(--spring) both}
+/* Open / Closed sections fold: the height eases between 0 and its content (grid 0fr ↔ 1fr), the list fades and
+   lifts a touch as it goes. Once shut it's also made invisible so hidden rows can't be tapped or tabbed to. */
+.cwrap{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .42s var(--spring),opacity .22s ease,visibility 0s linear .42s;visibility:hidden}
+.cwrap.show{grid-template-rows:1fr;opacity:1;visibility:visible;transition:grid-template-rows .42s var(--spring),opacity .3s ease .05s,visibility 0s}
+.cin{min-height:0;overflow:hidden}
+.cwrap{margin-top:-8px}   /* cancels the list's 8px gap, so a folded section leaves no extra space */
+.cin>.closedlist{padding-top:8px;transform:translateY(-6px);transition:transform .42s var(--spring)}
+.cwrap.show .cin>.closedlist{transform:none}
 
 /* Press feedback on list rows: scrolling a list used to "press in" whatever row your finger started on.
    Rows now only dip once a touch has held still for a moment (or on a quick tap), never mid-scroll. */
@@ -1755,9 +1763,10 @@ function renderPlaces(){
     .map(g=>`<div class="pgroup"><span class="glab">${['Dining halls','Quick bites','Munchie Marts'][g[0].k]}</span><div class="plist">${g.map(x=>placeRow(x.u,x.st)).join('')}</div></div>`).join('');
   const showOpen=eat.showOpen!==false;
   box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">Open <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
-    +(showOpen?`<div class="closedlist">${open.length?groups(open):'<div class="pickempty">Nothing is open right now.</div>'}</div>`:'')
-    +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${eat.showClosed}"><span class="gt">Closed <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}${CHEV}</span></button>`
-    +(eat.showClosed?`<div class="closedlist">${groups(closed)}</div>`:'');
+    // both lists are always built; a wrapper folds them open and shut (height + fade) so the toggle can animate
+    +`<div class="cwrap${showOpen?' show':''}"><div class="cin"><div class="closedlist">${open.length?groups(open):'<div class="pickempty">Nothing is open right now.</div>'}</div></div></div>`
+    +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${!!eat.showClosed}"><span class="gt">Closed <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}${CHEV}</span></button>`
+    +`<div class="cwrap${eat.showClosed?' show':''}"><div class="cin"><div class="closedlist">${groups(closed)}</div></div></div>`;
 }
 function renderEat(){
   if(!eat.meal)eat.meal=defaultMeal();
@@ -1981,8 +1990,11 @@ $('#pEat').addEventListener('click',e=>{
   const sm=e.target.closest('[data-seemeal]');if(sm){eat.meal=sm.dataset.seemeal;renderEat();return}
   const hr=e.target.closest('[data-hours]');if(hr){const id=+hr.dataset.hours;eat.showHours=eat.showHours||{};eat.showHours[id]=!eat.showHours[id];renderPlaces();return}
   const sd=e.target.closest('[data-sides]');if(sd){const id=+sd.dataset.sides;eat.showSides=eat.showSides||{};eat.showSides[id]=!eat.showSides[id];renderPlaces();return}
-  if(e.target.closest('#closedToggle')){eat.showClosed=!eat.showClosed;renderPlaces();return}
-  if(e.target.closest('#openToggle')){eat.showOpen=eat.showOpen===false;renderPlaces();return}
+  // Open / Closed fold in place (no re-render), so the list animates shut or open
+  const fold=(btn,show)=>{btn.setAttribute('aria-expanded',String(show));btn.querySelector('.gs').innerHTML=(show?'Hide':'Show')+CHEV;
+    const w=btn.nextElementSibling;if(w&&w.classList.contains('cwrap'))w.classList.toggle('show',show)};
+  const ct=e.target.closest('#closedToggle');if(ct){eat.showClosed=!eat.showClosed;fold(ct,eat.showClosed);return}
+  const ot=e.target.closest('#openToggle');if(ot){eat.showOpen=eat.showOpen===false;fold(ot,eat.showOpen!==false);return}
   if(e.target.closest('#moreToggle')){eat.showMore=!eat.showMore;renderPlaces()}
 });
 
