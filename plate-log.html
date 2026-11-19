@@ -1265,10 +1265,16 @@ header.appbar .iconbtn:active{background:rgba(255,255,255,.12)}
 #stTargets>.modecard+.modecard{margin-top:-6px}
 /* Daily goal numbers, balanced: four equal figures (same size, same weight), four plain grey labels with no dots,
    so no column looks heavier than the others. Same in the suggestion. */
-.set .rvtot input,.set .rvtot .kc input,.rsug b,.rsug .kc b{font-size:1.22rem!important;font-weight:750;letter-spacing:-.02em}
-.set .rvtot span,.rsug span{font-size:.7rem;color:var(--muted);gap:0}
-.set .rvtot span i,.rsug span i{display:none}
-.set .rvtot label,.rsug>div{padding:10px 0 9px;gap:3px}
+/* (the Add / Edit entry popup uses exactly the same balanced totals) */
+.rvtot input,.rvtot .kc input,.rsug b,.rsug .kc b{font-size:1.22rem!important;font-weight:750;letter-spacing:-.02em}
+.rvtot span,.rsug span{font-size:.7rem;color:var(--muted);gap:0}
+.rvtot span i,.rsug span i{display:none}
+.rvtot label,.rsug>div{padding:10px 0 9px;gap:3px}
+/* serving stepper on each food: compact and light, not a big clunky control */
+.rv .ritem .pstep{padding:2px;background:var(--soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.rv .ritem .pstep button{width:30px;height:30px;font-size:1.05rem;background:transparent}
+.rv .ritem .pstep button:active{background:rgba(255,255,255,.1)}
+.rv .ritem .pstep>span{min-width:38px;font-size:.88rem;font-weight:700}
 /* "Using suggested": small, quiet, and only a hint of green */
 .tok{gap:5px;font-size:.7rem;font-weight:600;color:rgba(61,220,132,.8)}
 .tok .sn{width:14px;height:14px;box-shadow:none;background:rgba(61,220,132,.85)}
