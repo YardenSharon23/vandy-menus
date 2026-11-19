@@ -164,6 +164,13 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .beerbtn svg{width:13px;height:13px}
 @media (max-width:380px){.minor{gap:10px;font-size:.8rem}.minor i{margin-right:5px}}
 .beerbtn.on{background:rgba(242,180,80,.16);border-color:rgba(242,180,80,.5)}
+/* Beer control, refined: a small neutral chip (soft rounded rectangle, no outline) like a native control,
+   with only the mug in amber. Once beer is planned it warms up to amber and shows the calories set aside. */
+.beerbtn{gap:5px;border:0;border-radius:9px;padding:5px 10px 5px 8px;background:rgba(255,255,255,.065);color:var(--ink);
+  font-size:.76rem;font-weight:650;letter-spacing:-.005em;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.beerbtn svg{width:14px;height:14px;color:#f3c46e}
+.beerbtn small{margin-left:2px;font-size:.7rem;font-weight:500;opacity:.7}
+.beerbtn.on{background:rgba(242,180,80,.13);color:#f6c877;box-shadow:inset 0 0 0 1px rgba(242,180,80,.22)}
 .beerbtn:active{transform:scale(.96)}
 #beer.scrim{align-items:center;padding-top:calc(16px + env(safe-area-inset-top, 0px))}
 .beerstep{display:flex;align-items:center;justify-content:center;gap:14px}
@@ -1341,7 +1348,7 @@ function renderToday(){
   fz.setAttribute('opacity',bp>0.03?'1':'0');
   $('#bg').setAttribute('x2',String(Math.min(220,130+110*Math.cos(Math.PI*bp)-6)));
   const B=planBeer();$('#beerBtn').classList.toggle('on',!!B);$('#beerBtn').hidden=!beerOn();
-  $('#beerBtnTxt').textContent=B?`${fmt(bk)} cal`:'Beer';
+  $('#beerBtnTxt').innerHTML=B?`${fmt(bk)}<small>cal</small>`:'Beer';
   $('#beerBtn').setAttribute('aria-label',B?`Room for beer: ${fmtBeer(B.n)} ${B.n===1?'beer':'beers'}, ${fmt(bk)} calories set aside`:'Room for beer');
   const foodK=Math.max(1,G.k-bk);
   renderPace(t,G,G.k?Math.min(1,t.k/foodK):0,pp/100);
