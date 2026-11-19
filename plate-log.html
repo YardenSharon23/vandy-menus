@@ -1261,8 +1261,14 @@ header.appbar .iconbtn svg{width:19px;height:19px}
 header.appbar .iconbtn:active{background:rgba(255,255,255,.12)}
 .set .toggle.modecard{margin:0;border:0;border-radius:var(--r-tile);background:var(--soft);padding:13px 14px}
 .set .toggle.modecard:active{background:rgba(255,255,255,.07)}
-#stTargets>.trackonly{padding-top:4px}
-#stTargets>.beerrow{margin-top:-4px}
+#stTargets>.trackonly{padding-top:6px}
+#stTargets>.modecard+.modecard{margin-top:-6px}
+/* Daily goal numbers, balanced: four equal figures (same size, same weight), four plain grey labels with no dots,
+   so no column looks heavier than the others. Same in the suggestion. */
+.set .rvtot input,.set .rvtot .kc input,.rsug b,.rsug .kc b{font-size:1.22rem!important;font-weight:750;letter-spacing:-.02em}
+.set .rvtot span,.rsug span{font-size:.7rem;color:var(--muted);gap:0}
+.set .rvtot span i,.rsug span i{display:none}
+.set .rvtot label,.rsug>div{padding:10px 0 9px;gap:3px}
 /* "Using suggested": small, quiet, and only a hint of green */
 .tok{gap:5px;font-size:.7rem;font-weight:600;color:rgba(61,220,132,.8)}
 .tok .sn{width:14px;height:14px;box-shadow:none;background:rgba(61,220,132,.85)}
@@ -1549,7 +1555,7 @@ header.appbar .iconbtn:active{background:rgba(255,255,255,.12)}
     <!-- two tabs keep Settings short: Targets (numbers + switches) and Personal info (goal, body stats, suggestion).
          In food finder mode there's nothing to track, so the tabs and Personal info go away. -->
     <div class="stabs" id="setTabs" role="tablist" aria-label="Settings sections">
-      <button type="button" role="tab" data-st="t" aria-pressed="true">Targets</button>
+      <button type="button" role="tab" data-st="t" aria-pressed="true">General</button>
       <button type="button" role="tab" data-st="p" aria-pressed="false">Personal info</button>
     </div>
     <!-- both tabs share one grid cell, so the card is always as tall as the taller tab and never jumps when switching -->
@@ -1598,6 +1604,10 @@ header.appbar .iconbtn:active{background:rgba(255,255,255,.12)}
       <span><b>Food finder mode</b><small>Just find food: no calorie tracking</small></span>
       <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
     </label>
+    <label class="toggle modecard beerrow" for="gbeer">
+      <span><b>Room for beer</b><small>Set aside calories for drinks later</small></span>
+      <input type="checkbox" id="gbeer"><i aria-hidden="true"></i>
+    </label>
     <div class="trackonly">
       <div class="rhead"><span class="sect">Your daily goal</span><span id="tSug"></span></div>
       <div class="rvtot" aria-label="Daily targets. Tap a number to change it.">
@@ -1607,10 +1617,6 @@ header.appbar .iconbtn:active{background:rgba(255,255,255,.12)}
         <label><input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70" aria-label="Fat grams"><span><i class="df"></i>fat</span></label>
       </div>
     </div>
-    <label class="toggle beerrow" for="gbeer">
-      <span><b>Room for beer</b><small>Set aside calories for drinks later</small></span>
-      <input type="checkbox" id="gbeer"><i aria-hidden="true"></i>
-    </label>
     <label class="prefs"><span class="sect">Foods you like</span><textarea id="gprefs" rows="4" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
     </div>
     </div>
