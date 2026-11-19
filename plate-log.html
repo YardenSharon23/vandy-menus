@@ -703,7 +703,11 @@ b,strong{font-weight:700}
 .entry:active{background-color:var(--panel)}
 .entry.beer:active{background-color:rgba(242,180,80,.05)}
 .pressing{transform:scale(.982)!important;transition:transform .08s ease-out,background-color .08s!important}
-.irow.pressing,.prow.pressing,.phead.pressing,.morebtn.pressing,.closedtoggle.pressing,.picktoggle.pressing{background-color:rgba(255,255,255,.04)!important}
+.irow.pressing,.prow.pressing,.phead.pressing{background-color:rgba(255,255,255,.04)!important}
+/* section headers (Open, Closed, Top picks, Show more) are bare text, so a box behind them looked wrong:
+   they just dim a touch when pressed instead, with no highlight shape */
+.closedtoggle.pressing,.picktoggle.pressing,.morebtn.pressing{background-color:transparent!important;transform:none!important;opacity:.6}
+.closedtoggle,.picktoggle,.morebtn{transition:opacity .15s!important}
 .entry.pressing{background-color:var(--panel-2)!important}
 /* top picks: same tint, quieter edge, no glow; only #1 keeps a filled badge */
 .picks{background:linear-gradient(160deg,rgba(61,123,255,.11),rgba(61,123,255,.03) 70%);border-color:rgba(95,160,255,.18);box-shadow:none}
