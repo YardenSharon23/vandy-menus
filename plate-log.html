@@ -382,6 +382,9 @@ button:active{transform:scale(.96)}
 .track i{transition:width .8s var(--ease)}
 .arcfill{transition:stroke-dashoffset 1s var(--ease)}
 #beerFoam{transform-box:view-box;transform-origin:130px 135px;transition:transform 1s var(--ease),opacity .3s}
+#beerFizz{transition:opacity .3s}
+.fizz{fill:#fff3d9;opacity:0;animation:fizz 2.6s ease-in infinite}
+@keyframes fizz{0%{transform:translateY(3px);opacity:0}25%{opacity:.75}100%{transform:translateY(-6px);opacity:0}}
 /* ===== Swipe layout: fixed tab bar on top, a horizontal pager of four full-height pages under it ===== */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{padding-left:0;padding-right:0}
@@ -840,12 +843,17 @@ b,strong{font-weight:700}
         <path id="beerArc" d="M240 135 A110 110 0 0 0 20 135" fill="none" stroke="url(#bg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="0 400" filter="url(#bglow)" opacity="0" style="transition:stroke-dasharray 1s var(--ease),opacity .3s"/>
         <!-- Foam on the beer's leading end: a cream cap plus a few bubbles. Drawn once at the arc's start (right end)
              and rotated around the gauge's center to wherever the beer reaches, on the same easing as the arc. -->
+        <!-- carbonation: tiny bubbles drifting up inside the beer (placed by renderToday) -->
+        <g id="beerFizz" opacity="0"></g>
+        <!-- foam head: a thin cream band hugging the whole rounded end, a faint fill inside it, and a few
+             pin-prick bubbles on the edge. Base position = the arc's start; rotated to the tip. -->
         <g id="beerFoam" opacity="0">
-          <path d="M239.85 140.75 A110 110 0 0 0 240 135" fill="none" stroke="#f6dcaa" stroke-opacity=".42" stroke-width="18" stroke-linecap="round"/>
-          <circle cx="234.5" cy="126.5" r="3.2" fill="#fbecd0" opacity=".85"/>
-          <circle cx="241" cy="125" r="3.8" fill="#fdf3e0" opacity=".9"/>
-          <circle cx="246.5" cy="127.5" r="2.6" fill="#fbecd0" opacity=".8"/>
-          <circle cx="238" cy="121.8" r="1.5" fill="#fdf3e0" opacity=".7"/>
+          <path d="M228 135 A12 12 0 0 1 252 135Z" fill="#f6dcaa" fill-opacity=".22"/>
+          <path d="M229.5 135.5 A10.5 10.5 0 0 1 250.5 135.5" fill="none" stroke="#fbeccd" stroke-opacity=".9" stroke-width="3.2" stroke-linecap="round"/>
+          <circle cx="231.5" cy="128" r="1.3" fill="#fff6e6" opacity=".9"/>
+          <circle cx="236" cy="124.6" r="1.6" fill="#fff6e6" opacity=".85"/>
+          <circle cx="242.5" cy="124" r="1.2" fill="#fff6e6" opacity=".8"/>
+          <circle cx="247.5" cy="126.8" r="1.5" fill="#fff6e6" opacity=".85"/>
         </g>
         <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
         <!-- Inner protein ring: green when protein keeps pace with calories, yellow when a little behind, red when well behind -->
@@ -1252,6 +1260,14 @@ function renderToday(){
   ba.style.strokeDasharray=`${(345.58*bp).toFixed(2)} 400`;ba.setAttribute('opacity',bp>0?'1':'0');
   // the foam rides the beer's tip: 180° of rotation = the whole arc
   const fm=$('#beerFoam');fm.style.transform=`rotate(${(-180*bp).toFixed(2)}deg)`;fm.setAttribute('opacity',bp>0.03?'1':'0');
+  // carbonation: a handful of pin-prick bubbles spread along the beer, each drifting up and fading on its own loop
+  // (rebuilt only when the amount changes, so the loops don't restart on every render)
+  const fz=$('#beerFizz');
+  if(fz.dataset.bp!==bp.toFixed(3)){fz.dataset.bp=bp.toFixed(3);
+    const n=Math.min(9,Math.round(bp*18)),spots=[.12,.55,.3,.78,.2,.66,.42,.9,.05],offs=[-5,4,-1,6,2,-6,5,-3,1];
+    fz.innerHTML=Array.from({length:n},(_,i)=>{const a=Math.PI*bp*spots[i]*.92,r=110+offs[i];
+      return `<circle class="fizz" cx="${(130+r*Math.cos(a)).toFixed(1)}" cy="${(135-r*Math.sin(a)).toFixed(1)}" r="${(i%3?0.9:1.25)}" style="animation-duration:${(2.2+(i%4)*.55).toFixed(2)}s;animation-delay:${(-i*.7).toFixed(1)}s"/>`}).join('');}
+  fz.setAttribute('opacity',bp>0.03?'1':'0');
   $('#bg').setAttribute('x2',String(Math.min(220,130+110*Math.cos(Math.PI*bp)-6)));
   const B=planBeer();$('#beerBtn').classList.toggle('on',!!B);$('#beerBtn').hidden=!beerOn();
   $('#beerBtnTxt').textContent=B?`${fmt(bk)} cal`:'Beer';
