@@ -682,6 +682,31 @@ b,strong{font-weight:700}
 .entry,.place,.pickempty,.eresults,.ilist,.wkgoal,.wkstats div,.toggle,.hall{box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
 .place.open{box-shadow:inset 0 1px 0 rgba(61,220,132,.08)}
 
+/* ===== Eat, calmer: each group of places is one panel of hairline rows instead of a stack of glowing cards.
+   Green is only the small status dot; times and dish hints are quiet grey; the picks panel loses its glow. ===== */
+.plist{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.plist .place,.plist .place.open{background:transparent;border:0;border-radius:0;box-shadow:none}
+.plist .place+.place{border-top:1px solid var(--line)}
+.plist .phead{padding:11px 14px;gap:11px}
+.plist .phead .t b{font-size:.96rem;font-weight:650;letter-spacing:-.01em}
+.plist .phead .t small{font-size:.76rem;color:var(--faint);margin-top:1px}
+.plist .phead .dot{width:7px;height:7px}
+.plist .place.open .dot{box-shadow:0 0 0 3px rgba(61,220,132,.12)}
+.plist .place.soon .dot{box-shadow:0 0 0 3px rgba(242,196,107,.12)}
+.plist .phead .st,.plist .place.open .st{color:var(--muted);font-size:.78rem;font-weight:500}
+.plist .place.soon .st{color:var(--carb)}
+.plist .place[data-open] , .plist .place:has(.pbody){background:rgba(255,255,255,.02)}
+.plist .pbody{padding:0 8px 8px}
+.plist .sidestoggle{align-self:flex-start;padding:5px 12px;font-size:.78rem}
+.pgroup{gap:6px}
+.glab{padding:0 4px;margin:0}
+/* top picks: same tint, quieter edge, no glow; only #1 keeps a filled badge */
+.picks{background:linear-gradient(160deg,rgba(61,123,255,.11),rgba(61,123,255,.03) 70%);border-color:rgba(95,160,255,.18);box-shadow:none}
+.prow{padding:10px 8px}
+.prow:first-child .rank{box-shadow:none}
+.prow .rank{width:22px;height:22px;font-size:.7rem;background:rgba(95,160,255,.12)}
+.prow .n small{color:var(--muted)}
+
 /* ===== Logging popups (Add to today / Edit, Room for beer): totals first, foods as hairline rows, no boxed fields ===== */
 .sheet.rv,.sheet.bz{gap:14px;padding:18px 18px 16px}
 .rvhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-width:0}
@@ -1663,7 +1688,7 @@ function placeRow(u,st){
   const isHall=MENU_UNITS.includes(u.id);const ctx=eatContext();
   let best='';
   if(isHall&&eat.loaded){const m=sortForYou(hallItems(u.id,eat.meal).filter(i=>i.kind==='main'),st)[0];
-    if(m)best=finderOn()?m.n:`${m.n} · ${fmt(m.k)} cal · ${Math.round(m.p)} g`;}
+    if(m)best=m.n;}   // just the dish; its numbers are one tap away (and in Top picks)
   const cls=st.open?(st.soon?' soon':' open'):'';const isOpen=eat.open===u.id;
   let body='';
   if(isOpen){
@@ -1706,7 +1731,7 @@ function renderPlaces(){
   const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
   // Each group is its own stack; a slightly larger gap between stacks shows where one kind of place ends.
   const groups=list=>[0,1,2].map(k=>list.filter(x=>x.k===k)).filter(g=>g.length)
-    .map(g=>`<div class="pgroup"><span class="glab">${['Dining halls','Quick bites','Munchie Marts'][g[0].k]}</span>${g.map(x=>placeRow(x.u,x.st)).join('')}</div>`).join('');
+    .map(g=>`<div class="pgroup"><span class="glab">${['Dining halls','Quick bites','Munchie Marts'][g[0].k]}</span><div class="plist">${g.map(x=>placeRow(x.u,x.st)).join('')}</div></div>`).join('');
   const showOpen=eat.showOpen!==false;
   box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">Open <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
     +(showOpen?`<div class="closedlist">${open.length?groups(open):'<div class="pickempty">Nothing is open right now.</div>'}</div>`:'')
