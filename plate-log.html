@@ -1189,10 +1189,38 @@ html:not(.on-today) .dock .composer{pointer-events:none}
 #pToday .gauge .kcal{font-size:clamp(2.6rem,12.5vw,3.2rem)}
 #pToday .gauge .of{margin-top:6px}
 
+/* ===== Comfortable spacing (one rhythm everywhere) =====
+   popups: 22px edges, 20px between blocks · cards: 14–16px inside · list rows: 13px tall padding · pages: 26px between
+   sections. Tighter where the content is dense on purpose (Settings tabs keep their own grid). */
+.sheet{padding:22px}
+.sheet.rv,.sheet.bz{padding:22px 22px 20px;gap:20px}
+.sheet.set{gap:18px}
+/* Room for beer, roomier: more air around the mugs, bigger mugs, the status line set apart */
+.bz .bh{padding-bottom:2px}
+.bz .kinds button{padding:10px 0 14px}
+.bz .mugrow{padding:6px 0 2px;gap:6px}
+.bz .mug{padding:9px 1px}
+.bz .mug svg{width:26px;height:26px}
+.bz .mstep{width:34px;height:34px}
+.bz .bzsum{padding:12px 14px;border-radius:var(--r-tile);background:var(--soft)}
+.bz .actions{margin-top:2px}
+/* Add to today: a little more room between foods and around the totals */
+.rv .ritem{padding:13px 0}
+.rvtot label{padding:10px 2px 9px}
+/* cards and rows on the pages */
+.entry{padding:14px 16px}
+.entries{gap:9px}
+.phead{padding:14px 16px}
+.places,.pgroup,.closedlist .pgroup{gap:10px}
+.prow{padding:13px 10px}
+.irow{padding:12px 10px}
+.wkgoal{padding:16px 18px}
+.toggle{padding:14px 2px}
+
 /* consistent vertical rhythm between blocks on every page */
-.pagein{gap:22px}
-.page .app{gap:22px}
-.eat{gap:18px}
+.pagein{gap:26px}
+.page .app{gap:26px}
+.eat{gap:20px}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1396,14 +1424,14 @@ html:not(.on-today) .dock .composer{pointer-events:none}
       <button type="button" data-per="150" title="Budweiser, Yuengling, Stella, Corona">Regular<em>150</em></button>
       <button type="button" data-per="210" title="IPA or craft: usually 180–250 a can">IPA / craft<em>210</em></button>
     </div>
-    <!-- tap a mug to set how many; − / + for half beers or more than eight -->
+    <!-- tap a mug to set how many; − / + step one at a time (and go past eight) -->
     <div class="mugrow">
-      <button type="button" class="mstep" data-bstep="-0.5" aria-label="Half a beer fewer">&minus;</button>
+      <button type="button" class="mstep" data-bstep="-1" aria-label="One fewer beer">&minus;</button>
       <div class="mugs" id="beerMugs" role="group" aria-label="Tap to set how many beers"></div>
-      <button type="button" class="mstep" data-bstep="0.5" aria-label="Half a beer more">+</button>
+      <button type="button" class="mstep" data-bstep="1" aria-label="One more beer">+</button>
     </div>
     <!-- one line under the mugs: what's left for food on the left, how many beers (typeable) on the right -->
-    <div class="bzsum"><span class="bzleft" id="beerSum"></span><label class="bzn"><input type="number" inputmode="decimal" min="0" max="30" step="0.5" id="beerN" aria-label="Number of beers"><span id="beerUnit">beers</span></label></div>
+    <div class="bzsum"><span class="bzleft" id="beerSum"></span><label class="bzn"><input type="number" inputmode="numeric" min="0" max="30" step="1" id="beerN" aria-label="Number of beers"><span id="beerUnit">beers</span></label></div>
     <div class="actions">
       <button type="button" class="btn danger" id="beerClear">Clear</button>
       <button type="button" class="btn ghost" id="beerCancel">Cancel</button>
@@ -2377,7 +2405,7 @@ const BEER_KINDS={100:'Light beer or hard seltzer: Bud Light, Coors Light, Miche
   210:'IPA or craft beer: usually 180–250 a can'};
 let beerDraft=null;
 function openBeer(){
-  const B=planBeer();beerDraft={n:B?B.n:2,per:B?B.per:150};
+  const B=planBeer();beerDraft={n:B?Math.round(B.n):2,per:B?B.per:150};   // whole beers only (an old half rounds)
   $('#beerN').value=fmtBeer(beerDraft.n);$('#beerClear').hidden=!B;renderBeer();$('#beer').hidden=false;
 }
 function renderBeer(){
@@ -2510,11 +2538,11 @@ const closeBeer=()=>{$('#beer').hidden=true};
   }
 })();
 $('#beerBtn').addEventListener('click',openBeer);
-$('#beerN').addEventListener('input',()=>{const v=parseFloat($('#beerN').value);beerDraft.n=Math.max(0,Math.min(30,isFinite(v)?Math.round(v*10)/10:0));renderBeer()});
+$('#beerN').addEventListener('input',()=>{const v=parseFloat($('#beerN').value);beerDraft.n=Math.max(0,Math.min(30,isFinite(v)?Math.round(v):0));renderBeer()});
 $('#beer').addEventListener('click',e=>{
   if(e.target.id==='beer')return closeBeer();
   const st=e.target.closest('[data-bstep]');
-  if(st){beerDraft.n=Math.max(0,Math.min(30,Math.round((beerDraft.n+ +st.dataset.bstep)*2)/2));$('#beerN').value=fmtBeer(beerDraft.n);renderBeer();return}
+  if(st){beerDraft.n=Math.max(0,Math.min(30,Math.round(beerDraft.n+ +st.dataset.bstep)));$('#beerN').value=fmtBeer(beerDraft.n);renderBeer();return}
   // tapping the last filled mug again takes it away; any other mug sets the count to it
   const mg=e.target.closest('[data-mug]');if(mg){const m=+mg.dataset.mug;beerDraft.n=beerDraft.n===m?m-1:m;renderBeer();return}
   const kd=e.target.closest('[data-per]');if(kd){beerDraft.per=+kd.dataset.per;renderBeer()}
