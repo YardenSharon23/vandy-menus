@@ -1250,6 +1250,24 @@ html:not(.on-today) .dock .composer{pointer-events:none}
 .phero.pressing{background:rgba(255,255,255,.04)!important}
 .phero:active{transform:none}
 
+/* ===== Settings, refined =====
+   Gear button: a glassy disc (soft top light, hairline ring), a crisp thin gear.
+   Targets tab, top to bottom: Food finder mode (a card of its own, since it decides how the app works) →
+   your daily goal → Room for beer → foods you like. */
+header.appbar .iconbtn{width:38px;height:38px;color:#dfe4ee;
+  background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.03));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.3)}
+header.appbar .iconbtn svg{width:19px;height:19px}
+header.appbar .iconbtn:active{background:rgba(255,255,255,.12)}
+.set .toggle.modecard{margin:0;border:0;border-radius:var(--r-tile);background:var(--soft);padding:13px 14px}
+.set .toggle.modecard:active{background:rgba(255,255,255,.07)}
+#stTargets>.trackonly{padding-top:4px}
+#stTargets>.beerrow{margin-top:-4px}
+/* "Using suggested": small, quiet, and only a hint of green */
+.tok{gap:5px;font-size:.7rem;font-weight:600;color:rgba(61,220,132,.8)}
+.tok .sn{width:14px;height:14px;box-shadow:none;background:rgba(61,220,132,.85)}
+.tok .sn svg{width:8px;height:8px}
+
 /* consistent vertical rhythm between blocks on every page */
 .pagein{gap:26px}
 .page .app{gap:26px}
@@ -1267,7 +1285,8 @@ html:not(.on-today) .dock .composer{pointer-events:none}
     <button type="button" role="tab" data-p="3" aria-selected="false">Ask</button>
   </nav>
   <button class="iconbtn" id="openSettings" aria-label="Daily targets">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    <!-- a clean rounded gear (the familiar Settings symbol) -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
   </button>
 </header>
 
@@ -1574,6 +1593,11 @@ html:not(.on-today) .dock .composer{pointer-events:none}
       </div>
     </div>
     <div class="stpane" id="stTargets">
+    <!-- Food finder mode first: it decides how the whole app works (track calories, or just find food) -->
+    <label class="toggle modecard" for="gfinder">
+      <span><b>Food finder mode</b><small>Just find food: no calorie tracking</small></span>
+      <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
+    </label>
     <div class="trackonly">
       <div class="rhead"><span class="sect">Your daily goal</span><span id="tSug"></span></div>
       <div class="rvtot" aria-label="Daily targets. Tap a number to change it.">
@@ -1583,12 +1607,6 @@ html:not(.on-today) .dock .composer{pointer-events:none}
         <label><input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70" aria-label="Fat grams"><span><i class="df"></i>fat</span></label>
       </div>
     </div>
-    <span class="sect">Options</span>
-    <!-- Food finder mode: no calorie tracking, just finding food -->
-    <label class="toggle" for="gfinder">
-      <span><b>Food finder mode</b><small>Hide calories; tap a dish to see its nutrition</small></span>
-      <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
-    </label>
     <label class="toggle beerrow" for="gbeer">
       <span><b>Room for beer</b><small>Set aside calories for drinks later</small></span>
       <input type="checkbox" id="gbeer"><i aria-hidden="true"></i>
