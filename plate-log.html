@@ -737,7 +737,7 @@ b,strong{font-weight:700}
 .rvhead h2{font-size:1.08rem;white-space:nowrap}
 .rvhead .where{margin:0;font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* slim segmented switches (meal, beer kind): one tinted track, the chosen part raised */
-.seg5,.seg3{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:rgba(255,255,255,.045);border-radius:12px;padding:3px}
+.seg5,.seg3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;background:rgba(255,255,255,.045);border-radius:12px;padding:3px}
 .seg3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .seg5 button,.seg3 button{border:0;background:transparent;border-radius:9px;padding:7px 0;font-size:.76rem;font-weight:600;color:var(--muted);white-space:nowrap;
   transition:background-color .3s var(--spring),color .2s,box-shadow .3s,transform .5s var(--spring)}
@@ -778,6 +778,18 @@ b,strong{font-weight:700}
 .rv .ritem .t{min-width:0}
 .rv .ritem .t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:500;font-size:.94rem;line-height:1.3}
 .rv .ritem .t small{display:block;margin-top:2px;font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.rv .ritem .t{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.rv .ritem .t:focus-visible{outline:2px solid var(--blue-2);outline-offset:2px;border-radius:6px}
+.rv .ritem .t small{display:flex;align-items:center;gap:5px}
+.caret{flex:none;width:6px;height:6px;border-right:1.5px solid var(--faint);border-bottom:1.5px solid var(--faint);transform:rotate(45deg) translateY(-2px);transition:transform .35s var(--spring)}
+.ritem.open .caret{transform:rotate(-135deg) translate(-1px,-1px)}
+/* one food's own macros, folded under its row: four quiet figures with the same colour dots as the totals */
+.imac{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 14px;padding:2px 0 2px;font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.imac.in{animation:pexpIn .3s var(--spring) both}
+.imac span{display:flex;align-items:center;gap:5px}
+.imac b{color:var(--ink);font-weight:700}
+.imac i{width:6px;height:6px;border-radius:50%}
+.imac .dp{background:var(--blue-2)}.imac .dc{background:var(--carb)}.imac .df{background:var(--fat)}
 .rv .ritem .pstep{padding:3px;background:rgba(255,255,255,.07)}
 .rv .ritem .pstep button{width:40px;height:40px;font-size:1.3rem;background:rgba(255,255,255,.06)}
 .rv .ritem .pstep button:active{background:rgba(61,123,255,.3)}
@@ -1175,7 +1187,9 @@ b,strong{font-weight:700}
 
 <script>
 const HALLS=[{id:1,name:'Rand'},{id:2,name:'Commons'},{id:3,name:'Kissam'},{id:11,name:'EBI'},{id:20,name:'Rothschild'},{id:21,name:'Carmichael'},{id:19,name:'Zeppos'},{id:4,name:'The Pub'},{id:22,name:'West End Bagel'},{id:17,name:'Local Java'},{id:0,name:'Elsewhere'}];
-const NAMES=['Breakfast','Lunch','Dinner','Snack','Drink'];
+// Drinks aren't their own meal: they go under whichever meal you pick (old "Drink" entries show under the meal of their time)
+const NAMES=['Breakfast','Lunch','Dinner','Snack'];
+const mealAt=t=>{const d=new Date(t||Date.now()),h=d.getHours()+d.getMinutes()/60;return h<10.5?'Breakfast':h<15.5?'Lunch':'Dinner'};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -1275,7 +1289,7 @@ const ICONS={
   Drink:'<path d="M6.5 8h11l-1.3 12.2a1 1 0 0 1-1 .8H8.8a1 1 0 0 1-1-.8z"/><path d="M13 8l1.6-5H18"/><path d="M7 12.5h10"/>'};
 const icon=n=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||ICONS.Snack}</svg>`;
 // Older entries stored a longer title in `meal` ("Lunch at Rand"); pull the short name out of it.
-function entryName(e){if(NAMES.includes(e.name))return e.name;const m=String(e.meal||'').toLowerCase();return NAMES.find(n=>m.includes(n.toLowerCase()))||'Snack'}
+function entryName(e){if(NAMES.includes(e.name))return e.name;if(e.name==='Drink')return mealAt(e.t);const m=String(e.meal||'').toLowerCase();return NAMES.find(n=>m.includes(n.toLowerCase()))||'Snack'}
 // Numbers glide to their new value instead of jumping (skipped when the viewer prefers reduced motion).
 const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function countTo(el,target){
@@ -1415,24 +1429,32 @@ function renderReview(fillTotals){
   const D=state.draft;
   $('#rvNames').innerHTML=NAMES.map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===D.name}">${n}</button>`).join('');
   // One hairline row per food: name, then one short line (amount · calories · protein), stepper and remove on the right.
-  $('#rvItems').innerHTML=D.items.length?D.items.map((i,ix)=>`<div class="ritem">
-      <div class="t"><b>${esc(i.n)}</b><small>${amountText(i)}</small></div>
+  // tap a food's name to show or hide its own macros (scaled to the servings chosen) under the row
+  const op=D.openItems||(D.openItems=new Set());
+  $('#rvItems').innerHTML=D.items.length?D.items.map((i,ix)=>`<div class="ritem${op.has(ix)?' open':''}">
+      <div class="t" data-tog="${ix}" role="button" tabindex="0" aria-expanded="${op.has(ix)}"><b>${esc(i.n)}</b><small>${amountText(i)}<i class="caret" aria-hidden="true"></i></small></div>
       <span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><span>${i.sv}×</span><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
-      <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div>`).join('')
+      <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+      ${op.has(ix)?`<div class="imac${D._justOpened===ix?' in':''}"><span><b>${fmt(i.k*i.sv)}</b> cal</span><span><i class="dp"></i><b>${r1(i.p*i.sv)}</b> g protein</span><span><i class="dc"></i><b>${r1(i.c*i.sv)}</b> g carbs</span><span><i class="df"></i><b>${r1(i.f*i.sv)}</b> g fat</span></div>`:''}</div>`).join('')
     :'<div class="empty">No foods listed. Type the totals above.</div>';
+  D._justOpened=null;
   if(fillTotals){const T=D.manual?D.tot:itemsTot(D.items);for(const k of ['k','p','c','f']){$('#t'+k).value=k==='k'?Math.round(T[k]):r1(T[k]);fitNum($('#t'+k))}}
 }
 // The typeable totals are exactly as wide as their number, so the underline hugs it
 function fitNum(){}   // totals now fill their column (kept so callers stay simple)
 $('#rvNames').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;state.draft.name=b.dataset.n;renderReview(false)});
 $('#rvItems').addEventListener('click',e=>{
+  const tg=e.target.closest('[data-tog]');
+  if(tg){const op=state.draft.openItems||(state.draft.openItems=new Set()),ix=+tg.dataset.tog;op.has(ix)?op.delete(ix):op.add(ix);state.draft._justOpened=op.has(ix)?ix:null;renderReview(false);return}
   const D=state.draft,t=e.target.closest('button');let i;if(!t)return;
+  if(t.dataset.x!=null)D.openItems=new Set();   // indexes shift when a food is removed, so fold everything
   if(t.dataset.inc!=null){i=D.items[+t.dataset.inc];i.sv=Math.round((i.sv+(i.sv<1?0.25:0.5))*4)/4}
   else if(t.dataset.dec!=null){i=D.items[+t.dataset.dec];i.sv=Math.max(0.25,Math.round((i.sv-(i.sv<=1?0.25:0.5))*4)/4)}
   else if(t.dataset.x!=null){D.items.splice(+t.dataset.x,1)}
   else return;
   D.manual=false;renderReview(true);
 });
+$('#rvItems').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-tog]')){e.preventDefault();e.target.click()}});
 for(const k of ['k','p','c','f'])$('#t'+k).addEventListener('input',e=>{state.draft.manual=true;fitNum(e.target)});
 function closeReview(){$('#review').hidden=true;state.draft=null}
 $('#rvCancel').addEventListener('click',()=>{const D=state.draft;if(D&&D.mode==='new')note('Not logged.');closeReview()});
@@ -2296,7 +2318,7 @@ How to estimate:
 - Anything else (snacks, packaged food, takeout, drinks, home food): set menu_id null, servings 1, and give calories, protein_g, carbs_g and fat_g as TOTALS for the amount eaten, using typical nutrition-label values.
 - If their message corrects or adds to the food in your previous reply ("actually two bags", "I also had a Coke with that"), return the full updated meal with "replaces_last": true.
 - If they only ask a question or chat, answer it and set meal to null.
-- name is one of Breakfast, Lunch, Dinner, Snack, Drink. Use the time of day for full meals; small items between meals are Snack; a drink on its own is Drink.
+- name is one of Breakfast, Lunch, Dinner, Snack. Use the time of day for full meals; small items between meals are Snack. Drinks are never their own entry type: a drink goes under the meal of the time of day (or Snack if it's between meals).
 So far today: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein.
 
 Reply with only JSON:
