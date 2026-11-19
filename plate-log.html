@@ -594,8 +594,95 @@ html.finder .irow .n,html.finder .prow .n{display:none}
 /* the old load-in on .top would replay inside pages; keep it only for the first page */
 .page:not(#pToday) .pagein{animation:none}
 
+/* ===== Polish pass: physics, readability, depth ===== */
+/* Springs as CSS easing (computed from Apple's damping/response model).
+   --spring: critically damped (damping 1, response .35s): settles smoothly, never overshoots. The default.
+   --spring-bounce: damping .8: a touch of overshoot, only for things you flick or toggle.
+   Older browsers fall back to the ease-out curve. */
+:root{
+  --spring:cubic-bezier(.2,.8,.2,1);--spring-bounce:cubic-bezier(.2,.9,.3,1.15);
+  --spring:linear(0, 0.055, 0.173, 0.309, 0.441, 0.558, 0.656, 0.736, 0.8, 0.849, 0.887, 0.916, 0.938, 0.955, 0.967, 0.976, 0.982, 0.987, 0.991, 0.993, 0.995, 0.997, 0.998, 0.998, 1);
+  --spring-bounce:linear(0, 0.053, 0.175, 0.324, 0.473, 0.608, 0.722, 0.813, 0.883, 0.933, 0.968, 0.991, 1.005, 1.012, 1.015, 1.015, 1.014, 1.012, 1.009, 1.007, 1.005, 1.004, 1.002, 1.001, 1.001, 1);
+  /* faint text was ~2.9:1 on the background, too dim to read; this is ~4:1 and still clearly secondary */
+  --faint:#6b7389;
+}
+
+/* Taps: the press lands instantly (on touch-down), the release springs back. Size-aware:
+   small buttons dip more, full-width rows barely move but light up, so nothing lurches. */
+button{transition:transform .5s var(--spring),background-color .25s,color .2s,opacity .2s,box-shadow .3s,border-color .25s}
+button:active{transform:scale(.94);transition:transform .07s ease-out,background-color .07s,color .2s,opacity .2s,box-shadow .2s,border-color .1s}
+.cam:active{transform:scale(.9)}
+.entry:active,.prow:active,.irow:active,.phead:active,.hr:active,.starter:active,.hall:active,.toggle:active,.closedtoggle:active,.picktoggle:active,.pick:active,.morebtn:active{transform:scale(.982)}
+.irow:active,.prow:active,.phead:active,.morebtn:active,.closedtoggle:active,.picktoggle:active{background-color:rgba(255,255,255,.04)}
+.entry:active{background-color:var(--panel-2)}
+.mealseg button:active,.name:active,.echip:active{transform:scale(.95)}
+.mealseg button{transition:background-color .3s var(--spring),color .2s,transform .5s var(--spring)}
+/* hover tints only where there's a real pointer; on phones they used to stick after a tap */
+@media (hover:none){.entry:hover{background:var(--panel)}.entry.beer:hover{background:rgba(242,180,80,.05)}}
+
+/* Switches: the knob travels on a slightly bouncy spring and stretches while you hold it, like a real toggle */
+.toggle i{transition:background-color .3s var(--spring)}
+.toggle i::after{transition:transform .5s var(--spring-bounce),width .3s var(--spring);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.toggle:active i::after{width:25px}
+.toggle:active input:checked+i::after{transform:translateX(13px)}
+
+/* Popups: a real surface with a lit top edge and a deep shadow; they grow out of a slight scale on a spring
+   and leave the same way they came (sinking and fading) instead of vanishing. */
+.sheet{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0) 120px),rgba(23,27,40,.95);border-color:rgba(255,255,255,.09);
+  box-shadow:0 30px 80px rgba(0,0,0,.55),0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06)}
+@keyframes sheetIn{from{opacity:0;transform:translateY(22px) scale(.965)}to{opacity:1;transform:none}}
+@keyframes sheetOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(14px) scale(.975)}}
+@keyframes scrimOut{from{opacity:1}to{opacity:0}}
+.scrim:not([hidden]) .sheet{animation:sheetIn .5s var(--spring) both}
+.scrim.closing{animation:scrimOut .2s ease-in both;pointer-events:none}
+.scrim.closing .sheet{animation:sheetOut .2s cubic-bezier(.4,0,1,1) both}
+.scrim:not([hidden]) .hall{animation:pop .45s var(--spring) both}
+
+/* Bars, rings and week columns fill on the same calm spring */
+.track i{transition:width .9s var(--spring),background .4s}
+.wkcol .b i{transition:transform .8s var(--spring) .1s,height .6s var(--spring)}
+.wkpro .t i{transition:transform .8s var(--spring) .15s,width .6s var(--spring)}
+.picks{transition:max-height .45s var(--spring),opacity .25s ease,padding .45s var(--spring),border-color .3s}
+.echips{transition:max-height .4s var(--spring),opacity .22s ease,transform .4s var(--spring),margin-top .4s var(--spring)}
+.trackonly{transition:max-height .5s var(--spring),opacity .25s ease,margin-top .5s var(--spring),transform .5s var(--spring)}
+.closedtoggle .gs svg{transition:transform .45s var(--spring)}
+.entry.new{animation:slideIn .55s var(--spring) both}
+
+/* Type: tracking changes with size (big numbers tighter, tiny labels a hair looser), nothing under 11.5px,
+   headings balance across lines, and Inter's rounder single-storey 'a' for a friendlier read. */
+body{font-feature-settings:"cv11"}
+.top h1,.pagein h1{letter-spacing:-.015em;text-wrap:balance}
+.sheet h2{letter-spacing:-.01em;text-wrap:balance}
+.gauge .kcal{letter-spacing:-.035em}
+.pro .val,.entry .n b,.prow .n b,.wkgoal b,.fdgrid b{letter-spacing:-.01em}
+.entry .t b{letter-spacing:-.005em}
+.fine,.beersum,.noserve,.pickempty,.bub p,.toggle small{text-wrap:pretty}
+.fine{line-height:1.45}
+.wkcol .v,.wkpro small,.sub2,.pick .tagline,.closedtoggle .gt small{font-size:.72rem}
+.entry .t small,.irow .t small,.prow .t small,.phead .t small,.entry .n small,.irow .n small,.prow .n small{font-size:.76rem;line-height:1.35}
+.lab,.closedtoggle .gt{letter-spacing:.11em}
+
+/* Depth: cards get a faint lit top edge so they read as raised surfaces, not flat boxes */
+.entry,.place,.pickempty,.eresults,.ilist,.wkgoal,.wkstats div,.toggle,.hall{box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+.place.open{box-shadow:inset 0 1px 0 rgba(61,220,132,.08)}
+
+/* Accessibility: reduced motion keeps gentle fades (so things don't just pop) but drops all movement and springs */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
+  .scrim:not([hidden]){animation:fade .18s ease-out both!important}
+  .scrim.closing{animation:scrimOut .15s ease-in both!important}
+  button,.track i{transition:opacity .15s,background-color .15s!important}
+  button:active,.entry:active{transform:none!important}
+}
+/* reduced transparency: solid surfaces, no blur */
+@media (prefers-reduced-transparency: reduce){
+  .sheet,.note,.field,.scrim{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  .sheet{background:#191d2b}.scrim{background:rgba(6,8,13,.92)}
+}
+/* increased contrast: brighter secondary text and real borders */
+@media (prefers-contrast: more){
+  :root{--muted:#b3b9c9;--faint:#8e95a8;--line:rgba(255,255,255,.16);--edge:rgba(255,255,255,.24);--pill-edge:rgba(255,255,255,.22)}
+  .entry,.place,.sheet{border-color:rgba(255,255,255,.22)}
 }
 </style>
 
@@ -1566,6 +1653,27 @@ function beerProteinLine(proLeft,calLeft){
   return `<br>${g} g protein to go: <strong>${msg}</strong>`;
 }
 const closeBeer=()=>{$('#beer').hidden=true};
+
+// Popups leave the way they came. Every popup closes by setting .hidden=true, so this catches that in one place:
+// the panel plays a short sink-and-fade (taps already pass through to the page), then it is really hidden.
+// It reads as closed right away, and reopening mid-exit simply cancels the exit, so nothing can get stuck.
+(()=>{
+  const d=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'hidden');
+  for(const el of document.querySelectorAll('.scrim')){
+    Object.defineProperty(el,'hidden',{configurable:true,
+      get(){return this._closing?true:d.get.call(this)},
+      set(v){
+        if(v){
+          if(d.get.call(this)||this._closing)return;
+          this._closing=true;this.classList.add('closing');
+          clearTimeout(this._ct);this._ct=setTimeout(()=>{this._closing=false;this.classList.remove('closing');d.set.call(this,true)},calm?150:200);
+        }else{
+          if(this._closing){clearTimeout(this._ct);this._closing=false;this.classList.remove('closing')}
+          d.set.call(this,false);
+        }
+      }});
+  }
+})();
 $('#beerBtn').addEventListener('click',openBeer);
 $('#beerN').addEventListener('input',()=>{const v=parseFloat($('#beerN').value);beerDraft.n=Math.max(0,Math.min(30,isFinite(v)?Math.round(v*10)/10:0));renderBeer()});
 $('#beer').addEventListener('click',e=>{
