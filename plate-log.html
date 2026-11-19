@@ -846,15 +846,22 @@ b,strong{font-weight:700}
 /* Eat: search + meal on one row (saves a whole row of height) */
 .eatbar{display:flex;align-items:center;gap:8px}
 .eatbar .esearch{flex:1;min-width:0;height:42px}
-.eatbar .mealseg{flex:none;display:flex;gap:2px;padding:3px;grid-template-columns:none}
-.eatbar .mealseg button{display:inline-flex;align-items:center;justify-content:center;gap:0;height:36px;min-width:36px;padding:0 9px;font-size:.8rem;
-  transition:background-color .3s var(--spring),color .2s,box-shadow .3s,gap .35s var(--spring)}
+/* The switch has one fixed width, so the search box never resizes. The chosen meal takes the wide slot with its name;
+   the other two are fixed icon slots. Switching only swaps which slot is wide plus a quick colour change: no sliding
+   text, no growing gaps. */
+.eatbar .mealseg{flex:none;width:184px;display:flex;gap:2px;padding:3px;grid-template-columns:none}
+.eatbar .mealseg button{flex:0 0 38px;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0;font-size:.8rem;
+  transition:background-color .2s ease,color .2s ease,box-shadow .2s ease}
 .eatbar .mealseg button svg{flex:none;width:17px;height:17px}
-/* the chosen meal unfolds its name next to the icon; the others stay icon-only */
-.eatbar .mealseg button span{display:inline-block;max-width:0;overflow:hidden;white-space:nowrap;opacity:0;transition:max-width .4s var(--spring),opacity .2s}
-.eatbar .mealseg button[aria-pressed="true"]{gap:6px}
-.eatbar .mealseg button[aria-pressed="true"] span{max-width:76px;opacity:1}
+.eatbar .mealseg button span{display:none;white-space:nowrap}
+.eatbar .mealseg button[aria-pressed="true"]{flex:1 1 auto}
+.eatbar .mealseg button[aria-pressed="true"] span{display:inline}
 .eatbar .mealseg button[aria-pressed="true"] svg{color:var(--cyan)}
+.eatbar .mealseg button:active{transform:scale(.96)}
+
+/* a little breathing room between the top bar and every page's content */
+.page{padding-top:14px}
+.askpage .chatpage{height:calc(100% - 14px)}
 
 /* Settings: the Add popup's pieces, plus switches as hairline rows and a quiet preferences box */
 .seg5.three{grid-template-columns:repeat(3,minmax(0,1fr))}
