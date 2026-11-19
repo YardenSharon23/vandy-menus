@@ -922,6 +922,12 @@ b,strong{font-weight:700}
 /* a calmer finish: the rail stops at the last step, a little air before the result, and "Use these" is a small pill
    on the label line instead of a third big button above Cancel / Save */
 .chk.last::before{display:none}
+/* Targets: the suggestion shortcut on the "Your daily goal" line */
+.trackonly>.rhead{margin-bottom:-6px;min-height:26px}
+.tuse{border:0;border-radius:99px;padding:5px 12px;font-size:.76rem;font-weight:650;background:rgba(61,123,255,.16);color:var(--blue-2)}
+.tok{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;font-weight:650;color:var(--good);animation:pexpIn .35s var(--spring) both}
+.tok .sn{position:static;width:18px;height:18px;background:var(--good);color:#05230f;box-shadow:0 0 10px rgba(61,220,132,.35)}
+.tok .sn svg{width:10px;height:10px;opacity:1;transform:none}
 #pRec{margin-top:6px}
 .rhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .rhead .sect{margin:0}
@@ -1346,7 +1352,7 @@ b,strong{font-weight:700}
     </div>
     <div class="stpane" id="stTargets">
     <div class="trackonly">
-      <span class="sect">Your daily goal</span>
+      <div class="rhead"><span class="sect">Your daily goal</span><span id="tSug"></span></div>
       <div class="rvtot" aria-label="Daily targets. Tap a number to change it.">
         <label class="kc"><input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200" aria-label="Calories"><span>calories</span></label>
         <label><input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150" aria-label="Protein grams"><span><i class="dp"></i>protein</span></label>
@@ -1729,7 +1735,27 @@ function renderRec(){
     countTo($('#rk'),r.k);countTo($('#rp'),r.p);countTo($('#rc'),r.c);countTo($('#rf'),r.f);
     const u=$('#pUse');if(u.dataset.k!==String(r.k+'/'+r.p)){u.dataset.k=r.k+'/'+r.p;u.disabled=false;u.textContent='Use these'}
   }
+  renderSugBtn();
 }
+// "Your daily goal" shortcut. Three states:
+//   personal info not finished → "Use suggested" takes you to Personal info to finish it;
+//   finished, targets differ  → "Use suggested" fills the four targets in place;
+//   targets match the suggestion → a green check: "Using suggested".
+const CHECK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function profileReady(p){return !!(p.sex&&p.age>=13&&p.ft>=3&&p.lb>=70&&p.act&&profDraft.goalSet)}
+function renderSugBtn(){
+  const box=$('#tSug');if(!box)return;
+  const p=readProf(),r=profileReady(p)?recommend(p,dirDraft):null;
+  const same=r&&+$('#gk').value===r.k&&+$('#gp').value===r.p&&+$('#gc').value===r.c&&+$('#gf').value===r.f;
+  const html=same?`<span class="tok"><i class="sn">${CHECK_SVG}</i>Using suggested</span>`:`<button type="button" class="tuse" data-sug="${r?'fill':'go'}">Use suggested</button>`;
+  if(box.dataset.h!==html){box.dataset.h=html;box.innerHTML=html}
+}
+$('#tSug').addEventListener('click',e=>{const b=e.target.closest('[data-sug]');if(!b)return;
+  if(b.dataset.sug==='go'){setTab('p');return}
+  const r=recommend(readProf(),dirDraft);if(!r)return;
+  $('#gk').value=r.k;$('#gp').value=r.p;$('#gc').value=r.c;$('#gf').value=r.f;renderSugBtn();
+});
+for(const k of ['k','p','c','f'])$('#g'+k).addEventListener('input',renderSugBtn);
 // Settings tabs: Targets / Personal info
 function setTab(t){
   if($('#gfinder').checked)t='t';
@@ -1744,7 +1770,7 @@ $('#stPersonal').addEventListener('click',e=>{
   if(s){profDraft.sex=s.dataset.sex;renderRec();return}
   if(a){profDraft.act=a.dataset.act;renderRec();return}
   if(e.target.closest('#pUse')){const r=recommend(readProf(),dirDraft);if(!r)return;
-    $('#gk').value=r.k;$('#gp').value=r.p;$('#gc').value=r.c;$('#gf').value=r.f;
+    $('#gk').value=r.k;$('#gp').value=r.p;$('#gc').value=r.c;$('#gf').value=r.f;renderSugBtn();
     const b=$('#pUse');b.disabled=true;b.textContent='Applied ✓';setTimeout(()=>setTab('t'),550)}   // show the filled-in targets
 });
 for(const id of ['page','pft','pin','plb'])$('#'+id).addEventListener('input',renderRec);
