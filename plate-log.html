@@ -1232,7 +1232,9 @@ html:not(.on-today) .dock .composer{pointer-events:none}
   box-shadow:0 14px 40px rgba(40,90,220,.22),0 0 24px rgba(95,160,255,.12)}
 .picks::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:radial-gradient(120% 70% at 0% 0%,rgba(110,170,255,.16),transparent 60%)}
-.picktoggle .gt .spark{width:15px;height:15px;color:var(--cyan);filter:drop-shadow(0 0 6px rgba(143,216,255,.7));margin-right:-2px}
+/* section titles all start on the same left edge: no icon in front of "Top picks for you" */
+.picktoggle .gt .spark{display:none}
+.picktoggle,.closedtoggle{padding-left:2px;padding-right:2px}
 .phero{position:relative;display:flex;flex-direction:column;gap:6px;width:100%;border:0;background:transparent;text-align:left;padding:14px 14px 15px;border-radius:14px}
 .ptag{display:flex;align-items:center;gap:6px;font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;font-weight:750;color:var(--cyan)}
 .ptag svg{flex:none;width:13px;height:13px;filter:drop-shadow(0 0 5px rgba(143,216,255,.7))}
