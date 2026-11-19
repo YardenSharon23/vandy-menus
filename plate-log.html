@@ -1019,7 +1019,10 @@ function renderToday(){
   const endX=130-110*Math.cos(Math.PI*pct);
   $('#gg').setAttribute('x2',String(Math.max(40,endX+6)));
   countTo($('#kcal'),t.k);
-  $('#kcalOf').textContent=G.k?`of ${fmt(G.k)} calories`:'calories';
+  // With beer planned, the target under the number is what's left for food (target − beer); the food arc and the
+  // amber beer arc meet exactly when you've eaten that much.
+  const bkT=beerK();
+  $('#kcalOf').textContent=G.k?`of ${fmt(Math.max(0,G.k-bkT))} calories`:'calories';
   countTo($('#proNum'),t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
