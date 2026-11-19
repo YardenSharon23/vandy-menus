@@ -1150,6 +1150,20 @@ h2.stitle{display:block;padding:0 2px}
 .irow .t b,.prow .t b{font-size:.93rem}
 .irow .t small,.prow .t small,.entry .t small,.phead .t small{font-size:.76rem;color:var(--muted)}
 
+/* Tabs, one look: anywhere you switch between whole views, it's the top bar's style. Plain type (active white and
+   bold, others grey), a hairline underneath, and the short glowing bar centred under the active one.
+   Top bar = blue · Settings (Targets / Personal info) = blue · Room for beer (Light / Regular / IPA) = amber */
+.stabs,.kinds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;border-bottom:1px solid var(--line)}
+.stabs button,.kinds button{position:relative;border:0;background:transparent;padding:8px 0 12px;font-size:.95rem;font-weight:600;letter-spacing:-.01em;color:var(--muted);text-align:center;transition:color .3s ease}
+.stabs button[aria-pressed="true"],.kinds button[aria-pressed="true"]{color:var(--ink);font-weight:750}
+.stabs button::after,.kinds button::after{left:50%;right:auto;width:24px;margin-left:-12px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;transform:scaleX(0);transition:transform .45s var(--spring)}
+.stabs button::after{background:linear-gradient(90deg,var(--blue-2),var(--cyan));box-shadow:0 0 12px rgba(95,160,255,.85),0 -4px 14px rgba(95,160,255,.35)}
+.kinds button::after{background:linear-gradient(90deg,#e0a23c,#ffd98a);box-shadow:0 0 12px rgba(242,169,59,.8),0 -4px 14px rgba(242,169,59,.3)}
+.stabs button[aria-pressed="true"]::after,.kinds button[aria-pressed="true"]::after{transform:none}
+.stabs button:active,.kinds button:active{transform:none;opacity:.7}
+.kinds em{display:block;margin:2px 0 0;font-size:.7rem;font-weight:500;color:var(--faint)}
+.kinds button[aria-pressed="true"] em{color:rgba(246,200,119,.8)}
+
 /* consistent vertical rhythm between blocks on every page */
 .pagein{gap:22px}
 .page .app{gap:22px}
