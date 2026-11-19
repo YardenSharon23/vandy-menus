@@ -1231,7 +1231,9 @@ html:not(.on-today) .dock .composer{pointer-events:none}
    sparkle after it, so it reads as "for you" — while still starting on the same left edge as "Open now". */
 .picktoggle .gt{background:linear-gradient(90deg,#9cc3ff,var(--cyan) 70%);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 10px rgba(95,160,255,.35))}
-.picktoggle .gt .spark{order:2;display:block;width:14px;height:14px;color:var(--cyan);margin:0 0 0 2px;filter:drop-shadow(0 0 6px rgba(143,216,255,.8))}
+.picktoggle .gt .spark{display:none}
+/* place groups keep only the thin dividing line between them — no "Dining halls / Quick bites / Munchie Marts" labels */
+.pgroup>.glab{display:none}
 .picktoggle,.closedtoggle{padding-left:2px;padding-right:2px}
 .phero{position:relative;display:flex;flex-direction:column;gap:6px;width:100%;border:0;background:transparent;text-align:left;padding:14px 14px 15px;border-radius:14px}
 .ptag{display:flex;align-items:center;gap:6px;font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;font-weight:750;color:var(--cyan)}
