@@ -684,6 +684,19 @@ b,strong{font-weight:700}
 
 /* Eat places: each place is its own card again, open ones with their green glow (the grouped-panel version was undone) */
 .plist{display:flex;flex-direction:column;gap:8px}
+/* opening a place: its menu fades and drops in a few pixels (opacity + transform only, so it costs nothing) */
+@keyframes pexpIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.pexp.opening{animation:pexpIn .32s var(--spring) both}
+
+/* Press feedback on list rows: scrolling a list used to "press in" whatever row your finger started on.
+   Rows now only dip once a touch has held still for a moment (or on a quick tap), never mid-scroll. */
+.entry:active,.prow:active,.irow:active,.phead:active,.hr:active,.starter:active,.closedtoggle:active,.picktoggle:active,.pick:active,.morebtn:active{transform:none}
+.prow:active,.irow:active,.phead:active,.morebtn:active,.closedtoggle:active,.picktoggle:active{background-color:transparent}
+.entry:active{background-color:var(--panel)}
+.entry.beer:active{background-color:rgba(242,180,80,.05)}
+.pressing{transform:scale(.982)!important;transition:transform .08s ease-out,background-color .08s!important}
+.irow.pressing,.prow.pressing,.phead.pressing,.morebtn.pressing,.closedtoggle.pressing,.picktoggle.pressing{background-color:rgba(255,255,255,.04)!important}
+.entry.pressing{background-color:var(--panel-2)!important}
 /* top picks: same tint, quieter edge, no glow; only #1 keeps a filled badge */
 .picks{background:linear-gradient(160deg,rgba(61,123,255,.11),rgba(61,123,255,.03) 70%);border-color:rgba(95,160,255,.18);box-shadow:none}
 .prow{padding:10px 8px}
@@ -747,6 +760,24 @@ b,strong{font-weight:700}
 .rv .actions,.bz .actions{gap:8px}
 .rv .btn,.bz .btn{padding:12px;border-radius:13px}
 .btn.ghost{background:transparent;color:var(--muted)}
+/* Settings: the Add popup's pieces, plus switches as hairline rows and a quiet preferences box */
+.seg5.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg5.three button{font-size:.84rem;padding:8px 0}
+.set .trackonly{gap:14px}
+.sheet>*{flex-shrink:0}   /* a short screen scrolls the popup instead of squashing sections to nothing */
+.set .rvtot input::placeholder{color:var(--faint)}
+.set .rvtot{border-bottom:0;padding-bottom:0}
+.set .toggle{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 2px;box-shadow:none}
+.set .toggle b{font-size:.94rem;font-weight:650}
+.set .toggle small{font-size:.76rem;color:var(--muted);margin-top:1px}
+.set .toggle:active{transform:none;background:transparent}
+.set>.toggle{margin-top:-14px}
+.set .prefs{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line);margin-top:-14px}
+.set .prefs>span{font-size:.94rem;font-weight:650}
+.set #gprefs{min-height:96px;background:rgba(255,255,255,.045);border:1px solid transparent;border-radius:14px;padding:10px 12px;font-size:16px;line-height:1.45;transition:border-color .2s}
+.set #gprefs:focus{outline:none;border-color:rgba(95,160,255,.45)}
+#goalForm.finder .trackonly{margin-top:-14px}
+
 /* beer: no boxes. Title + amber total, underlined kind tabs, a row of mugs you tap to fill, one status line */
 .bz{--amber:#f6c877}
 .bh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -1059,35 +1090,35 @@ b,strong{font-weight:700}
 </div>
 
 <div class="scrim" id="settings" hidden>
-  <form class="sheet" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <h2 id="setTitle">Settings</h2>
-    <!-- Food finder mode: no calorie tracking, just finding food -->
-    <label class="toggle" for="gfinder">
-      <span><b>Food finder mode</b><small>Hide calories and tracking. Tap any dish to see its nutrition.</small></span>
-      <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
-    </label>
+  <!-- Same language as the Add popup: slim goal switch, the four daily targets as big tap-to-type numbers,
+       switches as hairline rows, a quiet preferences box. -->
+  <form class="sheet rv set" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="rvhead"><h2 id="setTitle">Settings</h2><span class="where">Daily targets</span></div>
     <div class="trackonly">
-      <div class="names" id="gdir" role="group" aria-label="Your goal">
-        <button type="button" class="name" data-dir="lose">Lose weight</button>
-        <button type="button" class="name" data-dir="maintain">Maintain</button>
-        <button type="button" class="name" data-dir="gain">Gain weight</button>
+      <div class="seg5 three" id="gdir" role="group" aria-label="Your goal">
+        <button type="button" data-dir="lose">Lose</button>
+        <button type="button" data-dir="maintain">Maintain</button>
+        <button type="button" data-dir="gain">Gain</button>
       </div>
-      <div class="fields goals">
-        <label>Calories<input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200"></label>
-        <label>Protein (g)<input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150"></label>
-        <label>Carbs (g)<input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250"></label>
-        <label>Fat (g)<input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70"></label>
+      <div class="rvtot" aria-label="Daily targets. Tap a number to change it.">
+        <label class="kc"><input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200" aria-label="Calories"><span>calories</span></label>
+        <label><input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150" aria-label="Protein grams"><span><i class="dp"></i>protein</span></label>
+        <label><input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250" aria-label="Carbs grams"><span><i class="dc"></i>carbs</span></label>
+        <label><input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70" aria-label="Fat grams"><span><i class="df"></i>fat</span></label>
       </div>
       <label class="toggle" for="gbeer">
-        <span><b>Room for beer</b><small>Set aside calories for drinks you're planning on later.</small></span>
+        <span><b>Room for beer</b><small>Set aside calories for drinks later</small></span>
         <input type="checkbox" id="gbeer"><i aria-hidden="true"></i>
       </label>
     </div>
-    <div class="fields goals">
-      <label class="wide">Foods you like (for recommendations)<textarea id="gprefs" rows="5" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
-    </div>
+    <!-- Food finder mode: no calorie tracking, just finding food -->
+    <label class="toggle" for="gfinder">
+      <span><b>Food finder mode</b><small>Hide calories; tap a dish to see its nutrition</small></span>
+      <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
+    </label>
+    <label class="prefs"><span>Foods you like</span><textarea id="gprefs" rows="4" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
     <div class="actions">
-      <button type="button" class="btn" id="closeSettings">Cancel</button>
+      <button type="button" class="btn ghost" id="closeSettings">Cancel</button>
       <button type="submit" class="btn primary">Save</button>
     </div>
   </form>
@@ -1702,7 +1733,7 @@ function placeRow(u,st){
       return `<span${td}>${DAYS[i].slice(0,3)}</span><span${td}>${rs.length?rs.map(r=>tshort(r.o)+'–'+tshort(r.c)).join(', '):'Closed'}</span>`}).join('')}</div>`:'');
   }
   return `<div class="place${cls}"><button type="button" class="phead" data-place="${u.id}" aria-expanded="${isOpen}">
-    <span class="dot"></span><span class="t"><b>${esc(shortName(u.name))}</b>${best?`<small>${esc(best)}</small>`:''}</span><span class="st">${esc(st.label)}</span></button>${body}</div>`;
+    <span class="dot"></span><span class="t"><b>${esc(shortName(u.name))}</b>${best?`<small>${esc(best)}</small>`:''}</span><span class="st">${esc(st.label)}</span></button>${body?`<div class="pexp${eat.justOpened===u.id?' opening':''}">${body}</div>`:''}</div>`;
 }
 const CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
 function renderPlaces(){
@@ -1843,6 +1874,24 @@ const closeBeer=()=>{$('#beer').hidden=true};
   }
 })();
 
+// Row press feedback that ignores scrolling. A touch only "presses" a row after it has held still ~80ms;
+// moving more than a few px (a scroll) or the browser taking over the gesture cancels it. Quick taps still flash.
+(()=>{
+  const ROWS='.entry,.prow,.irow,.phead,.hr,.starter,.closedtoggle,.picktoggle,.pick,.morebtn';
+  let el=null,x0=0,y0=0,t=null;
+  const clear=()=>{clearTimeout(t);t=null;if(el)el.classList.remove('pressing');el=null};
+  document.addEventListener('pointerdown',e=>{clear();const r=e.target.closest(ROWS);if(!r)return;
+    el=r;x0=e.clientX;y0=e.clientY;
+    if(e.pointerType==='mouse')r.classList.add('pressing');else t=setTimeout(()=>{t=null;el&&el.classList.add('pressing')},80);
+  },{passive:true});
+  document.addEventListener('pointermove',e=>{if(el&&Math.hypot(e.clientX-x0,e.clientY-y0)>6)clear()},{passive:true});
+  document.addEventListener('pointerup',()=>{if(!el)return;const r=el;
+    if(t){clearTimeout(t);t=null;r.classList.add('pressing')}   // a quick tap: show the press briefly
+    el=null;setTimeout(()=>r.classList.remove('pressing'),110)},{passive:true});
+  document.addEventListener('pointercancel',clear,{passive:true});
+  document.addEventListener('scroll',clear,{passive:true,capture:true});
+})();
+
 // Swipe down to dismiss any popup. The panel follows your finger 1:1 (from where you grabbed it), the backdrop
 // lightens as it goes, and on release the flick is projected forward (Apple's deceleration model): if it would
 // travel past ~40% of the panel, it carries on off-screen at your finger's speed; otherwise it springs back.
@@ -1921,7 +1970,8 @@ function tapFood(items,hallId){if(finderOn())openFood(items,hallId);else logFrom
 $('#pEat').addEventListener('click',e=>{
   const pk=e.target.closest('[data-pick]');if(pk){const c=eat.pickList&&eat.pickList[+pk.dataset.pick];if(c)tapFood(c.items,c.hall);return}
   const lg=e.target.closest('[data-log]');if(lg){const [h,n,v]=lg.dataset.log.split('|');const it=(eat.menus[+h]||[]).find(i=>i.n===n&&(i.v||'')===v);if(it)tapFood([it],+h);return}
-  const pl=e.target.closest('[data-place]');if(pl){const id=+pl.dataset.place;eat.open=eat.open===id?null:id;renderPlaces();return}
+  // only the place you just opened plays the open animation (re-renders for sides/hours don't replay it)
+  const pl=e.target.closest('[data-place]');if(pl){const id=+pl.dataset.place;eat.open=eat.open===id?null:id;eat.justOpened=eat.open;renderPlaces();eat.justOpened=null;return}
   const sm=e.target.closest('[data-seemeal]');if(sm){eat.meal=sm.dataset.seemeal;renderEat();return}
   const hr=e.target.closest('[data-hours]');if(hr){const id=+hr.dataset.hours;eat.showHours=eat.showHours||{};eat.showHours[id]=!eat.showHours[id];renderPlaces();return}
   const sd=e.target.closest('[data-sides]');if(sd){const id=+sd.dataset.sides;eat.showSides=eat.showSides||{};eat.showSides[id]=!eat.showSides[id];renderPlaces();return}
