@@ -1181,8 +1181,10 @@ html:not(.on-today) .dock .composer{pointer-events:none}
 #pToday .top .sub{color:var(--faint)}
 #pToday .hero{gap:26px;padding-top:0}
 #pToday .gauge{max-width:344px}
-#pToday .gauge::before{content:"";position:absolute;left:8%;right:8%;top:6%;bottom:-6%;z-index:-1;pointer-events:none;
-  background:radial-gradient(60% 55% at 50% 70%,rgba(61,123,255,.16),rgba(61,123,255,.05) 55%,transparent 75%)}
+/* the halo fades to nothing before it reaches its own edges ("closest-side"), and stays inside the page's side
+   margins, so there's never a visible boundary — just light */
+#pToday .gauge::before{content:"";position:absolute;left:-3%;right:-3%;top:-8%;bottom:-18%;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side at 50% 60%,rgba(61,123,255,.15),rgba(61,123,255,.07) 45%,rgba(61,123,255,.025) 72%,rgba(61,123,255,0) 100%)}
 #pToday .gauge{isolation:isolate}
 #pToday .gauge .kcal{font-size:clamp(2.6rem,12.5vw,3.2rem)}
 #pToday .gauge .of{margin-top:6px}
