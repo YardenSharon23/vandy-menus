@@ -1093,6 +1093,67 @@ b,strong{font-weight:700}
   :root{--muted:#b3b9c9;--faint:#8e95a8;--line:rgba(255,255,255,.16);--edge:rgba(255,255,255,.24);--pill-edge:rgba(255,255,255,.22)}
   .entry,.place,.sheet{border-color:rgba(255,255,255,.22)}
 }
+
+/* =====================================================================================================
+   DESIGN SYSTEM — the final layer. One answer for each kind of thing, used on every screen.
+     Page header   h1 1.3rem 700 + grey subtitle                    (Thursday · This week · Ask Claude)
+     Section title .stitle / section toggles: 1.06rem 750, white    (Entries · Calories · Open now · Top picks)
+     Label         tiny caps .68rem 700 +.11em, grey                (DINING HALLS · YOUR DAILY GOAL · GOALS HIT)
+     Card          --r-card 18px, panel colour, 1px hairline, lit top edge
+     Inner tile    --r-tile 12px, soft tint, no border               (age/height/weight, suggestion, switch tracks)
+     Control       --r-ctl 14px                                      (buttons, search, text boxes)
+     Small action  soft blue pill, .76rem 650                        (Use these · Use suggested · Show sides …)
+     Text action   blue text + arrow                                 (Hide / Show)
+   ===================================================================================================== */
+:root{--r-card:18px;--r-tile:12px;--r-ctl:14px;--soft:rgba(255,255,255,.045);--soft-blue:rgba(61,123,255,.15)}
+
+/* page headers: same size, weight and subtitle on every page */
+.top h1,.pagein h1,.askhead h2,#chat .chathead h2{font-family:var(--display);font-size:1.3rem;font-weight:700;letter-spacing:-.015em;margin:0}
+.top .sub,.pagein .sub,.askhead .sub{font-size:.8rem;color:var(--muted);margin-top:2px}
+
+/* section titles */
+.stitle,.picktoggle .gt,.closedtoggle .gt{font-family:var(--display);font-size:1.06rem;font-weight:750;letter-spacing:-.012em;text-transform:none;color:var(--ink);margin:0}
+h2.stitle{display:block;padding:0 2px}
+.log .stitle{margin-bottom:2px}
+
+/* tiny caps labels */
+.lab,.sect,.glab,.sub2,.pick .tagline,.wkstats .lab{font-size:.68rem;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.glab{color:var(--faint)}
+
+/* cards */
+.entry,.place,.pickempty,.eresults,.wkgoal,.wkstats div,.picks{border-radius:var(--r-card)}
+.place,.pickempty,.eresults,.wkgoal{border:1px solid var(--line)}
+.place.open{border-color:rgba(61,220,132,.18)}
+.picks .pickempty,.pbody .ilist{border:0;border-radius:0}
+.wkgoal{padding:14px 16px;background:var(--panel)}
+
+/* inner tiles */
+.pgrid label.ptile,.rsug,.seg5,.seg3,.mealseg,.rvtot label,.pgrid label{border-radius:var(--r-tile)}
+.seg5 button,.seg3 button,.mealseg button{border-radius:9px}
+
+/* controls */
+.btn,.rv .btn,.bz .btn{border-radius:var(--r-ctl)}
+.esearch,.rnote,.rv .rnote,#gprefs,.cfform{border-radius:var(--r-ctl)}
+
+/* small actions: one soft-blue pill everywhere; secondary ones go neutral grey */
+.tuse,#pRec #pUse,.sidestoggle,.hourstoggle,.noservebtns .sidestoggle{border:0;border-radius:99px;padding:6px 12px;font-size:.76rem;font-weight:650;
+  background:var(--soft-blue);color:var(--blue-2);box-shadow:none;line-height:1.2}
+.hourstoggle,.sidestoggle[aria-expanded="true"]{background:rgba(255,255,255,.06);color:var(--muted)}
+.sidestoggle,.hourstoggle{margin:8px 8px 6px}
+#pRec #pUse:disabled{background:rgba(61,220,132,.14);color:var(--good)}
+
+/* text actions (Hide / Show) */
+.picktoggle .gs,.closedtoggle .gs{font-size:.78rem;font-weight:650;color:var(--blue-2)}
+
+/* list rows inside cards: one rhythm */
+.irow,.prow{padding:11px 10px}
+.irow .t b,.prow .t b{font-size:.93rem}
+.irow .t small,.prow .t small,.entry .t small,.phead .t small{font-size:.76rem;color:var(--muted)}
+
+/* consistent vertical rhythm between blocks on every page */
+.pagein{gap:22px}
+.page .app{gap:22px}
+.eat{gap:18px}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1185,7 +1246,7 @@ b,strong{font-weight:700}
   </section>
 
   <section class="log" id="log" hidden aria-label="Today's entries">
-    <span class="lab">Entries</span>
+    <h2 class="stitle">Entries</h2>
     <div class="entries" id="entries"></div>
   </section>
 
@@ -1227,10 +1288,13 @@ b,strong{font-weight:700}
     <div><h1>This week</h1><div class="sub" id="wkRange"></div></div>
     <div class="wkgoal"><span class="lab">Goals hit</span><b id="wkHit">0 / 0 days</b></div>
     <div>
-      <div class="wkhead"><span class="lab">Calories</span></div>
+      <div class="wkhead"><h2 class="stitle">Calories</h2></div>
       <div class="wkchart" id="wkChart"></div>
     </div>
-    <div class="wkpro" id="wkPro"></div>
+    <div>
+      <div class="wkhead"><h2 class="stitle">Protein</h2></div>
+      <div class="wkpro" id="wkPro"></div>
+    </div>
   </div>
 </section>
 
