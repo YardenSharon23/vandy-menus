@@ -1171,6 +1171,22 @@ h2.stitle{display:block;padding:0 2px}
 .dock .composer{pointer-events:auto}
 html:not(.on-today) .dock .composer{pointer-events:none}
 
+/* ===== Today, premium =====
+   The top bar already says "Today", so the big weekday heading goes. In its place: one quiet centred date line,
+   then the gauge as the confident hero — a touch larger, more air around it, a faint halo of light behind it. */
+#pToday .top{justify-content:center;text-align:center;padding-top:2px}
+#pToday .top>div{display:flex;align-items:baseline;justify-content:center;gap:8px}
+#pToday .top h1,#pToday .top .sub{font-family:var(--body);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);margin:0}
+#pToday .top .sub::before{content:"·";margin-right:8px;color:var(--faint)}
+#pToday .top .sub{color:var(--faint)}
+#pToday .hero{gap:26px;padding-top:0}
+#pToday .gauge{max-width:344px}
+#pToday .gauge::before{content:"";position:absolute;left:8%;right:8%;top:6%;bottom:-6%;z-index:-1;pointer-events:none;
+  background:radial-gradient(60% 55% at 50% 70%,rgba(61,123,255,.16),rgba(61,123,255,.05) 55%,transparent 75%)}
+#pToday .gauge{isolation:isolate}
+#pToday .gauge .kcal{font-size:clamp(2.6rem,12.5vw,3.2rem)}
+#pToday .gauge .of{margin-top:6px}
+
 /* consistent vertical rhythm between blocks on every page */
 .pagein{gap:22px}
 .page .app{gap:22px}
