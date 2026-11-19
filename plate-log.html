@@ -1449,11 +1449,15 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .pgx{gap:8px;padding-right:38px;margin-top:8px}
 .pgchart.m .pgx{gap:3px}.pgchart.q .pgx{gap:6px}
 .pgkey i{border-top:1px solid rgba(255,255,255,.4)}
+.pgtop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pgtop .pgstreak{margin-top:6px}
+.pgstreak[hidden]{display:none}
+.pgkey{font-size:.76rem;color:var(--muted)}.pgkey b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
 /* protein uses the same chart, in green */
 #pgPro .pgb.hit i{background:linear-gradient(180deg,#7df0b5,#2fbf73 85%)}
 #pgPro .pgb.miss i{background:rgba(61,220,132,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);opacity:1}
 #pgPro .pgchart{margin-top:4px}
-#pgHero.mswap,#pgChart.mswap,#pgCal.mswap,#pgPro.mswap{animation:mswap .38s var(--spring) both}
+#pgChart.mswap,#pgCal.mswap,#pgPro.mswap{animation:mswap .38s var(--spring) both}
 
 /* consistent vertical rhythm between blocks on every page */
 .pagein{gap:26px}
@@ -1595,13 +1599,12 @@ header.appbar .iconbtn svg{width:18px;height:18px}
      Week / Month / 3 months, all from the same daily logs you already keep. -->
 <section class="page" id="pWeek" aria-label="Progress">
   <div class="pagein prog">
-    <div><h1>Progress</h1><div class="sub" id="pgSub"></div></div>
+    <div class="pgtop"><div><h1>Progress</h1><div class="sub" id="pgSub"></div></div><span class="pgstreak" id="pgStreak" hidden></span></div>
     <div class="stabs" id="pgRange" role="tablist" aria-label="Range">
       <button type="button" role="tab" data-r="w" aria-pressed="true">Week</button>
       <button type="button" role="tab" data-r="m" aria-pressed="false">Month</button>
       <button type="button" role="tab" data-r="q" aria-pressed="false">3 months</button>
     </div>
-    <div class="pghero" id="pgHero"></div>
     <div>
       <div class="wkhead"><h2 class="stitle">Calories</h2><span class="pgkey" id="pgKey"></span></div>
       <div class="pgchart" id="pgChart"></div>
@@ -1611,7 +1614,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
       <div class="pgcal" id="pgCal"></div>
     </div>
     <div>
-      <div class="wkhead"><h2 class="stitle">Protein</h2></div>
+      <div class="wkhead"><h2 class="stitle">Protein</h2><span class="pgkey" id="pgProKey"></span></div>
       <div class="pgpro" id="pgPro"></div>
     </div>
   </div>
@@ -2269,36 +2272,23 @@ function renderWeek(){
   const G=goals(),dir=goalDir(),today=dstr();
   const rows=progressDays(pgRange).map(d=>dayRow(d,today));
   // A day only counts once it was really tracked: something logged AND at least ~40% of the target (min 800 cal).
-  // A day with just a coffee logged would otherwise look like a huge deficit.
   const tracked=r=>r.n>0&&r.k>=Math.max(800,G.k*.4);
   const past=rows.filter(r=>!r.future&&!r.today),logged=past.filter(tracked);
   // on target: lose = at or under (5% leeway) · gain = at or over (5% leeway) · maintain = within 10%
   const onT=k=>dir==='lose'?k<=G.k*1.05:dir==='gain'?k>=G.k*0.95:Math.abs(k-G.k)<=G.k*0.1;
   const calHit=r=>tracked(r)&&onT(r.k);
   const proHit=r=>tracked(r)&&r.p>=G.p;
-  // the real deficit is measured against maintenance (from Personal info) when we know it, otherwise against the target
-  const P=(state.settings&&state.settings.profile)||{};
-  const rec=P.sex&&P.age&&P.ft&&P.lb&&P.act?recommend(P,dir):null,base=rec?rec.tdee:G.k;
-  const net=logged.reduce((s,r)=>s+(base-r.k),0);   // + = ate under the baseline
   // streak: finished, tracked days in a row on target, counting back from yesterday (looks past the chosen range)
   let streak=0;for(let i=1;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);if(calHit(dayRow(d,today)))streak++;else break}
   const f=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
-  const goalWord={lose:'Losing weight',gain:'Gaining weight',maintain:'Maintaining'}[dir];
-  $('#pgSub').textContent=(pgRange==='w'?`${f(rows[0].d)} – ${f(rows[6].d)}`:pgRange==='m'?rows[0].d.toLocaleDateString(undefined,{month:'long'}):'Last 13 weeks')+' · '+goalWord;
+  $('#pgSub').textContent=pgRange==='w'?`${f(rows[0].d)} – ${f(rows[6].d)}`:pgRange==='m'?rows[0].d.toLocaleDateString(undefined,{month:'long'}):'Last 13 weeks';
   for(const b of document.querySelectorAll('#pgRange [data-r]'))b.setAttribute('aria-pressed',String(b.dataset.r===pgRange));
 
-  // hero: the number that matters for your goal, with the streak in its corner
-  const vs=rec?`vs your maintenance of ${fmt(base)}`:`vs your ${fmt(base)} target`;
-  const streakChip=streak?`<span class="pgstreak">${FLAME}${streak}-day streak</span>`:'';
-  let hero;
-  if(!logged.length)hero=`<div class="pghead"><span class="lab">${dir==='maintain'?'Average day':dir==='gain'?'Calorie surplus':'Calorie deficit'}</span>${streakChip}</div><div class="pgempty"><b>Nothing to show yet</b><span>Track a full day and your ${pgRange==='w'?'week':pgRange==='m'?'month':'trend'} starts here.</span></div>`;
-  else if(dir==='maintain'){const avg=logged.reduce((s,r)=>s+r.k,0)/logged.length,d=avg-G.k;
-    hero=`<div class="pghead"><span class="lab">Average day</span>${streakChip}</div><div class="pgbig"><b>${fmt(avg)}</b><span>cal</span></div><div class="pgfoot"><span class="pgpill ${Math.abs(d)<=G.k*.1?'good':'warn'}">${Math.abs(d)<10?'Right on target':fmt(Math.abs(d))+' cal '+(d>0?'over':'under')+' target'}</span><span>${logged.length} tracked ${logged.length===1?'day':'days'}</span></div>`}
-  else{const want=dir==='lose'?net:-net,good=want>0,lb=Math.abs(net)/3500;
-    hero=`<div class="pghead"><span class="lab">${dir==='lose'?(net>=0?'Calorie deficit':'Over your maintenance'):(net<=0?'Calorie surplus':'Under your maintenance')}</span>${streakChip}</div>
-      <div class="pgbig ${good?'good':'warn'}"><b>${fmt(Math.abs(net))}</b><span>cal</span></div>
-      <div class="pgfoot"><span class="pgpill ${good?'good':'warn'}">≈ ${lb<0.1?'<0.1':lb.toFixed(1)} lb ${net>=0?'lost':'gained'}</span><span>${vs} · ${logged.length} tracked ${logged.length===1?'day':'days'}</span></div>`}
-  $('#pgHero').innerHTML=hero;$('#pgHero').classList.toggle('good',/class="pgbig good"/.test(hero));
+  // streak beside the title; each chart's heading says how many days landed. Nothing else.
+  const st=$('#pgStreak');st.hidden=!streak;st.innerHTML=streak?`${FLAME}${streak}-day streak`:'';
+  const cnt=(n,m,w)=>m?`<b>${n}</b> of ${m} ${m===1?'day':'days'} ${w}`:'No full days yet';
+  $('#pgKey').innerHTML=cnt(logged.filter(calHit).length,logged.length,'on target');
+  $('#pgProKey').innerHTML=cnt(logged.filter(proHit).length,logged.length,'hit');
 
   // series: days (week, month) or weekly averages of tracked days (3 months)
   let series;
@@ -2310,7 +2300,7 @@ function renderWeek(){
   // one chart builder for both: clean rounded bars on a quiet baseline, a thin target line with its value on the right
   const chart=(el,key,target,hit,unit)=>{
     const max=Math.max(target*1.25,...series.map(x=>x[key]||0),1);
-    el.className='pgchart '+pgRange+(el.classList.contains('shown')||$('#pgChart').classList.contains('shown')?' shown':'');
+    el.className='pgchart '+pgRange+($('#pgChart').classList.contains('shown')?' shown':'');
     el.innerHTML=`<div class="pgbars">${series.map(x=>{
         const v=x[key]||0,state=x.future?' fut':x.today?' now':!x.t?(v?' part':' off'):hit(x)?' hit':' miss';
         return `<div class="pgb${state}" title="${f(x.d)}${v?': '+fmt(v)+unit:''}">${pgRange==='w'&&v?`<em>${fmt(v)}</em>`:''}<i style="height:${v?Math.max(3,v/max*100):0}%"></i></div>`}).join('')}
@@ -2318,7 +2308,6 @@ function renderWeek(){
       <div class="pgx">${series.map((x,i)=>`<span class="${x.today?'now':''}">${lab(x,i)}</span>`).join('')}</div>`;
   };
   chart($('#pgChart'),'k',G.k,x=>onT(x.k),' cal');
-  $('#pgKey').innerHTML=`<i></i>target`;
 
   // consistency map: a calendar for the month, a 13-week grid for 3 months (the week view already shows each day)
   $('#pgCalWrap').hidden=pgRange==='w';
@@ -2330,14 +2319,12 @@ function renderWeek(){
     else{$('#pgCal').className='pgcal heat';$('#pgCal').innerHTML=rows.map(cell).join('');}
   }
 
-  // protein: average on tracked days + the same bar chart, so it reads exactly like calories
-  const avgP=logged.length?logged.reduce((s,r)=>s+r.p,0)/logged.length:0;
-  $('#pgPro').innerHTML=logged.length?`<div class="pgprohead"><b>${fmt(avgP)}<small> g avg</small></b><span>hit ${logged.filter(proHit).length} of ${logged.length} ${logged.length===1?'day':'days'}</span></div><div class="pgprochart"></div>`
-    :`<div class="pgprohead"><span>Protein shows up once you've tracked a full day.</span></div>`;
-  if(logged.length)chart($('#pgPro .pgprochart'),'p',G.p,x=>x.p>=G.p,' g');
+  // protein: the same bar chart, in green
+  $('#pgPro').innerHTML='<div></div>';
+  chart($('#pgPro>div'),'p',G.p,x=>x.p>=G.p,' g');
 }
 $('#pgRange').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b||b.dataset.r===pgRange)return;pgRange=b.dataset.r;renderWeek();
-  for(const el of [$('#pgHero'),$('#pgChart'),$('#pgCal'),$('#pgPro')]){el.classList.remove('mswap');void el.offsetWidth;el.classList.add('mswap')}});
+  for(const el of [$('#pgChart'),$('#pgCal'),$('#pgPro')]){el.classList.remove('mswap');void el.offsetWidth;el.classList.add('mswap')}});
 
 /* ---------- Open now: hours for every location (doc menus/hours, refreshed daily) ---------- */
 const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
