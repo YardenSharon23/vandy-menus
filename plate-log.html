@@ -989,12 +989,24 @@ const PACE={good:{c:'#3ddc84',a:'#1a9a62',b:'#7df0b5',bar:'linear-gradient(90deg
   warn:{c:'#f2c46b',a:'#b8862a',b:'#ffd98e',bar:'linear-gradient(90deg,#c9962f,#f2c46b 70%,#ffe0a1)',lab:'A bit behind'},
   bad:{c:'#ff6b78',a:'#c43a48',b:'#ff9aa3',bar:'linear-gradient(90deg,#d8434f,#ff6b78 70%,#ffa3ab)',lab:'Behind'},
   idle:{c:'#5fa0ff',a:'#2f62d9',b:'#8fd8ff',bar:'',lab:''}};
+// Can the protein still to go fit in the food calories left (target − eaten − planned beer)?
+// Lean picks (chicken breast, Greek yogurt, a shake) run about 5–8 cal per gram of protein; a normal plate is 10–15.
+// ≥12 cal per gram still needed = easy; 8–12 = needs lean picks; under 8 = very hard.
+function proteinFit(t,G){
+  const proLeft=G.p-t.p,calLeft=G.k-beerK()-t.k;
+  if(!(G.k&&G.p)||proLeft<=5)return {st:'ok',proLeft:Math.max(0,proLeft),calLeft};
+  const r=calLeft/proLeft;
+  return {st:r>=12?'ok':r>=8?'warn':'bad',proLeft,calLeft,r};
+}
 function renderPace(t,G,calPct,proPct){
   const arc=$('#proArc');if(!arc)return;
   arc.style.strokeDashoffset=String(257.61*(1-Math.min(1,proPct)));
   const gap=(proPct-calPct)*100;
-  const st=!(G.k&&G.p)||t.k<300?'idle':gap>=-5?'good':gap>=-20?'warn':'bad';
-  const P=PACE[st];
+  let st=!(G.k&&G.p)||t.k<300?'idle':gap>=-5?'good':gap>=-20?'warn':'bad';
+  // If the protein left won't comfortably fit in the calories left, say so, even when the pace itself looks fine.
+  const fit=proteinFit(t,G),rank={idle:0,good:1,warn:2,bad:3};let fitLab='';
+  if(fit.st!=='ok'&&rank[fit.st]>=rank[st]){st=fit.st;fitLab=fit.st==='warn'?'Pick lean protein':'Hard to hit protein'}
+  const P={...PACE[st],...(fitLab?{lab:fitLab}:{})};
   // gradient runs deep → light along the filled part, in the pace color; glow is soft so the two rings blend
   $('#pgA').setAttribute('stop-color',P.a);$('#pgB').setAttribute('stop-color',P.b);
   const endX=130-82*Math.cos(Math.PI*Math.min(1,proPct));$('#pg').setAttribute('x2',String(Math.max(60,endX+5)));
@@ -1543,8 +1555,15 @@ function renderBeer(){
   $('#beerUnit').textContent=n===1?'beer':'beers';
   const k=Math.round(n*per),G=goals(),t=dayTot(),left=G.k-t.k-k;
   $('#beerSum').innerHTML=n>0
-    ?`<b>${fmt(k)} cal</b> set aside: ${esc(fmtBeer(n))} × ${per} cal<br>${esc(BEER_KINDS[per])}<br><strong>${left>=0?fmt(left)+' cal left':'Over by '+fmt(-left)+' cal'}</strong> for food today`
+    ?`<b>${fmt(k)} cal</b> set aside: ${esc(fmtBeer(n))} × ${per} cal<br>${esc(BEER_KINDS[per])}<br><strong>${left>=0?fmt(left)+' cal left':'Over by '+fmt(-left)+' cal'}</strong> for food today${beerProteinLine(G.p-t.p,left)}`
     :'Set how many you\'re planning on.';
+}
+// Whether the protein still to go fits in the food calories this plan leaves (same thresholds as proteinFit).
+function beerProteinLine(proLeft,calLeft){
+  if(!(goals().p)||proLeft<=5)return '';
+  const g=Math.round(proLeft),r=calLeft/proLeft;
+  const msg=calLeft<=0?'no room left for it':r>=12?'easy to fit':r>=8?'doable with lean picks: chicken, Greek yogurt, a shake':'very hard to fit. Try fewer beers';
+  return `<br>${g} g protein to go: <strong>${msg}</strong>`;
 }
 const closeBeer=()=>{$('#beer').hidden=true};
 $('#beerBtn').addEventListener('click',openBeer);
