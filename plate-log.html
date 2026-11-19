@@ -1357,7 +1357,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 
 /* ===== Progress ===== */
 .prog{gap:22px}
-.prog .stabs{margin-top:-6px}
+.prog .stabs{margin-top:0}
 /* hero: the deficit / surplus you've banked, big, with what it means in pounds */
 .pghero{display:flex;flex-direction:column;gap:6px;padding:18px 18px 16px;border-radius:var(--r-card);background:var(--panel);border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
 .pghero.good{background:linear-gradient(160deg,rgba(61,220,132,.1),rgba(61,220,132,.02) 60%),var(--panel);border-color:rgba(61,220,132,.2)}
@@ -1449,8 +1449,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .pgx{gap:8px;padding-right:38px;margin-top:8px}
 .pgchart.m .pgx{gap:3px}.pgchart.q .pgx{gap:6px}
 .pgkey i{border-top:1px solid rgba(255,255,255,.4)}
-.pgtop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.pgtop .pgstreak{margin-top:6px}
+.pgtop{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:26px;margin-top:-10px}
+.pgtop .sub{margin:0}
 .pgstreak[hidden]{display:none}
 .pgkey{font-size:.76rem;color:var(--muted)}.pgkey b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
 /* protein uses the same chart, in green */
@@ -1599,19 +1599,19 @@ header.appbar .iconbtn svg{width:18px;height:18px}
      Week / Month / 3 months, all from the same daily logs you already keep. -->
 <section class="page" id="pWeek" aria-label="Progress">
   <div class="pagein prog">
-    <div class="pgtop"><div><h1>Progress</h1><div class="sub" id="pgSub"></div></div><span class="pgstreak" id="pgStreak" hidden></span></div>
     <div class="stabs" id="pgRange" role="tablist" aria-label="Range">
       <button type="button" role="tab" data-r="w" aria-pressed="true">Week</button>
       <button type="button" role="tab" data-r="m" aria-pressed="false">Month</button>
       <button type="button" role="tab" data-r="q" aria-pressed="false">3 months</button>
     </div>
-    <div>
-      <div class="wkhead"><h2 class="stitle">Calories</h2><span class="pgkey" id="pgKey"></span></div>
-      <div class="pgchart" id="pgChart"></div>
-    </div>
+    <div class="pgtop"><span class="sub" id="pgSub"></span><span class="pgstreak" id="pgStreak" hidden></span></div>
     <div id="pgCalWrap">
       <div class="wkhead"><h2 class="stitle">Consistency</h2></div>
       <div class="pgcal" id="pgCal"></div>
+    </div>
+    <div>
+      <div class="wkhead"><h2 class="stitle">Calories</h2><span class="pgkey" id="pgKey"></span></div>
+      <div class="pgchart" id="pgChart"></div>
     </div>
     <div>
       <div class="wkhead"><h2 class="stitle">Protein</h2><span class="pgkey" id="pgProKey"></span></div>
@@ -2309,11 +2309,10 @@ function renderWeek(){
   };
   chart($('#pgChart'),'k',G.k,x=>onT(x.k),' cal');
 
-  // consistency map: a calendar for the month, a 13-week grid for 3 months (the week view already shows each day)
-  $('#pgCalWrap').hidden=pgRange==='w';
-  if(pgRange!=='w'){
-    const cell=r=>{const c=r.future?'fut':r.today?'now':!tracked(r)?'off':calHit(r)?'hit':'miss';return `<span class="${c}" title="${f(r.d)}">${pgRange==='m'?r.d.getDate():''}</span>`};
-    if(pgRange==='m'){const lead=(rows[0].d.getDay()+6)%7;
+  // consistency, shown first: one row of days for the week, a calendar for the month, a 13-week grid for 3 months
+  {
+    const cell=r=>{const c=r.future?'fut':r.today?'now':!tracked(r)?'off':calHit(r)?'hit':'miss';return `<span class="${c}" title="${f(r.d)}">${pgRange!=='q'?r.d.getDate():''}</span>`};
+    if(pgRange!=='q'){const lead=pgRange==='w'?0:(rows[0].d.getDay()+6)%7;
       $('#pgCal').className='pgcal month';
       $('#pgCal').innerHTML=['M','T','W','T','F','S','S'].map(x=>`<em>${x}</em>`).join('')+'<i></i>'.repeat(lead)+rows.map(cell).join('');}
     else{$('#pgCal').className='pgcal heat';$('#pgCal').innerHTML=rows.map(cell).join('');}
