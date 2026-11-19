@@ -797,6 +797,12 @@ b,strong{font-weight:700}
 .rv .actions,.bz .actions{gap:8px}
 .rv .btn,.bz .btn{padding:12px;border-radius:13px}
 .btn.ghost{background:transparent;color:var(--muted)}
+/* One segmented-switch look everywhere (meal in Add/Edit, goal in Settings, Breakfast/Lunch/Dinner in Eat):
+   a soft tinted track with no outline, and the chosen part raised as a lighter tile with a small shadow */
+.mealseg{background:rgba(255,255,255,.045);border:0;border-radius:12px;padding:3px;gap:2px}
+.mealseg button{border-radius:9px;padding:8px 0;font-size:.84rem;font-weight:650;color:var(--muted)}
+.mealseg button[aria-pressed="true"]{background:#2a3046;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.07)}
+
 /* Settings: the Add popup's pieces, plus switches as hairline rows and a quiet preferences box */
 .seg5.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .seg5.three button{font-size:.84rem;padding:8px 0}
