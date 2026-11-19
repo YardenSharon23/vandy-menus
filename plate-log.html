@@ -843,6 +843,8 @@ b,strong{font-weight:700}
 /* small section label, e.g. "Your daily goal" above the four targets */
 .sect{font-size:.7rem;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 2px;margin-bottom:-8px}
 #goalForm.finder .beerrow{display:none}
+/* in finder mode the tracking pieces simply leave (the whole card eases to its new size, see morphSettings) */
+#goalForm.finder .trackonly{display:none!important}
 /* ===== Settings type scale and grouping (one system for both tabs) =====
    section label  .70rem caps, 700, muted      → "GOAL", "ABOUT YOU", "OPTIONS"…
    choices        .82rem, 650                   → segmented switches
@@ -1250,14 +1252,6 @@ b,strong{font-weight:700}
       <!-- Four labelled groups, in the order you'd answer them: goal → about you → activity → what that adds up to -->
       <div class="pinfo">
         <div class="pgrp">
-          <span class="sect">Goal</span>
-          <div class="seg5 three" id="gdir" role="group" aria-label="Your goal">
-            <button type="button" data-dir="lose">Lose weight</button>
-            <button type="button" data-dir="maintain">Maintain</button>
-            <button type="button" data-dir="gain">Gain weight</button>
-          </div>
-        </div>
-        <div class="pgrp">
           <span class="sect">About you</span>
           <div class="seg5 two" id="psex" role="group" aria-label="Sex">
             <button type="button" data-sex="m">Male</button>
@@ -1267,6 +1261,14 @@ b,strong{font-weight:700}
           <label><span class="pv"><input type="number" inputmode="numeric" min="13" max="99" id="page" placeholder="18" aria-label="Age"></span><span class="pl">age</span></label>
           <label><span class="pv"><input type="number" inputmode="numeric" min="3" max="7" id="pft" placeholder="5" aria-label="Height, feet"><em>ft</em><input type="number" inputmode="numeric" min="0" max="11" id="pin" placeholder="7" aria-label="Height, inches"><em>in</em></span><span class="pl">height</span></label>
           <label><span class="pv"><input type="number" inputmode="decimal" min="70" max="500" id="plb" placeholder="160" aria-label="Weight in pounds"><em>lb</em></span><span class="pl">weight</span></label>
+          </div>
+        </div>
+        <div class="pgrp">
+          <span class="sect">Goal</span>
+          <div class="seg5 three" id="gdir" role="group" aria-label="Your goal">
+            <button type="button" data-dir="lose">Lose weight</button>
+            <button type="button" data-dir="maintain">Maintain</button>
+            <button type="button" data-dir="gain">Gain weight</button>
           </div>
         </div>
         <div class="pgrp">
@@ -1673,7 +1675,25 @@ function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const
   $('#page').value=P.age||'';$('#pft').value=P.ft||'';$('#pin').value=P.ft?(P.in||0):'';$('#plb').value=P.lb||'';
   renderRec();setTab('t');
   $('#gprefs').value=prefs();$('#gfinder').checked=finderOn();$('#gbeer').checked=beerOn();$('#goalForm').classList.toggle('finder',finderOn());$('#settings').hidden=false}
-$('#gfinder').addEventListener('change',()=>{$('#goalForm').classList.toggle('finder',$('#gfinder').checked);if($('#gfinder').checked)setTab('t')});
+// Turning food finder mode on/off changes a lot at once (tabs, targets, beer row). Instead of everything snapping:
+// the content fades out, the change happens while it's invisible, the card eases to its new height, content fades back.
+let morphT=null;
+function morphSettings(apply){
+  // only the pieces that come and go fade; the switch you just flipped and the rows that stay never blink
+  const s=$('#settings .sheet'),parts=['#setTabs','#stTargets .trackonly','#goalForm .beerrow'].map(q=>$(q));
+  if(calm){apply();return}
+  clearTimeout(morphT);
+  parts.forEach(p=>{p.style.transition='opacity .12s ease';p.style.opacity='0'});
+  morphT=setTimeout(()=>{
+    const h0=s.offsetHeight;apply();const h1=s.offsetHeight;
+    s.style.height=h0+'px';s.style.overflow='hidden';void s.offsetHeight;
+    s.style.transition='height .42s var(--spring)';s.style.height=h1+'px';
+    parts.forEach(p=>{p.style.transition='none';p.style.opacity='0'});void s.offsetHeight;
+    parts.forEach(p=>{p.style.transition='opacity .28s ease .12s';p.style.opacity=''});
+    morphT=setTimeout(()=>{s.style.height='';s.style.overflow='';s.style.transition='';parts.forEach(p=>p.style.transition='')},460);
+  },120);
+}
+$('#gfinder').addEventListener('change',()=>{const on=$('#gfinder').checked;morphSettings(()=>{$('#goalForm').classList.toggle('finder',on);if(on)setTab('t')})});
 function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
