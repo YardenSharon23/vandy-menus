@@ -1309,6 +1309,14 @@ header.appbar .iconbtn:active{background:rgba(255,255,255,.12)}
    just where and what */
 .entry .t b time{margin-left:7px;font-size:.72rem;font-weight:500;color:var(--faint);letter-spacing:0;font-variant-numeric:tabular-nums}
 
+/* Planning a later meal: places that WILL be open get the app's blue (not the green that means "open right now"),
+   with their hours for that meal, and a one-line note says what you're looking at. */
+.place.later{background:linear-gradient(180deg,rgba(61,123,255,.08),rgba(61,123,255,.02)),var(--panel);border-color:rgba(95,160,255,.22)}
+.place.later .dot{background:var(--blue-2);box-shadow:0 0 0 3px rgba(95,160,255,.16),0 0 10px rgba(95,160,255,.6)}
+.place.later .st{color:var(--blue-2)}
+.mhint{display:flex;align-items:center;gap:8px;padding:0 4px 2px;font-size:.76rem;color:var(--muted)}
+.mhint i{flex:none;width:6px;height:6px;border-radius:50%;background:var(--blue-2);box-shadow:0 0 8px rgba(95,160,255,.7)}
+
 /* consistent vertical rhythm between blocks on every page */
 .pagein{gap:26px}
 .page .app{gap:26px}
@@ -2175,6 +2183,21 @@ function kindOf(it){
 }
 // "Grill Main" and "Grill Side" share the family "grill"; plates are only built inside one family.
 const stationFamily=s=>String(s||'').replace(/\s+(mains?|entr[eé]e|sides?|base|grains?|protein|veggies)$/i,'').trim().toLowerCase();
+// Campus meal windows (minutes after midnight), Vanderbilt's usual Breakfast / Lunch / Dinner periods.
+const MEAL_WIN={Breakfast:[420,630,'7–10:30 AM'],Lunch:[660,870,'11 AM–2:30 PM'],Dinner:[1020,1230,'5–8:30 PM']};
+// When the chosen meal isn't the one happening now, plan for it: today if it's still ahead, otherwise tomorrow.
+function mealMode(){
+  const meal=eat.meal;if(!meal||meal===defaultMeal()||!MEAL_WIN[meal])return null;
+  const now=new Date(),m=now.getHours()*60+now.getMinutes(),[s,e,span]=MEAL_WIN[meal];
+  const tomorrow=m>=e;const day=(now.getDay()+(tomorrow?1:0))%7;
+  return {meal,s,e,span,day,tomorrow};
+}
+// Is a place open at any point during that meal? If so: its hours for it ("5 – 9 PM"), sorted by opening time.
+function mealStatus(u,mode){
+  const r=ranges(u,mode.day).find(r=>r.s<mode.e&&r.e>mode.s);
+  if(r)return {open:false,later:true,wait:r.s,label:`${tshort(r.o)} – ${tshort(r.c)}`};
+  return {open:false,later:false,wait:1e9,label:'Closed'};
+}
 function defaultMeal(){const h=new Date().getHours()+new Date().getMinutes()/60;return h<10.5?'Breakfast':h<15.5?'Lunch':'Dinner'}
 // Items one hall serves for a meal (Brunch counts for breakfast and lunch; Daily Offerings count all day), deduplicated.
 function hallItems(id,meal){
@@ -2375,7 +2398,7 @@ function placeRow(u,st){
   let best='';
   if(isHall&&eat.loaded){const m=sortForYou(hallItems(u.id,eat.meal).filter(i=>i.kind==='main'),st)[0];
     if(m)best={n:m.n,mac:finderOn()?'':`${fmt(m.k)} cal · ${Math.round(m.p)} g`};}   // the dish, plus its numbers in a quieter tone
-  const cls=st.open?(st.soon?' soon':' open'):'';const isOpen=eat.open===u.id;
+  const cls=st.later?' later':st.open?(st.soon?' soon':' open'):'';const isOpen=eat.open===u.id;
   let body='';
   if(isOpen){
     // Mains open, sorted for you. Sides and extras each stay folded until you tap them.
@@ -2412,17 +2435,22 @@ function renderPlaces(){
   if(!hoursData){box.innerHTML='<div class="pickempty">Hours aren\'t loaded yet.</div>';return}
   // Three groups, in this order: dining halls (and The Pub), quicker spots (Suzie's, Wasabi, VandyBlenz, cafés…), then Munchie Marts.
   const now=new Date();const kind=id=>DINING.includes(id)||id===4?0:[12,13,14,15].includes(id)?2:1;
-  const all=hoursData.units.map(u=>({u,st:status(u,now),k:kind(u.id)}));
-  const open=all.filter(x=>x.st.open).sort((a,b)=>(a.k-b.k)||(b.st.wait-a.st.wait));
-  const closed=all.filter(x=>!x.st.open).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
+  // Planning ahead: pick a meal that isn't happening now (Dinner at lunchtime) and the list shows who'll be open
+  // during that meal instead of right now — titled "Open for dinner", each card showing its hours for that meal.
+  const mode=mealMode();
+  const all=hoursData.units.map(u=>({u,st:mode?mealStatus(u,mode):status(u,now),k:kind(u.id)}));
+  const isOpen=x=>x.st.open||x.st.later;
+  const open=all.filter(isOpen).sort((a,b)=>(a.k-b.k)||(mode?a.st.wait-b.st.wait:b.st.wait-a.st.wait));
+  const closed=all.filter(x=>!isOpen(x)).sort((a,b)=>(a.k-b.k)||(a.st.wait-b.st.wait));
   // Each group is its own stack; a slightly larger gap between stacks shows where one kind of place ends.
   const groups=list=>[0,1,2].map(k=>list.filter(x=>x.k===k)).filter(g=>g.length)
     .map(g=>`<div class="pgroup"><span class="glab">${['Dining halls','Quick bites','Munchie Marts'][g[0].k]}</span><div class="plist">${g.map(x=>placeRow(x.u,x.st)).join('')}</div></div>`).join('');
   const showOpen=eat.showOpen!==false;
-  box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">Open now <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
+  const when=mode?`${mode.meal.toLowerCase()}${mode.tomorrow?' tomorrow':''}`:'';
+  box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">${mode?'Open for '+when:'Open now'} <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
     // both lists are always built; a wrapper folds them open and shut (height + fade) so the toggle can animate
-    +`<div class="cwrap${showOpen?' show':''}"><div class="cin"><div class="closedlist">${open.length?groups(open):'<div class="pickempty">Nothing is open right now.</div>'}</div></div></div>`
-    +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${!!eat.showClosed}"><span class="gt">Closed <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}${CHEV}</span></button>`
+    +`<div class="cwrap${showOpen?' show':''}"><div class="cin"><div class="closedlist">${mode?`<div class="mhint"><i></i>Will be open during ${when} · ${mode.span}</div>`:''}${open.length?groups(open):`<div class="pickempty">${mode?'Nothing is open for '+when+'.':'Nothing is open right now.'}</div>`}</div></div></div>`
+    +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${!!eat.showClosed}"><span class="gt">${mode?'Closed for '+mode.meal.toLowerCase():'Closed'} <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}${CHEV}</span></button>`
     +`<div class="cwrap${eat.showClosed?' show':''}"><div class="cin"><div class="closedlist">${groups(closed)}</div></div></div>`;
 }
 function renderEat(){
