@@ -825,13 +825,14 @@ b,strong{font-weight:700}
 .kinds button[aria-pressed="true"]::after{transform:none}
 .mugrow{display:flex;align-items:center;gap:4px}
 .mugs{flex:1;display:flex;justify-content:space-between;min-width:0}
-.mug{border:0;background:transparent;padding:6px 1px;color:rgba(255,255,255,.17);line-height:0}
+/* solid (not see-through) line colours, so where the mug's body, handle and foam lines cross there's no darker overlap */
+.mug{border:0;background:transparent;padding:6px 1px;color:#3a4052;line-height:0}
 .mug svg{width:27px;height:27px;transition:color .25s}
 .mug .fill{fill:currentColor;fill-opacity:0;transition:fill-opacity .25s}
 .mug.on{color:var(--amber)}
 .mug.on svg{filter:drop-shadow(0 0 6px rgba(242,169,59,.45))}
 .mug.on .fill{fill-opacity:.85}
-.mug.half{color:rgba(246,200,119,.75)}
+.mug.half{color:#c4a160}
 .mug.half .fill{fill-opacity:.35}
 @keyframes mugPop{0%{transform:scale(.7)}60%{transform:scale(1.15)}100%{transform:none}}
 .mug.pop svg{animation:mugPop .45s var(--spring-bounce)}
