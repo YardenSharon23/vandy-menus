@@ -843,6 +843,22 @@ b,strong{font-weight:700}
 .mealseg button{border-radius:9px;padding:8px 0;font-size:.84rem;font-weight:650;color:var(--muted)}
 .mealseg button[aria-pressed="true"]{background:#2a3046;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.07)}
 
+/* ===== Eat hierarchy: three clear levels =====
+   1  Section titles  "Top picks for you" · "Open now" · "Closed"   1.06rem, 750, white, with a count and Hide/Show + arrow
+   2  Group labels    DINING HALLS · QUICK BITES · MUNCHIE MARTS    tiny caps, faint (they sort places inside a section)
+   3  Cards           place / dish names                           */
+.picktoggle,.closedtoggle{align-items:center}
+.picktoggle .gt,.closedtoggle .gt{flex:1;display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:1.06rem;font-weight:750;
+  letter-spacing:-.012em;text-transform:none;color:var(--ink)}
+.closedtoggle .gt small{font-size:.7rem;font-weight:650;letter-spacing:0;color:var(--muted);background:rgba(255,255,255,.07);border-radius:99px;padding:2px 8px}
+.picktoggle .gs,.closedtoggle .gs{display:flex;align-items:center;gap:4px;font-size:.78rem;font-weight:600;color:var(--blue-2)}
+.picktoggle .gs svg{width:14px;height:14px;transition:transform .45s var(--spring)}
+.picktoggle[aria-expanded="true"] .gs svg{transform:rotate(180deg)}
+.picktoggle{padding:2px 2px}
+.closedtoggle{padding:18px 2px 4px}
+#eatPlaces>.closedtoggle:first-child{padding-top:6px}
+.glab{font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--faint);padding:0 4px}
+
 /* Eat: search + meal on one row (saves a whole row of height) */
 .eatbar{display:flex;align-items:center;gap:8px}
 .eatbar .esearch{flex:1;min-width:0;height:42px}
@@ -858,6 +874,9 @@ b,strong{font-weight:700}
 .eatbar .mealseg button[aria-pressed="true"] span{display:inline}
 .eatbar .mealseg button[aria-pressed="true"] svg{color:var(--cyan)}
 .eatbar .mealseg button:active{transform:scale(.96)}
+/* searching: the meal switch folds away and search takes the whole row (one smooth width change, nothing else moves) */
+.eatbar .mealseg{overflow:hidden;transition:width .38s var(--spring),opacity .2s ease,margin .38s var(--spring),padding .38s var(--spring)}
+.eatbar.searching .mealseg{width:0;padding:3px 0;margin-left:-8px;opacity:0;pointer-events:none}
 
 /* a little breathing room between the top bar and every page's content */
 .page{padding-top:14px}
@@ -1193,7 +1212,7 @@ b,strong{font-weight:700}
     <div class="echips" id="eatChips" aria-hidden="true"></div>
     <div class="pickblock" id="pickBlock">
       <button type="button" class="picktoggle" id="pickToggle" aria-expanded="false" aria-controls="picks">
-        <span class="lab picklab">Top picks for you</span><span class="gs" id="pickToggleTxt">Hide</span>
+        <span class="gt">Top picks for you</span><span class="gs"><span id="pickToggleTxt">Hide</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
       </button>
       <div class="picks" id="picks"></div>
     </div>
@@ -2177,7 +2196,7 @@ function renderPlaces(){
   const groups=list=>[0,1,2].map(k=>list.filter(x=>x.k===k)).filter(g=>g.length)
     .map(g=>`<div class="pgroup"><span class="glab">${['Dining halls','Quick bites','Munchie Marts'][g[0].k]}</span><div class="plist">${g.map(x=>placeRow(x.u,x.st)).join('')}</div></div>`).join('');
   const showOpen=eat.showOpen!==false;
-  box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">Open <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
+  box.innerHTML=`<button type="button" class="closedtoggle" id="openToggle" aria-expanded="${showOpen}"><span class="gt">Open now <small>${open.length}</small></span><span class="gs">${showOpen?'Hide':'Show'}${CHEV}</span></button>`
     // both lists are always built; a wrapper folds them open and shut (height + fade) so the toggle can animate
     +`<div class="cwrap${showOpen?' show':''}"><div class="cin"><div class="closedlist">${open.length?groups(open):'<div class="pickempty">Nothing is open right now.</div>'}</div></div></div>`
     +`<button type="button" class="closedtoggle" id="closedToggle" aria-expanded="${!!eat.showClosed}"><span class="gt">Closed <small>${closed.length}</small></span><span class="gs">${eat.showClosed?'Hide':'Show'}${CHEV}</span></button>`
@@ -2213,6 +2232,10 @@ function maybeHideChips(){setTimeout(()=>{
 },180)}
 $('#eatQ').addEventListener('focus',()=>showChips(true));
 $('#eatQ').addEventListener('blur',maybeHideChips);
+// while you're searching (box focused, or there's text in it), the meal switch steps aside
+const syncSearching=()=>$('.eatbar').classList.toggle('searching',document.activeElement===$('#eatQ')||!!$('#eatQ').value.trim());
+for(const ev of ['focus','blur','input'])$('#eatQ').addEventListener(ev,syncSearching);
+$('#eatClear').addEventListener('click',()=>setTimeout(syncSearching,0));
 $('#eatChips').addEventListener('focusout',maybeHideChips);
 // tapping a chip shouldn't steal focus from the search box (which would fold the chips away mid-tap)
 $('#eatChips').addEventListener('pointerdown',e=>{if(e.target.closest('button'))e.preventDefault()});
