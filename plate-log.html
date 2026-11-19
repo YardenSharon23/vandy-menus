@@ -669,6 +669,76 @@ body{font-feature-settings:"cv11"}
 .entry,.place,.pickempty,.eresults,.ilist,.wkgoal,.wkstats div,.toggle,.hall{box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
 .place.open{box-shadow:inset 0 1px 0 rgba(61,220,132,.08)}
 
+/* ===== Logging popups (Add to today / Edit, Room for beer): totals first, foods as hairline rows, no boxed fields ===== */
+.sheet.rv,.sheet.bz{gap:14px;padding:18px 18px 16px}
+.rvhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-width:0}
+.rvhead h2{font-size:1.08rem;white-space:nowrap}
+.rvhead .where{margin:0;font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* slim segmented switches (meal, beer kind): one tinted track, the chosen part raised */
+.seg5,.seg3{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:rgba(255,255,255,.045);border-radius:12px;padding:3px}
+.seg3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.seg5 button,.seg3 button{border:0;background:transparent;border-radius:9px;padding:7px 0;font-size:.76rem;font-weight:600;color:var(--muted);white-space:nowrap;
+  transition:background-color .3s var(--spring),color .2s,box-shadow .3s,transform .5s var(--spring)}
+.seg5 button[aria-pressed="true"],.seg3 button[aria-pressed="true"]{background:#2a3046;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.07)}
+.seg3 button{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0 6px;font-size:.82rem}
+.seg3 button small{font-size:.7rem;font-weight:500;color:var(--faint)}
+.seg3 button[aria-pressed="true"]{background:rgba(242,180,80,.15);color:#f6c877;box-shadow:inset 0 0 0 1px rgba(242,180,80,.35)}
+.seg3 button[aria-pressed="true"] small{color:rgba(246,200,119,.75)}
+/* totals: the calorie number is the hero; every number is typeable in place (faint underline, blue when editing) */
+.rvtot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:2px 2px 12px;border-bottom:1px solid var(--line)}
+.rvtot input{background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.1);border-radius:0;padding:0 0 1px;color:var(--ink);
+  font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield;transition:border-color .2s}
+.rvtot input::-webkit-inner-spin-button,.rvtot input::-webkit-outer-spin-button,.pstep input::-webkit-inner-spin-button,.pstep input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.rvtot input:focus{outline:none;border-bottom-color:var(--blue-2)}
+.rvtot .kc{display:flex;align-items:baseline;gap:6px}
+.rvtot .kc input{width:4.4ch;font-size:2.3rem!important;line-height:1.05;letter-spacing:-.035em}
+.rvtot .kc span{font-size:.88rem;color:var(--muted)}
+.rvtot .mx{display:flex;gap:14px}
+.rvtot .mx label{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.rvtot .mx input{width:3.4ch;text-align:right;font-size:1.08rem!important}
+.rvtot .mx span{display:flex;align-items:center;gap:4px;font-size:.7rem;color:var(--muted)}
+.rvtot .mx i{width:6px;height:6px;border-radius:50%}
+.rvtot .dp{background:var(--blue-2)}.rvtot .dc{background:var(--carb)}.rvtot .df{background:var(--fat)}
+/* foods: hairline rows, one short detail line, stepper + remove on the right */
+.rv .ritems{background:transparent;border-radius:0;padding:0;margin-top:-6px}
+.rv .ritem{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rv .ritem:first-child{border-top:0}
+.rv .ritem .t{min-width:0}
+.rv .ritem .t b{display:block;font-weight:500;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv .ritem .t small{display:block;margin-top:1px;font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.rv .empty{padding:6px 0;font-size:.84rem}
+.pstep{display:inline-flex;align-items:center;background:rgba(255,255,255,.06);border-radius:99px;padding:2px}
+.pstep button{width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--ink);font-size:1.05rem;line-height:1;display:grid;place-items:center}
+.pstep button:active{background:rgba(255,255,255,.12);transform:scale(.9)}
+.pstep>span{min-width:34px;text-align:center;font-size:.82rem;font-weight:600;font-variant-numeric:tabular-nums}
+.rx{width:28px;height:28px;margin-right:-6px;border:0;border-radius:50%;background:transparent;color:var(--faint);display:grid;place-items:center}
+.rx svg{width:15px;height:15px}
+.rx:active{color:var(--bad);background:rgba(255,107,120,.1)}
+/* note to Claude: a quiet one-line field, not another big pill */
+.rv .rnote{min-height:44px;padding:3px 3px 3px 14px;border-radius:14px;background:rgba(255,255,255,.045);border-color:transparent;box-shadow:none}
+.rv .rnote input{padding:8px 2px;font-size:16px}
+.rv .rnote button{height:38px;border-radius:11px;padding:0 14px;font-size:.84rem;background:rgba(61,123,255,.2);color:var(--blue-2);box-shadow:none}
+.rv .actions,.bz .actions{gap:8px}
+.rv .btn,.bz .btn{padding:12px;border-radius:13px}
+.btn.ghost{background:transparent;color:var(--muted)}
+/* beer: count stepper on the left, total set aside on the right, one status line under a hairline */
+.bzrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bzrow .pstep{padding:3px}
+.bzrow .pstep button{width:40px;height:40px;font-size:1.3rem}
+.bzrow .pstep label{display:flex;align-items:baseline;gap:4px;padding:0 4px}
+.bzrow .pstep input{width:2.4ch;text-align:center;background:transparent;border:0;padding:0;color:var(--ink);font-family:var(--display);font-weight:600;font-size:1.45rem!important;
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+.bzrow .pstep input:focus{outline:none}
+.bzrow .pstep label span{font-size:.78rem;color:var(--muted)}
+.bztot{text-align:right}
+.bztot b{display:block;font-family:var(--display);font-weight:600;font-size:1.65rem;line-height:1.1;letter-spacing:-.025em;color:#f6c877;font-variant-numeric:tabular-nums}
+.bztot span{font-size:.72rem;color:var(--muted)}
+.bzsum{display:flex;align-items:flex-start;gap:8px;padding-top:12px;border-top:1px solid var(--line);font-size:.82rem;line-height:1.4;color:var(--muted)}
+.bzsum strong{color:var(--ink);font-weight:600}
+.sd{flex:none;width:7px;height:7px;margin-top:6px;border-radius:50%;background:var(--good);box-shadow:0 0 8px rgba(61,220,132,.5)}
+.sd.warn{background:var(--carb);box-shadow:0 0 8px rgba(242,196,107,.5)}
+.sd.bad{background:var(--bad);box-shadow:0 0 8px rgba(255,107,120,.5)}
+
 /* Accessibility: reduced motion keeps gentle fades (so things don't just pop) but drops all movement and springs */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
@@ -853,22 +923,27 @@ body{font-feature-settings:"cv11"}
 
 <!-- Room for beer: plan drinks ahead; the calories are set aside on the gauge -->
 <div class="scrim" id="beer" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="beerTitle">
-    <div><h2 id="beerTitle">Room for beer</h2><div class="fine">Set aside calories for drinks later today. Calories left, top picks and protein pace all plan around it.</div></div>
-    <div class="beerstep">
-      <button type="button" data-bstep="-1" aria-label="One fewer">&minus;</button>
-      <label><input type="number" inputmode="decimal" min="0" max="30" step="0.5" id="beerN" aria-label="Number of beers"><span id="beerUnit">beers</span></label>
-      <button type="button" data-bstep="1" aria-label="One more">+</button>
+  <!-- Layout: title, kind as a three-part switch (calories per can underneath), one row with the count stepper on the
+       left and the total set aside on the right, then a single status line. -->
+  <div class="sheet bz" role="dialog" aria-modal="true" aria-labelledby="beerTitle">
+    <div class="rvhead"><h2 id="beerTitle">Room for beer</h2><span class="where">Set aside for later today</span></div>
+    <div class="seg3" id="beerKind" role="group" aria-label="Kind of beer">
+      <button type="button" data-per="100" title="Bud Light, Coors Light, Michelob Ultra, White Claw">Light<small>100 cal</small></button>
+      <button type="button" data-per="150" title="Budweiser, Yuengling, Stella, Corona">Regular<small>150 cal</small></button>
+      <button type="button" data-per="210" title="IPA or craft: usually 180–250 a can">IPA / craft<small>210 cal</small></button>
     </div>
-    <div class="names" id="beerKind" role="group" aria-label="Kind of beer">
-      <button type="button" class="name" data-per="100">Light</button>
-      <button type="button" class="name" data-per="150">Regular</button>
-      <button type="button" class="name" data-per="210">IPA / craft</button>
+    <div class="bzrow">
+      <div class="pstep" role="group" aria-label="Number of beers">
+        <button type="button" data-bstep="-1" aria-label="One fewer">&minus;</button>
+        <label><input type="number" inputmode="decimal" min="0" max="30" step="0.5" id="beerN" aria-label="Number of beers"><span id="beerUnit">beers</span></label>
+        <button type="button" data-bstep="1" aria-label="One more">+</button>
+      </div>
+      <div class="bztot"><b id="beerK">0</b><span>cal set aside</span></div>
     </div>
-    <div class="beersum" id="beerSum"></div>
+    <div class="bzsum" id="beerSum"></div>
     <div class="actions">
       <button type="button" class="btn danger" id="beerClear">Clear</button>
-      <button type="button" class="btn" id="beerCancel">Cancel</button>
+      <button type="button" class="btn ghost" id="beerCancel">Cancel</button>
       <button type="button" class="btn primary" id="beerSave">Save</button>
     </div>
   </div>
@@ -886,25 +961,27 @@ body{font-feature-settings:"cv11"}
 
 <!-- Review / edit an entry -->
 <div class="scrim" id="review" hidden>
-  <form class="sheet" id="reviewForm" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
-    <h2 id="rvTitle">Add to today</h2>
-    <div class="where" id="rvWhere"></div>
-    <div class="names" id="rvNames" role="group" aria-label="Name"></div>
+  <!-- Layout: title + place on one line, a slim meal switch, the totals as the hero (tap any number to type over it),
+       then the foods as hairline rows with the serving stepper right on each row. No boxed fields, no helper text. -->
+  <form class="sheet rv" id="reviewForm" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
+    <div class="rvhead"><h2 id="rvTitle">Add to today</h2><span class="where" id="rvWhere"></span></div>
+    <div class="seg5" id="rvNames" role="group" aria-label="Meal"></div>
+    <div class="rvtot" aria-label="Totals. Tap a number to change it.">
+      <label class="kc"><input type="number" inputmode="decimal" min="0" step="any" id="tk" aria-label="Calories"><span>cal</span></label>
+      <div class="mx">
+        <label><input type="number" inputmode="decimal" min="0" step="any" id="tp" aria-label="Protein grams"><span><i class="dp"></i>protein</span></label>
+        <label><input type="number" inputmode="decimal" min="0" step="any" id="tc" aria-label="Carbs grams"><span><i class="dc"></i>carbs</span></label>
+        <label><input type="number" inputmode="decimal" min="0" step="any" id="tf" aria-label="Fat grams"><span><i class="df"></i>fat</span></label>
+      </div>
+    </div>
     <div class="ritems" id="rvItems"></div>
     <div class="rnote" id="rvNoteRow" hidden>
-      <input id="rvNote" placeholder="Add a note: no dressing, ate half…" aria-label="Add a note for Claude" autocomplete="off">
+      <input id="rvNote" placeholder="Tell Claude: no dressing, ate half…" aria-label="Add a note for Claude" autocomplete="off">
       <button type="button" id="rvUpdate">Update</button>
     </div>
-    <div class="fields">
-      <label>Calories<input type="number" inputmode="decimal" min="0" step="any" id="tk"></label>
-      <label>Protein g<input type="number" inputmode="decimal" min="0" step="any" id="tp"></label>
-      <label>Carbs g<input type="number" inputmode="decimal" min="0" step="any" id="tc"></label>
-      <label>Fat g<input type="number" inputmode="decimal" min="0" step="any" id="tf"></label>
-    </div>
-    <div class="fine" id="rvFine">Change servings above, or type over any total.</div>
     <div class="actions">
       <button type="button" class="btn danger" id="rvDelete" hidden>Delete</button>
-      <button type="button" class="btn" id="rvCancel">Cancel</button>
+      <button type="button" class="btn ghost" id="rvCancel">Cancel</button>
       <button type="submit" class="btn primary" id="rvSave">Add</button>
     </div>
   </form>
@@ -1178,28 +1255,36 @@ function portionText(i){
   const g=+i.gr>0?Math.round(i.gr*i.sv):null;
   return `${i.sv===1?'':i.sv+' × '}${esc(i.v||'1 serving')}${g?` ≈ ${g} g`:''}`;
 }
+// The short amount on a food row: total grams when the menu gives a weight ("225 g"), else the serving ("1 cup"),
+// and Claude's guesses for off-menu food marked "est.".
+function amountText(i){
+  if(i.v==='estimate')return `<span class="est">est.</span>${i.eg?` ${Math.round(i.eg*i.sv)} g`:''}`;
+  const g=+i.gr>0?Math.round(i.gr*i.sv):null;
+  return g?`${g} g`:esc((i.sv===1?'':i.sv+' × ')+String(i.v||'1 serving').replace(/\s*portion$/i,''));
+}
 function renderReview(fillTotals){
   const D=state.draft;
-  $('#rvNames').innerHTML=NAMES.map(n=>`<button type="button" class="name" data-n="${n}" aria-pressed="${n===D.name}">${n}</button>`).join('');
+  $('#rvNames').innerHTML=NAMES.map(n=>`<button type="button" data-n="${n}" aria-pressed="${n===D.name}">${n}</button>`).join('');
+  // One hairline row per food: name, then one short line (amount · calories · protein), stepper and remove on the right.
   $('#rvItems').innerHTML=D.items.length?D.items.map((i,ix)=>`<div class="ritem">
-      <span class="nm">${esc(i.n)}</span>
-      <span class="step" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">−</button><span>${i.sv}×</span><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
-      <span class="sub">${fmt(i.k*i.sv)} cal · ${r1(i.p*i.sv)} g protein</span>
-      <span class="portion">${portionText(i)}</span>
-      <button type="button" class="x" data-x="${ix}">Remove</button></div>`).join('')
-    :'<div class="empty">No items. Type the totals below.</div>';
-  if(fillTotals){const T=D.manual?D.tot:itemsTot(D.items);for(const k of ['k','p','c','f'])$('#t'+k).value=k==='k'?Math.round(T[k]):r1(T[k])}
+      <div class="t"><b>${esc(i.n)}</b><small>${amountText(i)} · ${fmt(i.k*i.sv)} cal · ${r1(i.p*i.sv)} g protein</small></div>
+      <span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><span>${i.sv}×</span><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
+      <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div>`).join('')
+    :'<div class="empty">No foods listed. Type the totals above.</div>';
+  if(fillTotals){const T=D.manual?D.tot:itemsTot(D.items);for(const k of ['k','p','c','f']){$('#t'+k).value=k==='k'?Math.round(T[k]):r1(T[k]);fitNum($('#t'+k))}}
 }
+// The typeable totals are exactly as wide as their number, so the underline hugs it
+function fitNum(el){el.style.width=Math.max(1.6,String(el.value||'0').length+.35)+'ch'}
 $('#rvNames').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;state.draft.name=b.dataset.n;renderReview(false)});
 $('#rvItems').addEventListener('click',e=>{
-  const D=state.draft,t=e.target;let i;
+  const D=state.draft,t=e.target.closest('button');let i;if(!t)return;
   if(t.dataset.inc!=null){i=D.items[+t.dataset.inc];i.sv=Math.round((i.sv+(i.sv<1?0.25:0.5))*4)/4}
   else if(t.dataset.dec!=null){i=D.items[+t.dataset.dec];i.sv=Math.max(0.25,Math.round((i.sv-(i.sv<=1?0.25:0.5))*4)/4)}
   else if(t.dataset.x!=null){D.items.splice(+t.dataset.x,1)}
   else return;
   D.manual=false;renderReview(true);
 });
-for(const k of ['k','p','c','f'])$('#t'+k).addEventListener('input',()=>{state.draft.manual=true});
+for(const k of ['k','p','c','f'])$('#t'+k).addEventListener('input',e=>{state.draft.manual=true;fitNum(e.target)});
 function closeReview(){$('#review').hidden=true;state.draft=null}
 $('#rvCancel').addEventListener('click',()=>{const D=state.draft;if(D&&D.mode==='new')note('Not logged.');closeReview()});
 $('#review').addEventListener('click',e=>{if(e.target.id==='review')$('#rvCancel').click()});
@@ -1644,16 +1729,19 @@ function renderBeer(){
   for(const b of document.querySelectorAll('#beerKind [data-per]'))b.setAttribute('aria-pressed',String(+b.dataset.per===per));
   $('#beerUnit').textContent=n===1?'beer':'beers';
   const k=Math.round(n*per),G=goals(),t=dayTot(),left=G.k-t.k-k;
-  $('#beerSum').innerHTML=n>0
-    ?`<b>${fmt(k)} cal</b> set aside: ${esc(fmtBeer(n))} × ${per} cal<br>${esc(BEER_KINDS[per])}<br><strong>${left>=0?fmt(left)+' cal left':'Over by '+fmt(-left)+' cal'}</strong> for food today${beerProteinLine(G.p-t.p,left)}`
-    :'Set how many you\'re planning on.';
+  $('#beerK').textContent=fmt(k);
+  // one status line with a colored dot: what's left for food, and whether the protein still fits in it
+  if(!(n>0)){$('#beerSum').innerHTML='<span>Set how many you\'re planning on.</span>';return}
+  const P=beerProteinLine(G.p-t.p,left),lvl=left<0?'bad':P.lvl;
+  $('#beerSum').innerHTML=`<i class="sd ${lvl}"></i><span><strong>${left>=0?fmt(left)+' cal':'Over by '+fmt(-left)+' cal'}</strong>${left>=0?' left for food':''}${P.txt}</span>`;
 }
 // Whether the protein still to go fits in the food calories this plan leaves (same thresholds as proteinFit).
 function beerProteinLine(proLeft,calLeft){
-  if(!(goals().p)||proLeft<=5)return '';
+  if(!(goals().p)||proLeft<=5)return {txt:'',lvl:'ok'};
   const g=Math.round(proLeft),r=calLeft/proLeft;
-  const msg=calLeft<=0?'no room left for it':r>=12?'easy to fit':r>=8?'doable with lean picks: chicken, Greek yogurt, a shake':'very hard to fit. Try fewer beers';
-  return `<br>${g} g protein to go: <strong>${msg}</strong>`;
+  const lvl=calLeft<=0||r<8?'bad':r<12?'warn':'ok';
+  const msg={ok:'fits easily',warn:'needs lean picks',bad:'very hard to fit'}[lvl];
+  return {txt:` · ${g} g protein ${msg}`,lvl};
 }
 const closeBeer=()=>{$('#beer').hidden=true};
 
