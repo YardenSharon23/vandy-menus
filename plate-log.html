@@ -194,6 +194,21 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 .cam::after{display:none}
 .cam svg{width:30px;height:30px;filter:drop-shadow(0 1px 1.5px rgba(10,30,90,.35))}
 .cam:active{transform:scale(.92);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -2px 6px rgba(12,35,110,.4),0 5px 14px rgba(48,104,245,.38),0 1px 3px rgba(0,0,0,.35)}
+/* ===== Top navigation, premium =====
+   The app's main nav must read a level above every in-page switch. In-page choices are tinted tracks with a raised
+   tile; navigation is plain type on a frosted bar: the active page bright and bold with a short glowing indicator
+   underneath (it still glides with your swipe), the others quiet. A hairline closes the bar off from the content. */
+header.appbar{background:linear-gradient(180deg,rgba(13,16,25,.97),rgba(15,18,27,.88));-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);
+  padding-bottom:0;box-shadow:0 1px 0 rgba(255,255,255,.05),0 10px 24px rgba(5,7,12,.35)}
+header.appbar .tabs{background:none;border:0;border-radius:0;padding:0}
+header.appbar .tabs button{padding:13px 0 15px;font-size:1rem;font-weight:600;letter-spacing:-.01em;color:var(--muted);transition:color .3s ease}
+header.appbar .tabs button[aria-selected="true"]{color:var(--ink);font-weight:750}
+header.appbar .tabhl{top:auto;bottom:0;left:0;height:3px;width:25%;background:none;border-radius:0;box-shadow:none}
+header.appbar .tabhl::after{content:"";position:absolute;left:50%;bottom:0;width:24px;height:3px;margin-left:-12px;border-radius:3px 3px 0 0;
+  background:linear-gradient(90deg,var(--blue-2),var(--cyan));box-shadow:0 0 12px rgba(95,160,255,.85),0 -4px 14px rgba(95,160,255,.35)}
+html.finder header.appbar .tabhl{width:50%}
+header.appbar .iconbtn{width:36px;height:36px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);color:var(--muted);align-self:center}
+header.appbar .iconbtn:active{background:rgba(255,255,255,.1)}
 /* Protein line: "PROTEIN  58 / 130 g" reads as one unit on the left; the pace word sits on the right, in its colour */
 .pro .head{align-items:baseline}
 .pro .head .plab{display:flex;align-items:baseline;gap:10px;min-width:0}
