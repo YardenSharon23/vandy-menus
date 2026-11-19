@@ -832,7 +832,11 @@ b,strong{font-weight:700}
 .set .toggle b{font-size:.94rem;font-weight:650}
 .set .toggle small{font-size:.76rem;color:var(--muted);margin-top:1px}
 .set .toggle:active{transform:none;background:transparent}
-.set>.toggle{margin-top:-14px}
+.stpane{display:flex;flex-direction:column;gap:14px}
+.stpane.in{animation:pexpIn .28s var(--spring) both}
+.stpane>.toggle{margin-top:-14px}
+#goalForm.finder #setTabs,#goalForm.finder #stPersonal{display:none!important}
+#stTargets>.trackonly .rvtot{margin-top:2px}
 .set .prefs{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line);margin-top:-14px}
 .set .prefs>span{font-size:.94rem;font-weight:650}
 .set #gprefs{min-height:96px;background:rgba(255,255,255,.045);border:1px solid transparent;border-radius:14px;padding:10px 12px;font-size:16px;line-height:1.45;transition:border-color .2s}
@@ -1190,18 +1194,20 @@ b,strong{font-weight:700}
   <!-- Same language as the Add popup: slim goal switch, the four daily targets as big tap-to-type numbers,
        switches as hairline rows, a quiet preferences box. -->
   <form class="sheet rv set" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="rvhead"><h2 id="setTitle">Settings</h2><span class="where">Daily targets</span></div>
-    <div class="trackonly">
-      <div class="seg5 three" id="gdir" role="group" aria-label="Your goal">
-        <button type="button" data-dir="lose">Lose</button>
-        <button type="button" data-dir="maintain">Maintain</button>
-        <button type="button" data-dir="gain">Gain</button>
-      </div>
-      <!-- Personal info: folds open; from it (and the goal above) the app suggests daily targets -->
-      <button type="button" class="pirow" id="pinfoToggle" aria-expanded="false" aria-controls="pinfoWrap">
-        <span><b>Personal info</b><small id="pinfoSum">Height, weight and activity, for suggested targets</small></span><i class="caret" aria-hidden="true"></i>
-      </button>
-      <div class="cwrap pwrap" id="pinfoWrap"><div class="cin"><div class="pinfo">
+    <div class="rvhead"><h2 id="setTitle">Settings</h2></div>
+    <!-- two tabs keep Settings short: Targets (numbers + switches) and Personal info (goal, body stats, suggestion).
+         In food finder mode there's nothing to track, so the tabs and Personal info go away. -->
+    <div class="seg5 two" id="setTabs" role="tablist" aria-label="Settings sections">
+      <button type="button" role="tab" data-st="t" aria-pressed="true">Targets</button>
+      <button type="button" role="tab" data-st="p" aria-pressed="false">Personal info</button>
+    </div>
+    <div class="stpane" id="stPersonal" hidden>
+      <div class="pinfo">
+        <div class="seg5 three" id="gdir" role="group" aria-label="Your goal">
+          <button type="button" data-dir="lose">Lose</button>
+          <button type="button" data-dir="maintain">Maintain</button>
+          <button type="button" data-dir="gain">Gain</button>
+        </div>
         <div class="seg5 two" id="psex" role="group" aria-label="Sex">
           <button type="button" data-sex="m">Male</button>
           <button type="button" data-sex="f">Female</button>
@@ -1217,8 +1223,11 @@ b,strong{font-weight:700}
           <button type="button" data-act="a" title="Exercise or lifting 3–5 days a week">Active</button>
           <button type="button" data-act="v" title="Hard training 6–7 days a week">Athlete</button>
         </div>
-        <div class="prec" id="pRec"></div>
-      </div></div></div>
+        <div class="prec" id="pRec" hidden></div>
+      </div>
+    </div>
+    <div class="stpane" id="stTargets">
+    <div class="trackonly">
       <div class="rvtot" aria-label="Daily targets. Tap a number to change it.">
         <label class="kc"><input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200" aria-label="Calories"><span>calories</span></label>
         <label><input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150" aria-label="Protein grams"><span><i class="dp"></i>protein</span></label>
@@ -1236,6 +1245,7 @@ b,strong{font-weight:700}
       <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
     </label>
     <label class="prefs"><span>Foods you like</span><textarea id="gprefs" rows="4" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
+    </div>
     <div class="actions">
       <button type="button" class="btn ghost" id="closeSettings">Cancel</button>
       <button type="submit" class="btn primary">Save</button>
@@ -1573,27 +1583,33 @@ function renderRec(){
   const p=readProf(),r=recommend(p,dirDraft);
   for(const b of document.querySelectorAll('#psex [data-sex]'))b.setAttribute('aria-pressed',String(b.dataset.sex===p.sex));
   for(const b of document.querySelectorAll('#pact [data-act]'))b.setAttribute('aria-pressed',String(b.dataset.act===p.act));
-  $('#pinfoSum').textContent=p.lb&&p.ft?`${p.ft}′${p.in}″ · ${p.lb} lb${p.age?` · ${p.age}`:''}`:'Height, weight and activity, for suggested targets';
-  $('#pRec').innerHTML=r?`<span>Suggested for ${{lose:'losing',maintain:'maintaining',gain:'gaining'}[dirDraft]||'maintaining'}: <b>${fmt(r.k)} cal</b> · <b>${r.p} g</b> protein · ${r.c} g carbs · ${r.f} g fat</span><button type="button" id="pUse">Use</button>`
-    :'<span>Fill in sex, age, height, weight and activity to get suggested targets.</span>';
+  // the suggestion only appears once everything it needs is filled in (no "fill in…" text)
+  $('#pRec').hidden=!r;
+  $('#pRec').innerHTML=r?`<span>Suggested for ${{lose:'losing',maintain:'maintaining',gain:'gaining'}[dirDraft]||'maintaining'}: <b>${fmt(r.k)} cal</b> · <b>${r.p} g</b> protein · ${r.c} g carbs · ${r.f} g fat</span><button type="button" id="pUse">Use</button>`:'';
 }
-function foldPinfo(open){$('#pinfoToggle').setAttribute('aria-expanded',String(open));$('#pinfoWrap').classList.toggle('show',open)}
-$('#pinfoToggle').addEventListener('click',()=>foldPinfo($('#pinfoToggle').getAttribute('aria-expanded')!=='true'));
-$('#pinfoWrap').addEventListener('click',e=>{
+// Settings tabs: Targets / Personal info
+function setTab(t){
+  if($('#gfinder').checked)t='t';
+  for(const b of document.querySelectorAll('#setTabs [data-st]'))b.setAttribute('aria-pressed',String(b.dataset.st===t));
+  $('#stTargets').hidden=t!=='t';$('#stPersonal').hidden=t!=='p';
+  const pane=t==='t'?$('#stTargets'):$('#stPersonal');pane.classList.remove('in');void pane.offsetWidth;pane.classList.add('in');
+}
+$('#setTabs').addEventListener('click',e=>{const b=e.target.closest('[data-st]');if(b)setTab(b.dataset.st)});
+$('#stPersonal').addEventListener('click',e=>{
   const s=e.target.closest('[data-sex]'),a=e.target.closest('[data-act]');
   if(s){profDraft.sex=s.dataset.sex;renderRec();return}
   if(a){profDraft.act=a.dataset.act;renderRec();return}
   if(e.target.closest('#pUse')){const r=recommend(readProf(),dirDraft);if(!r)return;
     $('#gk').value=r.k;$('#gp').value=r.p;$('#gc').value=r.c;$('#gf').value=r.f;
-    const b=$('#pUse');b.disabled=true;b.textContent='Applied ✓'}
+    const b=$('#pUse');b.disabled=true;b.textContent='Applied ✓';setTimeout(()=>setTab('t'),550)}   // show the filled-in targets
 });
 for(const id of ['page','pft','pin','plb'])$('#'+id).addEventListener('input',renderRec);
 function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';
   const P=(state.settings&&state.settings.profile)||{};profDraft={sex:P.sex||'',act:P.act||''};
   $('#page').value=P.age||'';$('#pft').value=P.ft||'';$('#pin').value=P.ft?(P.in||0):'';$('#plb').value=P.lb||'';
-  foldPinfo(!(P.lb&&P.ft));renderRec();   // open the first time (nothing filled in yet), folded once it's set
+  renderRec();setTab('t');
   $('#gprefs').value=prefs();$('#gfinder').checked=finderOn();$('#gbeer').checked=beerOn();$('#goalForm').classList.toggle('finder',finderOn());$('#settings').hidden=false}
-$('#gfinder').addEventListener('change',()=>$('#goalForm').classList.toggle('finder',$('#gfinder').checked));
+$('#gfinder').addEventListener('change',()=>{$('#goalForm').classList.toggle('finder',$('#gfinder').checked);if($('#gfinder').checked)setTab('t')});
 function closeSettings(){$('#settings').hidden=true}
 $('#openSettings').addEventListener('click',openSettings);
 $('#closeSettings').addEventListener('click',closeSettings);
