@@ -821,7 +821,10 @@ b,strong{font-weight:700}
 .bh h2 small{display:block;margin-top:2px;font-family:var(--body);font-weight:400;font-size:.78rem;letter-spacing:0;color:var(--muted)}
 .bztot{text-align:right}
 .bztot b{display:block;font-family:var(--display);font-weight:800;font-size:1.95rem;line-height:1;letter-spacing:-.04em;color:var(--amber);font-variant-numeric:tabular-nums}
-.bzn{display:flex;justify-content:flex-end;align-items:baseline;gap:4px;margin-top:4px;font-size:.8rem;color:var(--muted)}
+.bztot span{display:block;margin-top:3px;font-size:.72rem;color:var(--muted);text-align:right}
+.bzn{flex:none;display:flex;justify-content:flex-end;align-items:baseline;gap:4px;margin-left:auto;font-size:.8rem;color:var(--muted)}
+.bzleft{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.bzsum{align-items:center}
 .bzn input{width:2.6ch;text-align:right;background:transparent;border:0;border-bottom:1px solid rgba(255,255,255,.14);padding:0;color:var(--ink);font-weight:700;
   font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
 .bzn input::-webkit-inner-spin-button,.bzn input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
@@ -1056,8 +1059,9 @@ b,strong{font-weight:700}
   <div class="sheet bz" role="dialog" aria-modal="true" aria-labelledby="beerTitle">
     <div class="bh">
       <h2 id="beerTitle">Room for beer<small>Set aside for later today</small></h2>
-      <div class="bztot"><b id="beerK">0</b><label class="bzn"><input type="number" inputmode="decimal" min="0" max="30" step="0.5" id="beerN" aria-label="Number of beers"><span id="beerUnit">beers</span></label></div>
+      <div class="bztot"><b id="beerK">0</b><span>cal</span></div>
     </div>
+    <!-- kind tabs on the left; how many beers (typeable) sits at the right end of the same line, right above the mugs -->
     <div class="kinds" id="beerKind" role="group" aria-label="Kind of beer">
       <button type="button" data-per="100" title="Bud Light, Coors Light, Michelob Ultra, White Claw">Light<em>100</em></button>
       <button type="button" data-per="150" title="Budweiser, Yuengling, Stella, Corona">Regular<em>150</em></button>
@@ -1069,7 +1073,8 @@ b,strong{font-weight:700}
       <div class="mugs" id="beerMugs" role="group" aria-label="Tap to set how many beers"></div>
       <button type="button" class="mstep" data-bstep="0.5" aria-label="Half a beer more">+</button>
     </div>
-    <div class="bzsum" id="beerSum"></div>
+    <!-- one line under the mugs: what's left for food on the left, how many beers (typeable) on the right -->
+    <div class="bzsum"><span class="bzleft" id="beerSum"></span><label class="bzn"><input type="number" inputmode="decimal" min="0" max="30" step="0.5" id="beerN" aria-label="Number of beers"><span id="beerUnit">beers</span></label></div>
     <div class="actions">
       <button type="button" class="btn danger" id="beerClear">Clear</button>
       <button type="button" class="btn ghost" id="beerCancel">Cancel</button>
@@ -1879,7 +1884,8 @@ function renderBeer(){
   // one status line with a colored dot: what's left for food, and whether the protein still fits in it
   if(!(n>0)){$('#beerSum').innerHTML='<span>Set how many you\'re planning on.</span>';return}
   const P=beerProteinLine(G.p-t.p,left),lvl=left<0?'bad':P.lvl;
-  $('#beerSum').innerHTML=`<i class="sd ${lvl}"></i><span><strong>${left>=0?fmt(left)+' cal':'Over by '+fmt(-left)+' cal'}</strong>${left>=0?' left for food':''}${P.txt}</span>`;
+  // just what's left for food; the dot's colour still says whether your protein fits in it
+  $('#beerSum').innerHTML=`<i class="sd ${lvl}"></i><span><strong>${left>=0?fmt(left)+' cal':'Over by '+fmt(-left)+' cal'}</strong>${left>=0?' left for food':''}</span>`;
 }
 // Whether the protein still to go fits in the food calories this plan leaves (same thresholds as proteinFit).
 function beerProteinLine(proLeft,calLeft){
