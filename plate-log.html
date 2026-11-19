@@ -381,6 +381,7 @@ button:active{transform:scale(.96)}
 /* smooth bar and arc changes */
 .track i{transition:width .8s var(--ease)}
 .arcfill{transition:stroke-dashoffset 1s var(--ease)}
+#beerFoam{transform-box:view-box;transform-origin:130px 135px;transition:transform 1s var(--ease),opacity .3s}
 /* ===== Swipe layout: fixed tab bar on top, a horizontal pager of four full-height pages under it ===== */
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{padding-left:0;padding-right:0}
@@ -837,6 +838,18 @@ b,strong{font-weight:700}
         </linearGradient>
         <filter id="bglow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#f2a93b" flood-opacity=".4"/></filter>
         <path id="beerArc" d="M240 135 A110 110 0 0 0 20 135" fill="none" stroke="url(#bg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="0 400" filter="url(#bglow)" opacity="0" style="transition:stroke-dasharray 1s var(--ease),opacity .3s"/>
+        <!-- Foam on the beer's leading end: a cream cap plus a few bubbles. Drawn once at the arc's start (right end)
+             and rotated around the gauge's center to wherever the beer reaches, on the same easing as the arc. -->
+        <g id="beerFoam" opacity="0">
+          <path d="M239.4 146.5 A110 110 0 0 0 240 135" fill="none" stroke="#fbe9c4" stroke-width="24" stroke-linecap="round"/>
+          <circle cx="231" cy="128" r="6" fill="#fff4dc"/>
+          <circle cx="240.5" cy="123.5" r="7" fill="#fffaf0"/>
+          <circle cx="249.5" cy="128.5" r="5.5" fill="#fff1d2"/>
+          <circle cx="235" cy="118.5" r="3" fill="#fffaf0" opacity=".9"/>
+          <circle cx="246" cy="117.5" r="2.4" fill="#fff4dc" opacity=".85"/>
+          <circle cx="241" cy="113.5" r="1.6" fill="#fffaf0" opacity=".7"/>
+          <circle cx="237.5" cy="121" r="1.8" fill="#ffffff" opacity=".9"/>
+        </g>
         <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
         <!-- Inner protein ring: green when protein keeps pace with calories, yellow when a little behind, red when well behind -->
         <!-- like the calorie arc: a deep-to-light gradient over just the filled part, so a short fill still ends bright -->
@@ -1240,6 +1253,8 @@ function renderToday(){
   // number (protein pace, top picks) is measured against what's left for food.
   const bk=beerK(),bp=G.k?Math.min(1,bk/G.k):0,ba=$('#beerArc');
   ba.style.strokeDasharray=`${(345.58*bp).toFixed(2)} 400`;ba.setAttribute('opacity',bp>0?'1':'0');
+  // the foam rides the beer's tip: 180° of rotation = the whole arc
+  const fm=$('#beerFoam');fm.style.transform=`rotate(${(-180*bp).toFixed(2)}deg)`;fm.setAttribute('opacity',bp>0.03?'1':'0');
   $('#bg').setAttribute('x2',String(Math.min(220,130+110*Math.cos(Math.PI*bp)-6)));
   const B=planBeer();$('#beerBtn').classList.toggle('on',!!B);$('#beerBtn').hidden=!beerOn();
   $('#beerBtnTxt').textContent=B?`${fmt(bk)} cal`:'Beer';
