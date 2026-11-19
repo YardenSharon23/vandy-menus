@@ -832,6 +832,17 @@ b,strong{font-weight:700}
 .set .toggle b{font-size:.94rem;font-weight:650}
 .set .toggle small{font-size:.76rem;color:var(--muted);margin-top:1px}
 .set .toggle:active{transform:none;background:transparent}
+/* Hierarchy in Settings: the two sections are navigation (bigger text, blue underline, full-width hairline under
+   them), clearly a level above the in-section choices (the tinted segmented switches) */
+.stabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);margin-top:-4px}
+.stabs button{position:relative;border:0;background:transparent;padding:6px 0 11px;font-size:.98rem;font-weight:650;color:var(--muted);letter-spacing:-.01em}
+.stabs button:active{transform:none;opacity:.7}
+.stabs button[aria-pressed="true"]{color:var(--ink)}
+.stabs button::after{content:"";position:absolute;left:22%;right:22%;bottom:-1px;height:2.5px;border-radius:2px;background:var(--blue-2);transform:scaleX(0);transition:transform .45s var(--spring)}
+.stabs button[aria-pressed="true"]::after{transform:none}
+/* small section label, e.g. "Your daily goal" above the four targets */
+.sect{font-size:.7rem;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 2px;margin-bottom:-8px}
+#goalForm.finder .beerrow{display:none}
 .stpane{display:flex;flex-direction:column;gap:14px}
 .stpane.in{animation:pexpIn .28s var(--spring) both}
 .stpane>.toggle{margin-top:-14px}
@@ -1197,7 +1208,7 @@ b,strong{font-weight:700}
     <div class="rvhead"><h2 id="setTitle">Settings</h2></div>
     <!-- two tabs keep Settings short: Targets (numbers + switches) and Personal info (goal, body stats, suggestion).
          In food finder mode there's nothing to track, so the tabs and Personal info go away. -->
-    <div class="seg5 two" id="setTabs" role="tablist" aria-label="Settings sections">
+    <div class="stabs" id="setTabs" role="tablist" aria-label="Settings sections">
       <button type="button" role="tab" data-st="t" aria-pressed="true">Targets</button>
       <button type="button" role="tab" data-st="p" aria-pressed="false">Personal info</button>
     </div>
@@ -1228,21 +1239,22 @@ b,strong{font-weight:700}
     </div>
     <div class="stpane" id="stTargets">
     <div class="trackonly">
+      <span class="sect">Your daily goal</span>
       <div class="rvtot" aria-label="Daily targets. Tap a number to change it.">
         <label class="kc"><input type="number" inputmode="decimal" min="0" step="any" id="gk" placeholder="2200" aria-label="Calories"><span>calories</span></label>
         <label><input type="number" inputmode="decimal" min="0" step="any" id="gp" placeholder="150" aria-label="Protein grams"><span><i class="dp"></i>protein</span></label>
         <label><input type="number" inputmode="decimal" min="0" step="any" id="gc" placeholder="250" aria-label="Carbs grams"><span><i class="dc"></i>carbs</span></label>
         <label><input type="number" inputmode="decimal" min="0" step="any" id="gf" placeholder="70" aria-label="Fat grams"><span><i class="df"></i>fat</span></label>
       </div>
-      <label class="toggle" for="gbeer">
-        <span><b>Room for beer</b><small>Set aside calories for drinks later</small></span>
-        <input type="checkbox" id="gbeer"><i aria-hidden="true"></i>
-      </label>
     </div>
     <!-- Food finder mode: no calorie tracking, just finding food -->
     <label class="toggle" for="gfinder">
       <span><b>Food finder mode</b><small>Hide calories; tap a dish to see its nutrition</small></span>
       <input type="checkbox" id="gfinder"><i aria-hidden="true"></i>
+    </label>
+    <label class="toggle beerrow" for="gbeer">
+      <span><b>Room for beer</b><small>Set aside calories for drinks later</small></span>
+      <input type="checkbox" id="gbeer"><i aria-hidden="true"></i>
     </label>
     <label class="prefs"><span>Foods you like</span><textarea id="gprefs" rows="4" placeholder="e.g. love chicken and spicy food, no pork, hate mushrooms"></textarea></label>
     </div>
@@ -1604,6 +1616,8 @@ $('#stPersonal').addEventListener('click',e=>{
     const b=$('#pUse');b.disabled=true;b.textContent='Applied ✓';setTimeout(()=>setTab('t'),550)}   // show the filled-in targets
 });
 for(const id of ['page','pft','pin','plb'])$('#'+id).addEventListener('input',renderRec);
+// feet is one digit, so typing it jumps straight to inches
+$('#pft').addEventListener('input',e=>{if(/^[3-8]$/.test(e.target.value)){const i=$('#pin');i.focus();i.select&&i.select()}});
 function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const k of ['k','p','c','f'])$('#g'+k).value=G[k]||'';
   const P=(state.settings&&state.settings.profile)||{};profDraft={sex:P.sex||'',act:P.act||''};
   $('#page').value=P.age||'';$('#pft').value=P.ft||'';$('#pin').value=P.ft?(P.in||0):'';$('#plb').value=P.lb||'';
