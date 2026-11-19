@@ -190,6 +190,8 @@ html.locked,html.locked body{overflow:hidden;overscroll-behavior:none}
 /* Protein line: "PROTEIN  58 / 130 g" reads as one unit on the left; the pace word sits on the right, in its colour */
 .pro .head{align-items:baseline}
 .pro .head .plab{display:flex;align-items:baseline;gap:10px;min-width:0}
+/* same reading order as carbs / fat: number, "/ goal g", then the word */
+.pro .val .pw{color:var(--muted);font-size:.82rem;font-weight:500}
 .pro .head .pace{margin:0;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 /* a soft divider (fading at both ends) and a bit more room between today's numbers and the entries list */
 .log{position:relative;padding-top:20px;margin-top:6px}
@@ -1006,7 +1008,7 @@ b,strong{font-weight:700}
     </div>
     <div class="pro">
       <!-- the number sits right next to its label; the pace status (On pace / Behind…) is on the right -->
-      <div class="head"><span class="plab"><span class="lab">Protein</span><span class="val"><span id="proNum">0</span> <small id="proOf">g</small></span></span><span class="pace" id="paceLab"></span></div>
+      <div class="head"><span class="plab"><span class="val"><span id="proNum">0</span> <small id="proOf">g</small> <small class="pw">protein</small></span></span><span class="pace" id="paceLab"></span></div>
       <div class="track"><i id="proBar" style="width:0"></i></div>
     </div>
     <div class="minor">
