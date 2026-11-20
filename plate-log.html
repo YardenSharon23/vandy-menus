@@ -1688,6 +1688,10 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #reviewForm .ritem .rtap{transition:padding .42s var(--spring)}
 #reviewForm .ritem:not(.open) .redit *{pointer-events:none}
 @media (prefers-reduced-motion: reduce){#reviewForm .rwrap,#reviewForm .redit,#reviewForm .rtap{transition:none}}
+/* ===== gauge, refined: slimmer rings, hue-tinted tracks, a bright tip riding each ring's leading end ===== */
+.gauge .gtip{transform-box:view-box;transform-origin:130px 135px;transition:transform 1s var(--ease),opacity .3s;filter:drop-shadow(0 0 3px rgba(255,255,255,.7))}
+#pToday .gauge .kcal{font-weight:750;letter-spacing:-.045em}
+#pToday .gauge .of{font-size:.8rem;color:var(--muted);letter-spacing:.01em}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1724,21 +1728,20 @@ header.appbar .iconbtn svg{width:18px;height:18px}
           <linearGradient id="gg" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="240" y2="0">
             <stop offset="0" stop-color="#2f62d9"/><stop offset=".7" stop-color="#5fa0ff"/><stop offset="1" stop-color="#8fd8ff"/>
           </linearGradient>
-          <filter id="glow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#4d8cff" flood-opacity=".55"/></filter>
+          <filter id="glow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#4d8cff" flood-opacity=".38"/></filter>
           <!-- darker toward the bottom of the track so it reads as a groove -->
           <linearGradient id="trackShade" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#ffffff" stop-opacity=".05"/><stop offset="1" stop-color="#000000" stop-opacity=".25"/>
           </linearGradient>
         </defs>
         <!-- thick track with a subtle inner shade, then the glowing fill on top -->
-        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="#1b2031" stroke-width="24" stroke-linecap="round"/>
-        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#trackShade)" stroke-width="24" stroke-linecap="round"/>
+        <path d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="#5fa0ff" stroke-opacity=".09" stroke-width="18" stroke-linecap="round"/>
         <!-- Room for beer: amber, filling backward from the right end, so it reads as calories set aside -->
         <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="240" y1="0" x2="20" y2="0">
           <stop offset="0" stop-color="#9a5512"/><stop offset=".6" stop-color="#d4841f"/><stop offset="1" stop-color="#f4b657"/>
         </linearGradient>
         <filter id="bglow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#f2a93b" flood-opacity=".4"/></filter>
-        <path id="beerArc" d="M240 135 A110 110 0 0 0 20 135" fill="none" stroke="url(#bg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="0 400" filter="url(#bglow)" opacity="0" style="transition:stroke-dasharray 1s var(--ease),opacity .3s"/>
+        <path id="beerArc" d="M240 135 A110 110 0 0 0 20 135" fill="none" stroke="url(#bg)" stroke-width="18" stroke-linecap="round" stroke-dasharray="0 400" filter="url(#bglow)" opacity="0" style="transition:stroke-dasharray 1s var(--ease),opacity .3s"/>
         <!-- Foam on the beer's leading end: a cream cap plus a few bubbles. Drawn once at the arc's start (right end)
              and rotated around the gauge's center to wherever the beer reaches, on the same easing as the arc. -->
         <!-- carbonation: tiny bubbles drifting up inside the beer (placed by renderToday) -->
@@ -1746,24 +1749,26 @@ header.appbar .iconbtn svg{width:18px;height:18px}
         <!-- foam head: a thin cream band hugging the whole rounded end, a faint fill inside it, and a few
              pin-prick bubbles on the edge. Base position = the arc's start; rotated to the tip. -->
         <g id="beerFoam" opacity="0">
-          <path d="M228 135 A12 12 0 0 1 252 135Z" fill="#f6dcaa" fill-opacity=".22"/>
-          <path d="M229.5 135.5 A10.5 10.5 0 0 1 250.5 135.5" fill="none" stroke="#fbeccd" stroke-opacity=".9" stroke-width="3.2" stroke-linecap="round"/>
-          <circle cx="231.5" cy="128" r="1.3" fill="#fff6e6" opacity=".9"/>
-          <circle cx="236" cy="124.6" r="1.6" fill="#fff6e6" opacity=".85"/>
-          <circle cx="242.5" cy="124" r="1.2" fill="#fff6e6" opacity=".8"/>
-          <circle cx="247.5" cy="126.8" r="1.5" fill="#fff6e6" opacity=".85"/>
+          <path d="M231 135 A9 9 0 0 1 249 135Z" fill="#f6dcaa" fill-opacity=".22"/>
+          <path d="M232.2 135.4 A7.8 7.8 0 0 1 247.8 135.4" fill="none" stroke="#fbeccd" stroke-opacity=".9" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="233.5" cy="129.5" r="1.1" fill="#fff6e6" opacity=".9"/>
+          <circle cx="237.5" cy="127" r="1.3" fill="#fff6e6" opacity=".85"/>
+          <circle cx="242" cy="126.5" r="1" fill="#fff6e6" opacity=".8"/>
+          <circle cx="246.5" cy="129" r="1.2" fill="#fff6e6" opacity=".85"/>
         </g>
-        <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="24" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
+        <path id="arc" class="arcfill" d="M20 135 A110 110 0 0 1 240 135" fill="none" stroke="url(#gg)" stroke-width="18" stroke-linecap="round" stroke-dasharray="345.58" stroke-dashoffset="345.58" filter="url(#glow)"/>
+        <circle id="calTip" class="gtip" cx="20" cy="135" r="3.4" fill="#ffffff" opacity="0"/>
         <!-- Inner protein ring: green when protein keeps pace with calories, yellow when a little behind, red when well behind -->
         <!-- like the calorie arc: a deep-to-light gradient over just the filled part, so a short fill still ends bright -->
         <linearGradient id="pg" gradientUnits="userSpaceOnUse" x1="48" y1="0" x2="212" y2="0">
           <stop id="pgA" offset="0" stop-color="#2f62d9"/><stop id="pgB" offset="1" stop-color="#8fd8ff"/>
         </linearGradient>
-        <filter id="pglow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow id="pglowShadow" dx="0" dy="0" stdDeviation="3" flood-color="#5fa0ff" flood-opacity=".38"/></filter>
-        <path d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="#171c2b" stroke-width="9" stroke-linecap="round"/>
-        <path d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="url(#trackShade)" stroke-width="9" stroke-linecap="round"/>
-        <path id="proArc" class="arcfill" d="M48 135 A82 82 0 0 1 212 135" fill="none" stroke="url(#pg)" stroke-width="9" stroke-linecap="round" stroke-dasharray="257.61" stroke-dashoffset="257.61" filter="url(#pglow)" style="transition:stroke-dashoffset 1s var(--ease)"/>
-        <line id="paceTick" x1="130" y1="53" x2="130" y2="53" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" opacity="0" style="transition:opacity .3s"/>
+        <filter id="pglow" x="-20%" y="-30%" width="140%" height="160%"><feDropShadow id="pglowShadow" dx="0" dy="0" stdDeviation="2.6" flood-color="#3ddc84" flood-opacity=".32"/></filter>
+        <path d="M44 135 A86 86 0 0 1 216 135" fill="none" stroke="#3ddc84" stroke-opacity=".08" stroke-width="11" stroke-linecap="round"/>
+        <path id="proArc" class="arcfill" d="M44 135 A86 86 0 0 1 216 135" fill="none" stroke="url(#pg)" stroke-width="11" stroke-linecap="round" stroke-dasharray="270.18" stroke-dashoffset="270.18" filter="url(#pglow)" style="transition:stroke-dashoffset 1s var(--ease)"/>
+        <circle id="proTip" class="gtip" cx="44" cy="135" r="2.4" fill="#ffffff" opacity="0"/>
+        <!-- where protein would be if it kept pace with calories: a small quiet dot on the protein track -->
+        <circle id="paceTick" cx="130" cy="49" r="2" fill="rgba(255,255,255,.6)" opacity="0" style="transition:opacity .3s"/>
       </svg>
       <div class="center">
         <div class="kcal" id="kcal">0</div>
@@ -2239,7 +2244,8 @@ function proteinFit(t,G){
 }
 function renderPace(t,G,calPct,proPct){
   const arc=$('#proArc');if(!arc)return;
-  arc.style.strokeDashoffset=String(257.61*(1-Math.min(1,proPct)));
+  arc.style.strokeDashoffset=String(270.18*(1-Math.min(1,proPct)));
+  const pt=$('#proTip');pt.style.transform=`rotate(${(180*Math.min(1,proPct)).toFixed(2)}deg)`;pt.setAttribute('opacity',proPct>.02?'.9':'0');
   const gap=(proPct-calPct)*100;
   let st=!(G.k&&G.p)||t.k<300?'idle':gap>=-5?'good':gap>=-20?'warn':'bad';
   // If the protein left won't comfortably fit in the calories left, say so, even when the pace itself looks fine.
@@ -2247,18 +2253,18 @@ function renderPace(t,G,calPct,proPct){
   if(fit.st!=='ok'&&rank[fit.st]>=rank[st]){st=fit.st;fitLab=fit.st==='warn'?'Pick lean protein':'Hard to hit protein'}
   const P={...PACE[st],...(fitLab?{lab:fitLab}:{})};
   // gradient runs deep → light along the filled part, in the pace color; glow is soft so the two rings blend
-  $('#pgA').setAttribute('stop-color',P.a);$('#pgB').setAttribute('stop-color',P.b);
-  const endX=130-82*Math.cos(Math.PI*Math.min(1,proPct));$('#pg').setAttribute('x2',String(Math.max(60,endX+5)));
-  $('#pglowShadow').setAttribute('flood-color',P.c);
-  // protein bar under the gauge takes the same color, so the two always agree
+  // the protein ring and bar stay one steady green (premium rings keep their color); the pace word carries the status
+  const R=PACE.good;
+  $('#pgA').setAttribute('stop-color',R.a);$('#pgB').setAttribute('stop-color',R.b);
+  const endX=130-86*Math.cos(Math.PI*Math.min(1,proPct));$('#pg').setAttribute('x2',String(Math.max(56,endX+5)));
+  $('#pglowShadow').setAttribute('flood-color',R.c);
   const bar=$('#proBar');
-  bar.style.background=P.bar?'linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,0) 55%),'+P.bar:'';
-  bar.style.boxShadow=P.bar?`0 0 12px ${P.c}80,inset 0 -1px 2px rgba(0,0,0,.25)`:'';
+  bar.style.background='linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 55%),'+R.bar;
+  bar.style.boxShadow=`0 0 10px ${R.c}55,inset 0 -1px 2px rgba(0,0,0,.25)`;
   const lab=$('#paceLab');lab.textContent=P.lab||'';lab.style.color=P.c;
   // tick on the inner ring: where protein would be if it kept pace with calories
-  const tick=$('#paceTick'),a=Math.PI*(1-Math.min(1,calPct)),r1=74,r2=90;
-  tick.setAttribute('x1',(130+r1*Math.cos(a)).toFixed(1));tick.setAttribute('y1',(135-r1*Math.sin(a)).toFixed(1));
-  tick.setAttribute('x2',(130+r2*Math.cos(a)).toFixed(1));tick.setAttribute('y2',(135-r2*Math.sin(a)).toFixed(1));
+  const tick=$('#paceTick'),a=Math.PI*(1-Math.min(1,calPct));
+  tick.setAttribute('cx',(130+86*Math.cos(a)).toFixed(1));tick.setAttribute('cy',(135-86*Math.sin(a)).toFixed(1));
   tick.setAttribute('opacity',st==='idle'||calPct<=0?'0':'1');
 }
 function renderToday(){
@@ -2266,6 +2272,7 @@ function renderToday(){
   const pct=G.k?Math.min(1,t.k/G.k):0;
   // Real arc length (π·r), not pathLength, which some phone browsers ignore for dashes.
   $('#arc').style.strokeDashoffset=String(345.58*(1-pct));
+  const ct=$('#calTip');ct.style.transform=`rotate(${(180*pct).toFixed(2)}deg)`;ct.setAttribute('opacity',pct>.02?'.95':'0');
   // stretch the blue→cyan gradient over the filled part only, so a short fill still ends in cyan like the protein bar
   const endX=130-110*Math.cos(Math.PI*pct);
   $('#gg').setAttribute('x2',String(Math.max(40,endX+6)));
