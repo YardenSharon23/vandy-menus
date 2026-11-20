@@ -1520,6 +1520,32 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #where .hmore.on{color:var(--muted)}
 #where .hmore:active{color:var(--muted)}
 #where .hnone{grid-column:1/-1;font-size:.82rem;color:var(--muted);padding:0 2px 2px}
+/* ===== the + menu: a small glass card that grows up out of the + ===== */
+.composer{position:relative}
+.addmenu{position:absolute;left:0;bottom:calc(100% + 10px);z-index:6;width:212px;display:flex;flex-direction:column;padding:6px;border-radius:18px;
+  background:var(--glass),#1b2030;box-shadow:var(--glass-ring),0 18px 40px rgba(0,0,0,.5);transform-origin:22px 100%;animation:amIn .32s var(--spring) both}
+@keyframes amIn{from{opacity:0;transform:scale(.86) translateY(6px)}to{opacity:1;transform:none}}
+.addmenu button{display:flex;align-items:center;gap:11px;border:0;background:none;border-radius:12px;padding:9px 10px;font-size:.93rem;font-weight:600;color:var(--ink);text-align:left}
+.addmenu button:active{background:rgba(255,255,255,.07)}
+.addmenu .aic{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.07);color:#dfe4ee}
+.addmenu .aic svg{width:17px;height:17px}
+.addmenu .aic.q{background:rgba(61,123,255,.18);color:var(--blue-2)}
+.libbtn svg{transition:transform .3s var(--spring)}
+.libbtn.on svg{transform:rotate(45deg)}
+@media (prefers-reduced-motion: reduce){.addmenu{animation:none}}
+/* ===== Quick add ===== */
+#qkTabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.qk .qlist{display:flex;flex-direction:column;max-height:min(52vh,420px);overflow-y:auto;margin:-6px -4px 0;padding:0 4px}
+.qrow{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;text-align:left;padding:11px 2px;border-top:1px solid var(--line);color:var(--ink)}
+.qrow:first-child{border-top:0}
+.qrow:active{background:rgba(255,255,255,.04)}
+.qrow .qt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.qrow .qt>b{font-size:.93rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qrow small{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.qrow small b{color:var(--ink);font-weight:700}
+.qrow .qplus{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);color:var(--blue-2);font-size:1.15rem;font-weight:600;line-height:1}
+.qempty{padding:14px 2px;font-size:.84rem;color:var(--muted)}
+#qkList.mswap{animation:mswap .38s var(--spring) both}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1702,7 +1728,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
     <div class="note" id="note" role="status" aria-live="polite" hidden></div>
     <div class="bar">
       <div class="field">
-        <button type="button" class="libbtn" id="libBtn" aria-label="Choose a photo from your library" title="Choose a photo">
+        <button type="button" class="libbtn" id="libBtn" aria-label="Add food" aria-haspopup="menu" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
         <input class="txt" id="txt" placeholder="Describe what you ate…" aria-label="Describe what you ate" enterkeyhint="send">
@@ -1715,6 +1741,13 @@ header.appbar .iconbtn svg{width:18px;height:18px}
         <!-- rounded camera body with a soft top bump, a clean lens ring and a small flash dot -->
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.2A2.2 2.2 0 0 1 5.7 7h1.8l1.3-1.9A1.5 1.5 0 0 1 10 4.5h4a1.5 1.5 0 0 1 1.2.6L16.5 7h1.8a2.2 2.2 0 0 1 2.2 2.2v8.1a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z"/><circle cx="12" cy="13.2" r="3.4"/><circle cx="17.3" cy="10" r=".5" fill="currentColor" stroke="none"/></svg>
       </button>
+    </div>
+    <!-- the + menu: grows up out of the + button -->
+    <div class="addmenu" id="addMenu" role="menu" hidden>
+      <button type="button" role="menuitem" data-add="photo"><span class="aic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.2A2.2 2.2 0 0 1 5.7 7h1.8l1.3-1.9A1.5 1.5 0 0 1 10 4.5h4a1.5 1.5 0 0 1 1.2.6L16.5 7h1.8a2.2 2.2 0 0 1 2.2 2.2v8.1a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z"/><circle cx="12" cy="13.2" r="3.4"/></svg></span>Take a photo</button>
+      <button type="button" role="menuitem" data-add="library"><span class="aic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 15.5l-4.5-4.5-8.5 8.5"/></svg></span>Upload photo</button>
+      <button type="button" role="menuitem" data-add="manual"><span class="aic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>Add manually</button>
+      <button type="button" role="menuitem" data-add="quick"><span class="aic q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg></span>Quick add</button>
     </div>
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
     <input type="file" id="lib" accept="image/*" hidden>
@@ -1763,6 +1796,20 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 </div>
 
 <!-- Review / edit an entry -->
+<!-- Quick add: foods you've logged before, and everyday basics -->
+<div class="scrim" id="quick" hidden>
+  <div class="sheet qk" role="dialog" aria-modal="true" aria-labelledby="qkTitle">
+    <h2 id="qkTitle">Quick add</h2>
+    <div class="stabs" id="qkTabs" role="tablist" aria-label="Foods">
+      <button type="button" role="tab" data-q="recent" aria-pressed="true">Recent</button>
+      <button type="button" role="tab" data-q="often" aria-pressed="false">Often</button>
+      <button type="button" role="tab" data-q="common" aria-pressed="false">Basics</button>
+    </div>
+    <div class="qlist" id="qkList"></div>
+    <div class="actions"><button type="button" class="btn ghost" id="qkClose">Close</button></div>
+  </div>
+</div>
+
 <div class="scrim" id="review" hidden>
   <!-- Layout: title + place on one line, a slim meal switch, the totals as the hero (tap any number to type over it),
        then the foods as hairline rows with the serving stepper right on each row. No boxed fields, no helper text. -->
@@ -3191,7 +3238,50 @@ async function onPhoto(e){
 $('#file').addEventListener('change',onPhoto);
 $('#lib').addEventListener('change',onPhoto);
 // Small secondary option: pick an existing photo instead of opening the camera.
-$('#libBtn').addEventListener('click',()=>{if(state.busy)return;openWhere('library')});
+/* ---------- the + menu: take a photo, upload one, add manually, quick add ---------- */
+function setAddMenu(open){const m=$('#addMenu');m.hidden=!open;$('#libBtn').setAttribute('aria-expanded',String(open));$('#libBtn').classList.toggle('on',open)}
+$('#libBtn').addEventListener('click',e=>{e.stopPropagation();if(state.busy)return;setAddMenu($('#addMenu').hidden)});
+document.addEventListener('click',e=>{if(!$('#addMenu').hidden&&!e.target.closest('#addMenu'))setAddMenu(false)});
+$('#addMenu').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b)return;setAddMenu(false);const a=b.dataset.add;
+  if(a==='photo')openWhere('photo');
+  else if(a==='library')openWhere('library');
+  else if(a==='manual'){openReview({mode:'new',meal:{name:mealAt(),hall:'',items:[],tot:{k:0,p:0,c:0,f:0}}});state.draft.manual=true;setTimeout(()=>$('#tk').focus(),60)}
+  else if(a==='quick')openQuick()});
+// Everyday basics with typical label values, for when it isn't from a dining hall.
+const BASICS=[['Banana','1 medium',105,1.3,27,0.4],['Apple','1 medium',95,0.5,25,0.3],['Coffee, black','12 oz',5,0.3,0,0],
+  ['Latte, 2% milk','16 oz',190,13,18,7],['Protein shake','11 oz bottle',160,30,5,3],['Protein bar','1 bar',200,20,22,7],
+  ['Greek yogurt, plain nonfat','170 g cup',100,17,6,0.7],['Hard-boiled egg','1 large',78,6.3,0.6,5.3],['Peanut butter','2 tbsp',190,7,7,16],
+  ['Granola bar','1 bar',190,4,29,7],['Chips','1 oz bag',160,2,15,10],['Soda','12 oz can',140,0,39,0]]
+  .map(([n,v,k,p,c,f])=>({it:{n,v,gr:null,sv:1,k,p,c,f},hall:'',count:0}));
+// Every food you've logged, newest first, with how often it comes up.
+function pastFoods(){
+  const map=new Map();
+  for(const L of Object.values(state.logs))for(const e of (L&&L.entries)||[])for(const it of e.items||[]){
+    const key=String(it.n||'').toLowerCase().trim();if(!key)continue;const t=new Date(e.t).getTime()||0;
+    let r=map.get(key);if(!r){r={it:{...it},hall:e.hall||'',last:t,count:0};map.set(key,r)}
+    r.count++;if(t>r.last){r.last=t;r.it={...it};r.hall=e.hall||''}}
+  return [...map.values()];
+}
+let qkTab='recent',qkRows=[];
+function openQuick(){const has=pastFoods().length;qkTab=has?'recent':'common';renderQuick();$('#quick').hidden=false}
+function renderQuick(){
+  for(const b of document.querySelectorAll('#qkTabs [data-q]'))b.setAttribute('aria-pressed',String(b.dataset.q===qkTab));
+  const all=pastFoods();
+  qkRows=qkTab==='recent'?all.sort((a,b)=>b.last-a.last).slice(0,12)
+    :qkTab==='often'?all.filter(r=>r.count>=2).sort((a,b)=>b.count-a.count||b.last-a.last).slice(0,12):BASICS;
+  const empty={recent:'Foods you log show up here.',often:'Foods you have more than once show up here.'}[qkTab];
+  $('#qkList').innerHTML=qkRows.length?qkRows.map((r,ix)=>{const i=r.it;
+    const meta=[qkTab==='often'?`${r.count}×`:'',r.hall,i.v&&i.v!=='estimate'?esc(String(i.v).replace(/\s*portion$/i,'')):''].filter(Boolean).join(' · ');
+    return `<button type="button" class="qrow" data-qi="${ix}"><span class="qt"><b>${esc(i.n)}</b><small><b>${fmt(i.k*i.sv)}</b> cal · <b>${fmt(i.p*i.sv)}</b>g protein${meta?' · '+meta:''}</small></span><span class="qplus" aria-hidden="true">+</span></button>`}).join('')
+    :`<div class="qempty">${empty}</div>`;
+}
+$('#qkTabs').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(!b||b.dataset.q===qkTab)return;qkTab=b.dataset.q;renderQuick();
+  const l=$('#qkList');l.classList.remove('mswap');void l.offsetWidth;l.classList.add('mswap')});
+$('#qkList').addEventListener('click',e=>{const b=e.target.closest('[data-qi]');if(!b)return;const r=qkRows[+b.dataset.qi];if(!r)return;
+  $('#quick').hidden=true;const it={...r.it};
+  openReview({mode:'new',meal:{name:mealAt(),hall:r.hall,items:[it],tot:{k:it.k*it.sv,p:it.p*it.sv,c:it.c*it.sv,f:it.f*it.sv}}})});
+$('#qkClose').addEventListener('click',()=>{$('#quick').hidden=true});
+$('#quick').addEventListener('click',e=>{if(e.target.id==='quick')$('#quick').hidden=true});
 $('#txt').addEventListener('input',updateSend);
 function updateSend(){
   $('#send').hidden=state.busy||!$('#txt').value.trim();$('#stop').hidden=!state.busy;
