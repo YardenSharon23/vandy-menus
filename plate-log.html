@@ -1772,6 +1772,9 @@ html.finder #streakBtn{display:none}
 #chatForm .send{width:44px;height:44px;transition:transform .25s var(--spring),opacity .2s ease}
 #chatForm:not(.has) .send{opacity:0;transform:scale(.6);pointer-events:none}
 .askpage .chatpage{max-width:500px;margin:0 auto;width:100%}
+/* tabs centre on the page: the settings gear floats at the right edge instead of taking room in the row */
+header.appbar{position:fixed}
+header.appbar #openSettings{position:absolute;right:16px;top:50%;margin-top:-17px}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1958,7 +1961,6 @@ html.finder #streakBtn{display:none}
   <div class="pagein chatpage">
     <div class="msgs" id="msgs" aria-live="polite">
       <div class="starters" id="starters">
-        <div class="askhead"><h1>Coach</h1><div class="sub">Quick answers: what to eat, what's left, how you're doing.</div></div>
         <button type="button" class="starter">What should I eat right now?</button>
         <button type="button" class="starter">How do I hit my protein today?</button>
         <button type="button" class="starter">How's my week going?</button>
@@ -3469,6 +3471,8 @@ let finderApplied=null;
 function applyFinder(){
   const on=finderOn();if(on===finderApplied)return;finderApplied=on;
   document.documentElement.classList.toggle('finder',on);
+  // without tracking there's nothing to coach: the tab is just a place to ask
+  {const t=document.querySelector('header.appbar [data-p="3"]');if(t)t.textContent=on?'Ask':'Coach';const s=$('#pAsk');if(s)s.setAttribute('aria-label',on?'Ask':'Coach')}
   const target=on&&!visiblePages().includes(curPage)?1:curPage;
   requestAnimationFrame(()=>{pager.scrollLeft=slotOf(target)*pager.clientWidth;moveHighlight(slotOf(target));curPage=-1;enteredPage=null;setPage(target)});
   if(eat.loaded)renderEat();
