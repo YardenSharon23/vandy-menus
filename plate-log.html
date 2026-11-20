@@ -1781,6 +1781,11 @@ header.appbar::after{content:"";order:-1;flex:none;width:10px;height:1px}   /* n
 .page{scrollbar-gutter:stable}
 header.appbar{--col:max(16px, calc((100% - var(--sbw, 0px) - 500px) / 2));
   padding-left:max(var(--col), env(safe-area-inset-left, 0px));padding-right:calc(max(var(--col), env(safe-area-inset-right, 0px)) + var(--sbw, 0px))}
+/* Tabs spaced by the words themselves: every gap between two words is the same, at any width. One weight for all
+   four (a heavier active word would change widths and the gaps); the active tab is brighter, with the underline. */
+header.appbar .tabs{display:flex;justify-content:space-evenly;align-items:stretch}
+header.appbar .tabs button,header.appbar .tabs button[aria-selected="true"]{flex:none;padding-left:10px;padding-right:10px;font-weight:650}
+header.appbar .tabhl,html.finder header.appbar .tabhl{left:0;width:0}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -3442,7 +3447,11 @@ const visiblePages=()=>finderOn()?[1,3]:[0,1,2,3];
 // Swiping stays smooth: during the swipe only the tab highlight moves (a GPU transform) and the selected tab
 // label updates. The page's own work (building Eat, growing Week's bars…) waits until the swipe has settled.
 const tabHL=tabs.querySelector('.tabhl');
-function moveHighlight(slot){tabHL.style.transform=`translate3d(${(slot*100).toFixed(2)}%,0,0)`}
+// The underline sits under the centre of each word (the words are spaced evenly, not in equal columns), so a swipe
+// part-way between two pages puts it part-way between their words.
+function tabCentres(){return [...tabs.querySelectorAll('[data-p]')].filter(b=>b.offsetParent).map(b=>b.offsetLeft+b.offsetWidth/2)}
+function moveHighlight(slot){const c=tabCentres();if(!c.length)return;const i=Math.max(0,Math.min(c.length-1,Math.floor(slot))),f=slot-i;
+  const x=i<c.length-1?c[i]+(c[i+1]-c[i])*f:c[i];tabHL.style.transform=`translate3d(${x.toFixed(2)}px,0,0)`}
 function markTab(i){
   if(i===curPage)return;curPage=i;
   document.documentElement.classList.toggle('on-today',i===0);
@@ -3471,7 +3480,8 @@ pager.addEventListener('scrollend',()=>{clearTimeout(settleT);settled()});
 function slotOf(i){const v=visiblePages();const s=v.indexOf(i);return s<0?0:s}
 function goPage(i){pager.scrollTo({left:slotOf(i)*pager.clientWidth,behavior:calm?'auto':'smooth'})}
 tabs.addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b)goPage(+b.dataset.p)});
-addEventListener('resize',()=>{pager.scrollLeft=slotOf(curPage)*pager.clientWidth;setSbw()});
+addEventListener('resize',()=>{pager.scrollLeft=slotOf(curPage)*pager.clientWidth;setSbw();moveHighlight(slotOf(curPage))});
+if(document.fonts)document.fonts.ready.then(()=>moveHighlight(slotOf(curPage)));   // word widths settle once the font loads
 // how wide the pages' scrollbar is (0 where scrollbars overlay, like phones), so the top bar can match the content column
 function setSbw(){const p=document.getElementById('pToday');if(p)document.documentElement.style.setProperty('--sbw',Math.max(0,p.offsetWidth-p.clientWidth)+'px')}
 setSbw();
