@@ -1698,11 +1698,19 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .macros .p .ptick{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;border-radius:2px;background:#fff;box-shadow:0 0 0 2px #0d111b;transition:left 1s var(--ease)}
 .macros .p .ptick[hidden]{display:none}
 /* the context line: same quiet spot as the date, sentence case, a small blue dot in front */
-#pToday .top:has(.quip:not([hidden])){justify-content:flex-start}
-#pToday .top .quip{display:block;max-width:calc(100% - 84px);text-align:left;font-size:.76rem;font-weight:650;letter-spacing:.01em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pToday .top .quip{display:block;max-width:calc(100% - 156px);text-align:center;font-size:.76rem;font-weight:650;letter-spacing:.01em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #pToday .top .quip::before{content:"";display:inline-block;vertical-align:2px;margin-right:7px;width:5px;height:5px;border-radius:50%;background:var(--blue-2);box-shadow:0 0 6px rgba(95,160,255,.6)}
 #pToday .top .quip[hidden],#pToday .top>div[hidden]{display:none}
 #pToday .top .quip.in{animation:mswap .45s var(--spring) both}
+/* ===== clean plate: the empty state of the gauge; it opens into the rings on the first log ===== */
+#pToday .gauge svg>path,#pToday .gauge svg>.gtip,#pToday .gauge svg>#paceTick{transition:opacity .5s ease,stroke-dashoffset 1s var(--ease),stroke-dasharray 1s var(--ease),transform 1s var(--ease)}
+#pToday .gauge .center{transition:opacity .45s ease}
+#pToday .gauge #plate{opacity:0;transform-box:view-box;transform-origin:130px 80px;transform:scale(.92);transition:opacity .45s ease,transform .6s var(--spring);pointer-events:none}
+#pToday .gauge.empty #plate{opacity:1;transform:none}
+#pToday .gauge.empty svg>path,#pToday .gauge.empty svg>.gtip,#pToday .gauge.empty svg>#paceTick,#pToday .gauge.empty .center{opacity:0!important}
+#pToday .gauge #plate .pl1{font-family:var(--display);font-size:13px;font-weight:750;fill:#f1f4fb;letter-spacing:-.01em}
+#pToday .gauge #plate .pl2{font-family:var(--body);font-size:10.5px;font-weight:500;fill:#8a91a6}
+@media (prefers-reduced-motion: reduce){#pToday .gauge #plate{transition:opacity .2s;transform:none}}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1784,6 +1792,18 @@ header.appbar .iconbtn svg{width:18px;height:18px}
         <g id="paceTick" opacity="0" style="transition:opacity .3s">
           <line id="ptHalo" x1="130" y1="41" x2="130" y2="57" stroke="#0d111b" stroke-opacity=".85" stroke-width="5" stroke-linecap="round"/>
           <line id="ptLine" x1="130" y1="41" x2="130" y2="57" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+        </g>
+        <!-- Before anything is logged the empty rings become a clean plate seen from above, fork and knife either side -->
+        <g id="plate" aria-hidden="true">
+          <circle cx="130" cy="80" r="62" fill="none" stroke="#5fa0ff" stroke-opacity=".12" stroke-width="12"/>
+          <circle cx="130" cy="80" r="45" fill="none" stroke="#3ddc84" stroke-opacity=".10" stroke-width="8"/>
+          <circle cx="130" cy="80" r="36" fill="#ffffff" fill-opacity=".025"/>
+          <g fill="none" stroke="#8a91a6" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M40 46v26M34 46v13a6 6 0 0 0 12 0V46M40 72v44"/>
+            <path d="M224 46c-8 6-10 22-10 36h10v34"/>
+          </g>
+          <text x="130" y="80" text-anchor="middle" class="pl1">Clean plate.</text>
+          <text x="130" y="96" text-anchor="middle" class="pl2">Nothing logged yet</text>
         </g>
       </svg>
       <div class="center">
@@ -2210,15 +2230,14 @@ function quipLine(){
   if(hoursData&&home){const st=hallStatus(home);
     if(st&&st.open&&st.wait<=45)return `${hn} closes in ${st.wait} min`;
     if(st&&!st.open&&st.wait<=30)return `${hn} opens in ${st.wait} min`;}
-  if(G.p&&t.p>=G.p)return `Protein's handled. The rest is a bonus.`;
+  if(G.p&&t.p>=G.p)return `Protein goal hit`;
   // a dish you said you like, being served right now somewhere open
   if(eat.loaded&&hoursData){const P=prefModel();
     if(P.like.length)for(const id of hallOrder()){if(!id)continue;const st=hallStatus(id);if(!st||!st.open)continue;
       const hit=hallItems(id,defaultMeal()).find(i=>i.kind==='main'&&P.like.some(l=>l.words.every(w=>wordsOf(i.n).includes(w)))&&!es.some(e=>(e.items||[]).some(x=>x.n===i.n)));
-      if(hit)return `${(HALLS.find(x=>x.id===id)||{}).name||'Somewhere'} has ${hit.n.replace(/\s*\(.*?\)\s*/g,' ').trim()}`;}}
-  if(h>=17&&G.p&&t.k>300&&t.p<G.p*.8)return `${fmt(G.p-t.p)} g protein to go. Dinner has a job.`;
-  const sk=quipStreak();if(sk>=2)return `${sk}-day streak. Don't fumble it.`;
-  if(!es.length&&h>=11)return `Nothing logged yet. Breakfast counts.`;
+      if(hit)return `${hit.n.replace(/\s*\(.*?\)\s*/g,' ').trim()} at ${(HALLS.find(x=>x.id===id)||{}).name||'a hall'}`;}}
+  if(h>=17&&G.p&&t.k>300&&t.p<G.p*.8)return `${fmt(G.p-t.p)} g protein left today`;
+  const sk=quipStreak();if(sk>=2)return `${sk} days in a row on target`;
   return '';
 }
 function renderQuip(){const q=quipLine(),el=$('#quip');if(!el)return;
@@ -2318,6 +2337,8 @@ function renderPace(t,G,calPct,proPct){
   tick.setAttribute('opacity',st==='idle'||calPct<=0?'0':'1');
 }
 function renderToday(){queueMicrotask(renderQuip);
+  // nothing logged and no beer planned → the gauge shows as a clean plate; the first log opens it into the rings
+  {const g=document.querySelector('#pToday .gauge');if(g)g.classList.toggle('empty',!entries().length&&!planBeer())}
   const t=dayTot(),G=goals();
   const pct=G.k?Math.min(1,t.k/G.k):0;
   // Real arc length (π·r), not pathLength, which some phone browsers ignore for dashes.
