@@ -1744,6 +1744,9 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .eatbar .esearch:focus-within svg{color:var(--muted)}
 /* search with no results: one quiet box, not a card inside a card */
 #eatResults>.pickempty{background:none!important;border:0!important;box-shadow:none!important;border-radius:0;padding:18px 14px;text-align:center;font-size:.86rem;color:var(--muted)}
+/* the whole top row opens the menu; the date animates in like the line does */
+#pToday .top{cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:34px;align-items:center}
+#pToday .top>div:first-child.in{animation:mswap .45s var(--spring) both}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -2284,7 +2287,9 @@ function quipLine(){
 }
 function renderQuip(){const q=quipLine(),el=$('#quip');if(!el)return;
   if(el.dataset.q!==q){el.dataset.q=q;el.textContent=q;el.classList.remove('in');void el.offsetWidth;if(q)el.classList.add('in')}
-  el.hidden=!q;$('#pToday .top>div').hidden=!!q}
+  // the date fades back in the same way when it takes over the spot
+  const dt=$('#pToday .top>div');if(dt.hidden&&!q){dt.hidden=false;dt.classList.remove('in');void dt.offsetWidth;dt.classList.add('in')}else dt.hidden=!!q;
+  el.hidden=!q}
 // Tap the line (or the date) to choose what it shows
 function setQuipMenu(open){const m=$('#quipMenu');if(!m)return;
   if(open){const cur=LS.get('quipMode','auto');
@@ -2292,8 +2297,9 @@ function setQuipMenu(open){const m=$('#quipMenu');if(!m)return;
   m.hidden=!open}
 $('#pToday .top').addEventListener('click',e=>{if(e.target.closest('#beerBtn'))return;
   const b=e.target.closest('[data-qm]');if(b){LS.set('quipMode',b.dataset.qm);setQuipMenu(false);renderQuip();return}
-  if(e.target.closest('#quip')||e.target.closest('#pToday .top>div:first-child')){e.stopPropagation();setQuipMenu($('#quipMenu').hidden)}});
-document.addEventListener('click',e=>{const m=$('#quipMenu');if(m&&!m.hidden&&!e.target.closest('#quipMenu')&&!e.target.closest('#quip'))setQuipMenu(false)});
+  if(e.target.closest('#quipMenu'))return;
+  e.stopPropagation();setQuipMenu($('#quipMenu').hidden)});   // the whole row is the hit area (Beer keeps its own)
+document.addEventListener('click',e=>{const m=$('#quipMenu');if(m&&!m.hidden&&!e.target.closest('#quipMenu')&&!e.target.closest('#pToday .top'))setQuipMenu(false)});
 setInterval(()=>{if(!document.hidden)renderQuip()},60000);
 function renderDay(){const d=new Date();$('#dayH').textContent=d.toLocaleDateString(undefined,{weekday:'long'});$('#day').textContent=d.toLocaleDateString(undefined,{month:'long',day:'numeric'})}
 
