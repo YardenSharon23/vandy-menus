@@ -1772,9 +1772,15 @@ html.finder #streakBtn{display:none}
 #chatForm .send{width:44px;height:44px;transition:transform .25s var(--spring),opacity .2s ease}
 #chatForm:not(.has) .send{opacity:0;transform:scale(.6);pointer-events:none}
 .askpage .chatpage{max-width:500px;margin:0 auto;width:100%}
-/* tabs centre on the page: the settings gear floats at the right edge instead of taking room in the row */
-header.appbar{position:fixed}
-header.appbar #openSettings{position:absolute;right:16px;top:50%;margin-top:-17px}
+/* Top bar, three columns: an empty slot | the tabs | the gear. Both side slots are the gear's width, so the tabs are
+   always centred on the page and can never run under the gear. On small phones the labels shrink a touch to fit. */
+header.appbar{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;column-gap:8px;align-items:center}
+header.appbar .tabs{grid-column:2;width:100%;max-width:440px;margin:0 auto;min-width:0}
+header.appbar #openSettings{grid-column:3;justify-self:end;position:static;margin:0}
+header.appbar .tabs button{font-size:clamp(.84rem,3.7vw,1rem);min-width:0;white-space:nowrap}
+@media (max-width:360px){header.appbar{grid-template-columns:32px minmax(0,1fr) 32px;column-gap:2px;padding-left:max(12px, env(safe-area-inset-left, 0px));padding-right:max(12px, env(safe-area-inset-right, 0px))}
+  header.appbar .tabs button{font-size:.78rem;letter-spacing:-.015em}
+  header.appbar #openSettings{width:32px;height:32px}}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
