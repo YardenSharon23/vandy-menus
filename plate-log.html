@@ -1598,8 +1598,15 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .macros .f .track i{background:linear-gradient(90deg,#8d62c9,var(--fat))}
 .macros .p .ml{color:#c9d8ff}
 .macros .pace{margin:1px 0 0;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
-.minor{justify-content:flex-end;margin-top:-26px}
+.minor{display:none!important}
+#pToday .top{position:relative}
+#pToday .top #beerBtn{position:absolute;right:0;top:50%;transform:translateY(-50%);margin:0}
+#pToday .top #beerBtn:active{transform:translateY(-50%) scale(.96)}
 .minor:not(:has(.beerbtn:not([hidden]))){display:none}
+/* inner ring = protein: a tiny green line under the calories, and the Protein label in the same green */
+#pToday .gauge .proin{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:.72rem;font-weight:650;color:#7fe3ac;font-variant-numeric:tabular-nums}
+#pToday .gauge .proin i{width:6px;height:6px;border-radius:50%;background:#3ddc84;box-shadow:0 0 6px rgba(61,220,132,.6)}
+.macros .p .ml{color:#7fe3ac}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1623,6 +1630,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 <main class="app">
   <div class="top">
     <div><h1 id="dayH">Today</h1><div class="sub" id="day"></div></div>
+    <!-- Room for beer lives in the top-right corner, level with the date -->
+    <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
   </div>
 
   <section class="hero" aria-label="Today's macros">
@@ -1678,6 +1687,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
       <div class="center">
         <div class="kcal" id="kcal">0</div>
         <div class="of" id="kcalOf">calories</div>
+        <!-- the inner ring is protein: one small line in its green says so -->
+        <div class="proin" id="proIn"><i></i><span id="proInN">0</span> g protein</div>
       </div>
     </div>
     <!-- protein, carbs and fat read the same way: name, amount of goal, a bar. Protein's pace is the one extra word. -->
@@ -1687,7 +1698,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
       <div class="mc f"><span class="ml">Fat</span><span class="mv"><b id="fatNum">0</b><small id="fatOf">g</small></span><div class="track"><i id="fatBar" style="width:0"></i></div></div>
     </div>
     <div class="minor">
-            <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
+            
     </div>
   </section>
 
@@ -2177,6 +2188,7 @@ function renderToday(){
   // amber beer arc meet exactly when you've eaten that much.
   const bkT=beerK();
   $('#kcalOf').textContent=G.k?`of ${fmt(Math.max(0,G.k-bkT))} calories`:'calories';
+  $('#proInN').textContent=fmt(t.p);
   countTo($('#proNum'),t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
