@@ -1711,6 +1711,18 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #pToday .gauge #plate .pl1{font-family:var(--display);font-size:13px;font-weight:750;fill:#f1f4fb;letter-spacing:-.01em}
 #pToday .gauge #plate .pl2{font-family:var(--body);font-size:10.5px;font-weight:500;fill:#8a91a6}
 @media (prefers-reduced-motion: reduce){#pToday .gauge #plate{transition:opacity .2s;transform:none}}
+/* the context line is tappable: a small menu drops from it to pick what it shows */
+#pToday .top .quip,#pToday .top>div:first-child{cursor:pointer;-webkit-tap-highlight-color:transparent}
+#pToday .top .quip:active{opacity:.7}
+.quipmenu{position:absolute;top:calc(100% + 10px);left:50%;z-index:7;width:200px;margin-left:-100px;display:flex;flex-direction:column;padding:6px;border-radius:16px;
+  background:var(--glass),#1b2030;box-shadow:var(--glass-ring),0 18px 40px rgba(0,0,0,.5);transform-origin:50% 0;animation:amIn .3s var(--spring) both}
+.quipmenu[hidden]{display:none}
+#pToday .top{z-index:8}
+.quipmenu{background:#1b2030;background-image:var(--glass)}
+.quipmenu button{display:flex;align-items:center;justify-content:space-between;gap:10px;border:0;background:none;border-radius:10px;padding:9px 11px;font-size:.88rem;font-weight:600;color:var(--muted);text-align:left}
+.quipmenu button[aria-checked="true"]{color:var(--ink)}
+.quipmenu button:active{background:rgba(255,255,255,.07)}
+.quipmenu .qmk{width:9px;height:5px;border-left:2px solid var(--blue-2);border-bottom:2px solid var(--blue-2);transform:rotate(-45deg) translateY(-2px)}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1735,7 +1747,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
   <div class="top">
     <div><h1 id="dayH">Today</h1><div class="sub" id="day"></div></div>
     <!-- a short, dry line about right now (a hall closing, your streak…) takes the date's place when there's one worth saying -->
-    <div class="quip" id="quip" hidden></div>
+    <div class="quip" id="quip" role="button" tabindex="0" aria-haspopup="menu" hidden></div>
+    <div class="quipmenu" id="quipMenu" role="menu" aria-label="What the top line shows" hidden></div>
     <!-- Room for beer lives in the top-right corner, level with the date -->
     <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
   </div>
@@ -2221,28 +2234,45 @@ function quipStreak(){
   const ok=r=>r.n>0&&r.k>=Math.max(800,G.k*.4)&&(dir==='lose'?r.k<=G.k*1.05:dir==='gain'?r.k>=G.k*.95:Math.abs(r.k-G.k)<=G.k*.1);
   let n=0;for(let i=1;i<120;i++){const d=new Date();d.setDate(d.getDate()-i);if(ok(dayRow(d,today)))n++;else break}return n;
 }
+// Each kind of line on its own; '' when it has nothing to say right now.
+function quipHome(){const es=entries(),last=[...es].reverse().find(e=>e.hall),byName=last&&HALLS.find(x=>x.name===last.hall&&x.id);
+  const id=byName?byName.id:hallOrder().find(i=>i!==0);return {id,name:(HALLS.find(x=>x.id===id)||{}).name}}
+const QUIP={
+  // a dish from "Foods you like" being served right now somewhere open, that you haven't logged today
+  fav(){if(!eat.loaded||!hoursData)return '';const P=prefModel(),es=entries();if(!P.like.length)return '';
+    for(const id of hallOrder()){if(!id)continue;const st=hallStatus(id);if(!st||!st.open)continue;
+      const hit=hallItems(id,defaultMeal()).find(i=>i.kind==='main'&&P.like.some(l=>l.words.every(w=>wordsOf(i.n).includes(w)))&&!es.some(e=>(e.items||[]).some(x=>x.n===i.n)));
+      if(hit)return `${hit.n.replace(/\s*\(.*?\)\s*/g,' ').trim()} at ${(HALLS.find(x=>x.id===id)||{}).name||'a hall'}`}return ''},
+  protein(){const G=goals(),t=dayTot();if(!G.p)return '';return t.p>=G.p?'Protein goal hit':`${fmt(G.p-t.p)} g protein left today`},
+  streak(){const n=quipStreak();return n>=1?`${n} ${n===1?'day':'days'} in a row on target`:''},
+  hours(soonOnly){if(!hoursData)return '';const {id,name}=quipHome();if(!id)return '';const st=hallStatus(id);if(!st)return '';
+    if(st.open)return st.wait<=45?`${name} closes in ${st.wait} min`:soonOnly?'':`${name} open ${st.label.replace(/^Until/,'until')}`;
+    return st.wait<=30?`${name} opens in ${st.wait} min`:soonOnly?'':`${name} ${st.label.replace(/^Opens/,'opens').replace(/^Tomorrow/,'opens tomorrow')}`},
+};
+const QUIP_MODES=[['auto','Smart'],['fav','Dishes you like'],['protein','Protein left'],['streak','Streak'],['hours','Dining hours'],['random','Random'],['date','Just the date']];
 function quipLine(){
   if(document.documentElement.classList.contains('finder'))return '';
-  const now=new Date(),h=now.getHours()+now.getMinutes()/60,es=entries(),G=goals(),t=dayTot();
-  // the place you're most likely eating: where you last logged today, else the top of your hall list
-  const last=[...es].reverse().find(e=>e.hall),byName=last&&HALLS.find(x=>x.name===last.hall&&x.id);
-  const home=byName?byName.id:hallOrder().find(id=>id!==0),hn=(HALLS.find(x=>x.id===home)||{}).name;
-  if(hoursData&&home){const st=hallStatus(home);
-    if(st&&st.open&&st.wait<=45)return `${hn} closes in ${st.wait} min`;
-    if(st&&!st.open&&st.wait<=30)return `${hn} opens in ${st.wait} min`;}
-  if(G.p&&t.p>=G.p)return `Protein goal hit`;
-  // a dish you said you like, being served right now somewhere open
-  if(eat.loaded&&hoursData){const P=prefModel();
-    if(P.like.length)for(const id of hallOrder()){if(!id)continue;const st=hallStatus(id);if(!st||!st.open)continue;
-      const hit=hallItems(id,defaultMeal()).find(i=>i.kind==='main'&&P.like.some(l=>l.words.every(w=>wordsOf(i.n).includes(w)))&&!es.some(e=>(e.items||[]).some(x=>x.n===i.n)));
-      if(hit)return `${hit.n.replace(/\s*\(.*?\)\s*/g,' ').trim()} at ${(HALLS.find(x=>x.id===id)||{}).name||'a hall'}`;}}
-  if(h>=17&&G.p&&t.k>300&&t.p<G.p*.8)return `${fmt(G.p-t.p)} g protein left today`;
-  const sk=quipStreak();if(sk>=2)return `${sk} days in a row on target`;
-  return '';
+  const mode=LS.get('quipMode','auto'),h=new Date().getHours()+new Date().getMinutes()/60,G=goals(),t=dayTot();
+  if(mode==='date')return '';
+  if(QUIP[mode]){const q=QUIP[mode]();if(q)return q}   // the chosen kind; if it has nothing right now, fall through to Smart
+  if(mode==='random'){const all=['fav','protein','streak','hours'].map(k=>QUIP[k]()).filter(Boolean);
+    if(all.length)return all[Math.floor(Date.now()/6e5)%all.length]}   // changes every 10 minutes, not on every render
+  // Smart: food you like first, then hall hours that matter soon, then protein, then the streak
+  return QUIP.fav()||QUIP.hours(true)||(G.p&&t.p>=G.p?'Protein goal hit':'')
+    ||(h>=17&&G.p&&t.k>300&&t.p<G.p*.8?QUIP.protein():'')||(quipStreak()>=2?QUIP.streak():'');
 }
 function renderQuip(){const q=quipLine(),el=$('#quip');if(!el)return;
   if(el.dataset.q!==q){el.dataset.q=q;el.textContent=q;el.classList.remove('in');void el.offsetWidth;if(q)el.classList.add('in')}
   el.hidden=!q;$('#pToday .top>div').hidden=!!q}
+// Tap the line (or the date) to choose what it shows
+function setQuipMenu(open){const m=$('#quipMenu');if(!m)return;
+  if(open){const cur=LS.get('quipMode','auto');
+    m.innerHTML=QUIP_MODES.map(([k,l])=>`<button type="button" role="menuitemradio" aria-checked="${k===cur}" data-qm="${k}">${l}${k===cur?'<i class="qmk" aria-hidden="true"></i>':''}</button>`).join('')}
+  m.hidden=!open}
+$('#pToday .top').addEventListener('click',e=>{if(e.target.closest('#beerBtn'))return;
+  const b=e.target.closest('[data-qm]');if(b){LS.set('quipMode',b.dataset.qm);setQuipMenu(false);renderQuip();return}
+  if(e.target.closest('#quip')||e.target.closest('#pToday .top>div:first-child')){e.stopPropagation();setQuipMenu($('#quipMenu').hidden)}});
+document.addEventListener('click',e=>{const m=$('#quipMenu');if(m&&!m.hidden&&!e.target.closest('#quipMenu')&&!e.target.closest('#quip'))setQuipMenu(false)});
 setInterval(()=>{if(!document.hidden)renderQuip()},60000);
 function renderDay(){const d=new Date();$('#dayH').textContent=d.toLocaleDateString(undefined,{weekday:'long'});$('#day').textContent=d.toLocaleDateString(undefined,{month:'long',day:'numeric'})}
 
