@@ -3514,7 +3514,7 @@ async function chatSend(text){
   chatBusy=true;$('#chatSend').disabled=true;
   try{
     const menus=await chatMenus(text);
-    const turns=[{role:'user',content:coachPrompt(menus)},...chatTurns.slice(-12),{role:'user',content:text}];
+    const turns=[{role:'user',content:coachPrompt(menus)},...chatTurns.slice(-8),{role:'user',content:text}];
     const res=await sample.json(turns,{cache:false});
     const reply=String((res&&res.reply)||"Sorry, I didn't catch that. Try asking again.");
     wait.innerHTML=md(reply);
@@ -3585,6 +3585,15 @@ async function readCode(file,url){
     const r=await new Z.BrowserMultiFormatReader(hints).decodeFromImageUrl(url);if(r)return {text:r.getText(),format:String(Z.BarcodeFormat[r.getBarcodeFormat()]||'')}}catch(e){}
   return null;
 }
+// Claude scales every image down to about 1568 px on the long side before looking at it, so sending a 12 MP phone
+// photo only costs upload time. Resize to exactly that (orientation kept, high-quality JPEG): same detail, much lighter.
+async function fitPhoto(f){
+  try{const MAX=1568;const bm=await createImageBitmap(f,{imageOrientation:'from-image'});
+    const sc=Math.min(1,MAX/Math.max(bm.width,bm.height));if(sc===1&&f.size<1.5e6){bm.close&&bm.close();return f}
+    const c=document.createElement('canvas');c.width=Math.round(bm.width*sc);c.height=Math.round(bm.height*sc);
+    const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(bm,0,0,c.width,c.height);bm.close&&bm.close();
+    const b=await new Promise(r=>c.toBlob(r,'image/jpeg',.9));return b&&b.size<f.size?b:f}
+  catch(e){return f}}   // anything unusual: send the original
 async function onPhoto(e){
   const f=e.target.files[0];e.target.value='';if(!f)return;
   // Photo taken: check it for a QR code or barcode, then send it straight away (with any typed note).
@@ -3667,14 +3676,28 @@ async function menuFor(hallId){
   if(!data)return[];
   const out=[];let i=0;for(const m of data.meals)for(const it of m.items)out.push({...it,meal:m.meal,id:'i'+(i++)});return out;
 }
+// Menu text for the logger, compact: meal and station printed once as a header instead of on every line (same facts,
+// far fewer tokens). Keeps the order, so items Claude compares (same station) stay side by side.
+function menuBlock(items){let key='',out=[];
+  for(const c of items){const k=`[${c.meal} · ${c.s||'Other'}]`;if(k!==key){key=k;out.push(k)}
+    out.push(`${c.id} | ${c.n} | ${c.v}${c.g?` (${c.g}g)`:''} | ${Math.round(c.k)}`)}
+  return out.join('\n')}
+// Which of a hall's meals can matter for a log right now: the meal being served, the one before it (logging late),
+// Brunch and all-day items, and any meal named in the message. Falls back to the whole menu if that leaves nothing.
+function menuForLog(items,text){
+  const now=new Date(),h=now.getHours()+now.getMinutes()/60,cur=h<10.5?'Breakfast':h<15.5?'Lunch':'Dinner';
+  const keep=new Set([cur,{Breakfast:'Dinner',Lunch:'Breakfast',Dinner:'Lunch'}[cur],'Brunch','Daily Offerings']);
+  for(const m of ['Breakfast','Lunch','Dinner','Brunch'])if(new RegExp('\\b'+m+'\\b','i').test(text||''))keep.add(m);
+  const out=items.filter(c=>keep.has(c.meal)||!/^(Breakfast|Lunch|Dinner|Brunch)$/.test(c.meal));
+  return out.length?out:items}
 function instructions(hallId,items){
   const t=dayTot();const hn=hallId?hallName(hallId):'';
-  const where=hallId&&items.length?`They're eating from ${hn} dining hall. Its menu for today, from the official NetNutrition data (id | meal | station | item | one serving | kcal per serving):\n`+
-    items.map(c=>`${c.id} | ${c.meal} | ${c.s||''} | ${c.n} | ${c.v}${c.g?` (${c.g}g)`:''} | ${Math.round(c.k)}`).join('\n')
+  const where=hallId&&items.length?`They're eating from ${hn} dining hall. Its menu for today, from the official NetNutrition data. Items are grouped under [meal · station]; each line is: id | item | one serving | kcal per serving.\n`+
+    menuBlock(items)
     :hallId?`They're eating from ${hn} dining hall, but its menu isn't loaded today.`
     :hallId===0?`They're not eating at a dining hall.`
     :`They didn't say where the food is from. If it sounds like Vanderbilt dining-hall food, estimate it from typical dining-hall portions.`;
-  return `You are the food logger inside Plate Log, a Vanderbilt student's personal macro tracker. Today is ${state.date}, local time ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.
+  return `You are the food logger inside Plate Log, a Vanderbilt student's personal macro tracker. Today is ${state.date}. Each message starts with the local time and what they've logged so far today.
 The student tells you what they ate with a photo, a text message, or both. A photo may show a plate, a package, a nutrition label, or a QR code or barcode; the page decodes codes and tells you what it read. Work out what they ate and how much. They review and adjust your numbers before anything is logged.
 
 ${where}
@@ -3691,18 +3714,18 @@ How to estimate:
 - If their message corrects or adds to the food in your previous reply ("actually two bags", "I also had a Coke with that"), return the full updated meal with "replaces_last": true.
 - If they only ask a question or chat, answer it and set meal to null.
 - name is one of Breakfast, Lunch, Dinner, Snack. Use the time of day for full meals; small items between meals are Snack. Drinks are never their own entry type: a drink goes under the meal of the time of day (or Snack if it's between meals).
-So far today: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein.
-
 Reply with only JSON:
 {"reply":"one short, friendly sentence","meal":{"name":"Dinner","items":[{"menu_id":"i12","label":"Grilled Chicken Breast","grams":170,"servings":1.5},{"menu_id":"i30","label":"Roasted Brussels Sprouts","grams":85,"servings":1},{"menu_id":"i41","label":"French Fries","grams":60,"servings":0.75},{"menu_id":null,"label":"Ranch dip, small cup","grams":30,"servings":1,"calories":110,"protein_g":0.5,"carbs_g":2,"fat_g":11}],"replaces_last":false}}
 meal may be null. Labels are short food names. Before answering, check that every food visible in the photo appears in items, including every side.`;
 }
 // One call to Claude. ctx = {text, photo, code, hallId}; `history` adds the recent conversation (for "actually two bags").
 async function ask(ctx,{history=true,signal}={}){
-  const items=await menuFor(ctx.hallId);
-  const userTurn=(ctx.photo?'[Photo attached] ':'')+(ctx.code?`[The page decoded a ${ctx.code.format||'code'} in the photo: "${ctx.code.text}"] `:'')+(ctx.text||'Photo only. Log what is in it.');
-  const turns=[{role:'user',content:instructions(ctx.hallId,items)},...(history?state.turns.slice(-10):[]),{role:'user',content:userTurn}];
-  const res=await sample.json(turns,{images:ctx.photo?[ctx.photo]:undefined,signal,cache:false});
+  const items=menuForLog(await menuFor(ctx.hallId),ctx.text);
+  const t=dayTot();
+  const stamp=`[${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} · so far today ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein] `;
+  const userTurn=stamp+(ctx.photo?'[Photo attached] ':'')+(ctx.code?`[The page decoded a ${ctx.code.format||'code'} in the photo: "${ctx.code.text}"] `:'')+(ctx.text||'Photo only. Log what is in it.');
+  const turns=[{role:'user',content:instructions(ctx.hallId,items)},...(history?state.turns.slice(-6):[]),{role:'user',content:userTurn}];
+  const res=await sample.json(turns,{images:ctx.photo?[await fitPhoto(ctx.photo)]:undefined,signal,cache:false});
   const reply=String((res&&res.reply)||'Here is what I found.');
   let meal=null;
   if(res&&res.meal&&Array.isArray(res.meal.items)&&res.meal.items.length){
