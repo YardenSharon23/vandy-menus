@@ -1697,6 +1697,12 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .macros .p .track i{border-radius:9px}
 .macros .p .ptick{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;border-radius:2px;background:#fff;box-shadow:0 0 0 2px #0d111b;transition:left 1s var(--ease)}
 .macros .p .ptick[hidden]{display:none}
+/* the context line: same quiet spot as the date, sentence case, a small blue dot in front */
+#pToday .top:has(.quip:not([hidden])){justify-content:flex-start}
+#pToday .top .quip{display:block;max-width:calc(100% - 84px);text-align:left;font-size:.76rem;font-weight:650;letter-spacing:.01em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pToday .top .quip::before{content:"";display:inline-block;vertical-align:2px;margin-right:7px;width:5px;height:5px;border-radius:50%;background:var(--blue-2);box-shadow:0 0 6px rgba(95,160,255,.6)}
+#pToday .top .quip[hidden],#pToday .top>div[hidden]{display:none}
+#pToday .top .quip.in{animation:mswap .45s var(--spring) both}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1720,6 +1726,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 <main class="app">
   <div class="top">
     <div><h1 id="dayH">Today</h1><div class="sub" id="day"></div></div>
+    <!-- a short, dry line about right now (a hall closing, your streak…) takes the date's place when there's one worth saying -->
+    <div class="quip" id="quip" hidden></div>
     <!-- Room for beer lives in the top-right corner, level with the date -->
     <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
   </div>
@@ -2187,6 +2195,36 @@ function hallName(id=state.hall){return (HALLS.find(h=>h.id===id)||{}).name}
     else if(act==='send')$('#form').requestSubmit();
   });
 })();
+/* ---------- the context line: useful first, a little dry second; falls back to the date ---------- */
+function quipStreak(){
+  const G=goals(),dir=typeof goalDir==='function'?goalDir():'maintain',today=dstr();
+  const ok=r=>r.n>0&&r.k>=Math.max(800,G.k*.4)&&(dir==='lose'?r.k<=G.k*1.05:dir==='gain'?r.k>=G.k*.95:Math.abs(r.k-G.k)<=G.k*.1);
+  let n=0;for(let i=1;i<120;i++){const d=new Date();d.setDate(d.getDate()-i);if(ok(dayRow(d,today)))n++;else break}return n;
+}
+function quipLine(){
+  if(document.documentElement.classList.contains('finder'))return '';
+  const now=new Date(),h=now.getHours()+now.getMinutes()/60,es=entries(),G=goals(),t=dayTot();
+  // the place you're most likely eating: where you last logged today, else the top of your hall list
+  const last=[...es].reverse().find(e=>e.hall),byName=last&&HALLS.find(x=>x.name===last.hall&&x.id);
+  const home=byName?byName.id:hallOrder().find(id=>id!==0),hn=(HALLS.find(x=>x.id===home)||{}).name;
+  if(hoursData&&home){const st=hallStatus(home);
+    if(st&&st.open&&st.wait<=45)return `${hn} closes in ${st.wait} min`;
+    if(st&&!st.open&&st.wait<=30)return `${hn} opens in ${st.wait} min`;}
+  if(G.p&&t.p>=G.p)return `Protein's handled. The rest is a bonus.`;
+  // a dish you said you like, being served right now somewhere open
+  if(eat.loaded&&hoursData){const P=prefModel();
+    if(P.like.length)for(const id of hallOrder()){if(!id)continue;const st=hallStatus(id);if(!st||!st.open)continue;
+      const hit=hallItems(id,defaultMeal()).find(i=>i.kind==='main'&&P.like.some(l=>l.words.every(w=>wordsOf(i.n).includes(w)))&&!es.some(e=>(e.items||[]).some(x=>x.n===i.n)));
+      if(hit)return `${(HALLS.find(x=>x.id===id)||{}).name||'Somewhere'} has ${hit.n.replace(/\s*\(.*?\)\s*/g,' ').trim()}`;}}
+  if(h>=17&&G.p&&t.k>300&&t.p<G.p*.8)return `${fmt(G.p-t.p)} g protein to go. Dinner has a job.`;
+  const sk=quipStreak();if(sk>=2)return `${sk}-day streak. Don't fumble it.`;
+  if(!es.length&&h>=11)return `Nothing logged yet. Breakfast counts.`;
+  return '';
+}
+function renderQuip(){const q=quipLine(),el=$('#quip');if(!el)return;
+  if(el.dataset.q!==q){el.dataset.q=q;el.textContent=q;el.classList.remove('in');void el.offsetWidth;if(q)el.classList.add('in')}
+  el.hidden=!q;$('#pToday .top>div').hidden=!!q}
+setInterval(()=>{if(!document.hidden)renderQuip()},60000);
 function renderDay(){const d=new Date();$('#dayH').textContent=d.toLocaleDateString(undefined,{weekday:'long'});$('#day').textContent=d.toLocaleDateString(undefined,{month:'long',day:'numeric'})}
 
 /* ---------- menu ---------- */
@@ -2279,7 +2317,7 @@ function renderPace(t,G,calPct,proPct){
   const bt=$('#proTick');if(bt){bt.style.left=(Math.min(1,calPct)*100).toFixed(1)+'%';bt.hidden=st==='idle'||calPct<=0}
   tick.setAttribute('opacity',st==='idle'||calPct<=0?'0':'1');
 }
-function renderToday(){
+function renderToday(){queueMicrotask(renderQuip);
   const t=dayTot(),G=goals();
   const pct=G.k?Math.min(1,t.k/G.k):0;
   // Real arc length (π·r), not pathLength, which some phone browsers ignore for dashes.
@@ -2668,7 +2706,7 @@ function status(u,now=new Date()){
 let hoursLoading=null;
 function loadHours(){
   if(hoursData||!db)return Promise.resolve(hoursData);
-  if(!hoursLoading)hoursLoading=db.doc('menus/hours').get().then(s=>{if(s.exists)hoursData=s.data();return hoursData}).catch(()=>null).finally(()=>{hoursLoading=null});
+  if(!hoursLoading)hoursLoading=db.doc('menus/hours').get().then(s=>{if(s.exists)hoursData=s.data();renderQuip();return hoursData}).catch(()=>null).finally(()=>{hoursLoading=null});
   return hoursLoading;
 }
 /* ---------- Eat page ---------- */
@@ -2680,7 +2718,7 @@ const eat={menus:{},loaded:false,meal:null,q:'',chips:new Set(['open']),open:nul
 async function loadEatMenus(){
   if(!db)return;
   const lists=await Promise.all(MENU_UNITS.map(id=>menuFor(id).catch(()=>[])));
-  MENU_UNITS.forEach((id,i)=>{eat.menus[id]=lists[i]});eat.loaded=true;
+  MENU_UNITS.forEach((id,i)=>{eat.menus[id]=lists[i]});eat.loaded=true;renderQuip();
   if(curPage===1)renderEat();
 }
 // What kind of thing an item is, from Vanderbilt's station names.
