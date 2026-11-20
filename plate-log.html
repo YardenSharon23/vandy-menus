@@ -1514,6 +1514,12 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #where .hall.else .hic{background:rgba(61,123,255,.16);color:var(--blue-2)}
 #where .hall.else:active{background:rgba(61,123,255,.16)}
 #where .hall.done{justify-content:center;min-height:46px}
+/* the quiet "Closed places" toggle and the nothing-open note */
+#where .hmore{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;padding:4px 0 2px;font-size:.76rem;font-weight:600;color:var(--faint)}
+#where .hmore .caret{margin-top:-3px}
+#where .hmore.on .caret{transform:rotate(-135deg);margin-top:3px}
+#where .hmore:active{color:var(--muted)}
+#where .hnone{grid-column:1/-1;font-size:.82rem;color:var(--muted);padding:0 2px 2px}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1904,15 +1910,27 @@ function renderHalls(){
   $('#reorderHint').textContent=state.editing?'Drag to reorder, then tap Done.':'Press and hold to reorder.';
   // "Elsewhere" always sits last, full width and styled apart from the dining halls.
   // Each tile: a small icon (plate for dining halls, cup for cafés), the name, and whether it's open right now.
-  box.innerHTML=hallOrder().filter(id=>id!==0).map(id=>{const h=HALLS.find(x=>x.id===id),st=hallStatus(id);
-      const cafe=HALL_CAFE.has(id),cls=st?(st.open?' open':' shut'):'';
-      return `<button type="button" class="hall${cls}" data-h="${id}"><span class="hic">${cafe?ICON_CUP:ICON_PLATE}</span><span class="hn"><b>${h.name}</b>${st?`<small>${esc(st.open?st.label:st.label.replace(/^Opens /,'Opens '))}</small>`:''}</span></button>`}).join('')
+  // Only places you could be eating at right now are listed: open, opening within 30 min, or closed less than
+  // 45 min ago (people linger). The rest sit behind a quiet "Closed places" toggle. Reordering shows everything.
+  const now=Date.now(),ids=hallOrder().filter(id=>id!==0);
+  const near=id=>{const u=hoursData&&hoursData.units.find(x=>x.id===id);if(!u)return {show:true,st:null};
+    const st=status(u,new Date(now));if(st.open)return {show:true,st};
+    if(status(u,new Date(now+30*60e3)).open)return {show:true,st};
+    if(status(u,new Date(now-45*60e3)).open)return {show:true,st:{...st,label:'Just closed'}};
+    return {show:false,st}};
+  const tile=id=>{const h=HALLS.find(x=>x.id===id),{st}=near(id),cafe=HALL_CAFE.has(id),cls=st?(st.open?' open':' shut'):'';
+      return `<button type="button" class="hall${cls}" data-h="${id}"><span class="hic">${cafe?ICON_CUP:ICON_PLATE}</span><span class="hn"><b>${h.name}</b>${st?`<small>${esc(st.label)}</small>`:''}</span></button>`};
+  const shown=state.editing?ids:ids.filter(id=>near(id).show),closed=state.editing?[]:ids.filter(id=>!near(id).show);
+  const showClosed=state.showClosed||!shown.length;   // nothing open (late night): just show them all
+  box.innerHTML=(shown.length?'':'<div class="hnone">Nothing is open right now.</div>')+shown.map(tile).join('')
+    +(closed.length&&shown.length?`<button type="button" class="hmore${showClosed?' on':''}" id="hallMore">${showClosed?'Hide closed places':`Closed places · ${closed.length}`}<i class="caret" aria-hidden="true"></i></button>`:'')
+    +(showClosed?closed.map(tile).join(''):'')
     +(state.editing?'<button type="button" class="hall done" id="doneReorder">Done</button>':`<button type="button" class="hall else" data-h="0"><span class="hic">${ICON_PIN}</span><span class="hn"><b>Somewhere else</b><small>Off campus, home, a snack</small></span></button>`);
   if(!hoursData&&!renderHalls._wait){renderHalls._wait=1;loadHours().then(()=>{renderHalls._wait=0;if(!$('#where').hidden&&hoursData)renderHalls()})}
 }
 /* The hall popup opens on every camera tap (then the camera opens) and on sending text without a hall picked. */
 let pending=null;
-function openWhere(action){pending=action;state.editing=false;renderHalls();$('#where').hidden=false}
+function openWhere(action){pending=action;state.editing=false;state.showClosed=false;renderHalls();$('#where').hidden=false}
 function closeWhere(){$('#where').hidden=true;state.editing=false}
 $('#whereCancel').addEventListener('click',()=>{pending=null;closeWhere()});
 $('#where').addEventListener('click',e=>{if(e.target.id==='where'){pending=null;closeWhere()}});
@@ -1944,6 +1962,7 @@ function hallName(id=state.hall){return (HALLS.find(h=>h.id===id)||{}).name}
   box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
   box.addEventListener('click',e=>{
     if(e.target.id==='doneReorder'){state.editing=false;renderHalls();return}
+    if(e.target.closest('#hallMore')){state.showClosed=!state.showClosed;renderHalls();return}
     if(held||state.editing){held=false;return}
     const b=e.target.closest('[data-h]');if(!b)return;
     state.hall=+b.dataset.h;watchMenu();closeWhere();
