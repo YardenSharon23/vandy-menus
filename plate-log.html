@@ -1767,6 +1767,11 @@ html.finder #streakBtn{display:none}
 #pToday .gauge #plate .utensils,#pToday .gauge #plate text{transition:opacity .2s ease}
 #pToday .gauge:not(.empty) #plate .utensils,#pToday .gauge:not(.empty) #plate text{opacity:0}
 #pToday .gauge.opening svg>path,#pToday .gauge.opening .center{transition-delay:.18s}
+/* Coach chat box = the Track "Describe what you ate" box: same height, corners, glass, padding; arrow appears when typing */
+#chatForm.chatbar{min-height:54px;height:auto;padding:5px 6px 5px 18px;gap:6px;border:0;border-radius:16px}
+#chatForm .send{width:44px;height:44px;transition:transform .25s var(--spring),opacity .2s ease}
+#chatForm:not(.has) .send{opacity:0;transform:scale(.6);pointer-events:none}
+.askpage .chatpage{max-width:500px;margin:0 auto;width:100%}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1777,7 +1782,7 @@ html.finder #streakBtn{display:none}
     <button type="button" role="tab" data-p="0" aria-selected="true">Track</button>
     <button type="button" role="tab" data-p="1" aria-selected="false">Find</button>
     <button type="button" role="tab" data-p="2" aria-selected="false">Progress</button>
-    <button type="button" role="tab" data-p="3" aria-selected="false">Ask</button>
+    <button type="button" role="tab" data-p="3" aria-selected="false">Coach</button>
   </nav>
   <button class="iconbtn" id="openSettings" aria-label="Daily targets">
     <!-- a clean rounded gear (the familiar Settings symbol) -->
@@ -1949,18 +1954,19 @@ html.finder #streakBtn{display:none}
   </div>
 </section>
 
-<section class="page askpage" id="pAsk" aria-label="Ask Claude">
+<section class="page askpage" id="pAsk" aria-label="Coach">
   <div class="pagein chatpage">
     <div class="msgs" id="msgs" aria-live="polite">
       <div class="starters" id="starters">
-        <div class="askhead"><h1>Ask Claude</h1><div class="sub">Goals, food, where to eat.</div></div>
+        <div class="askhead"><h1>Coach</h1><div class="sub">Quick answers: what to eat, what's left, how you're doing.</div></div>
+        <button type="button" class="starter">What should I eat right now?</button>
+        <button type="button" class="starter">How do I hit my protein today?</button>
+        <button type="button" class="starter">How's my week going?</button>
         <button type="button" class="starter">What should my daily targets be?</button>
-        <button type="button" class="starter">How am I doing this week?</button>
-        <button type="button" class="starter">What's good to eat today, and where?</button>
       </div>
     </div>
     <form class="chatbar" id="chatForm" autocomplete="off">
-      <input id="chatIn" placeholder="Ask about goals, food, your week…" aria-label="Message Claude" enterkeyhint="send">
+      <input id="chatIn" placeholder="Ask your coach…" aria-label="Message your coach" enterkeyhint="send">
       <button type="submit" class="send" id="chatSend" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
@@ -3508,31 +3514,60 @@ async function chatMenus(text){
   });
   return `\nToday's ${meal.toLowerCase()} menus (station | item | serving | kcal | protein):\n`+blocks.join('\n');
 }
+// Everything the coach needs, worked out by the app first, so answers are exact and short:
+// what's left today, what's open, the app's own ranked picks, profile, week and habits.
+function coachFacts(){
+  const G=goals(),t=dayTot(),bk=beerK(),left={k:Math.round(G.k-t.k-bk),p:Math.round(G.p-t.p),c:Math.round(G.c-t.c),f:Math.round(G.f-t.f)};
+  const now=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}),meal=defaultMeal();
+  const open=hoursData?HALLS.filter(h=>h.id).map(h=>{const st=hallStatus(h.id);return st?`${h.name}: ${st.open?'open, '+st.label.toLowerCase():st.label.toLowerCase()}`:null}).filter(Boolean).join('; '):'hours not loaded';
+  let picks='menus not loaded';
+  if(eat.loaded){const ps=topPicks(meal);picks=ps.length?ps.map((c,i)=>`${i+1}. ${c.items.map(x=>x.n).join(' + ')} at ${hallName(c.hall)} · ${fmt(c.k)} cal · ${Math.round(c.p)} g protein · ${c.st?(c.st.open?'open '+c.st.label.toLowerCase():c.st.label.toLowerCase()):'hours unknown'}${c.liked?' · matches what they like':''}`).join('\n'):`no ${meal.toLowerCase()} menus posted`}
+  const P=(state.settings&&state.settings.profile)||{},dir=goalDir();
+  const prof=P.sex&&P.age&&P.ft&&P.lb&&P.act?`${P.sex==='m'?'male':'female'}, ${P.age}, ${P.ft}'${P.in||0}", ${P.lb} lb, activity ${({s:'sedentary',l:'light',a:'active',v:'athlete'})[P.act]||P.act}`:'not filled in';
+  const rec=P.sex&&P.age&&P.ft&&P.lb&&P.act?recommend(P,dir):null;
+  const wk=weekDates().filter(d=>dstr(d)<state.date).map(d=>totFor(dstr(d))).filter(x=>x.n);
+  const avg=k=>wk.length?Math.round(wk.reduce((s,x)=>s+x[k],0)/wk.length):0;
+  const fav=pastFoods().filter(r=>r.count>=2).sort((a,b)=>b.count-a.count).slice(0,5).map(r=>`${r.it.n} (${r.count}×)`).join(', ');
+  return `NOW: ${now}, ${meal.toLowerCase()} time. Goal: ${{lose:'lose weight',gain:'gain weight',maintain:'maintain'}[dir]}.
+TARGETS: ${G.k} cal · ${G.p} g protein · ${G.c} g carbs · ${G.f} g fat.
+EATEN TODAY: ${Math.round(t.k)} cal · ${Math.round(t.p)} g protein · ${Math.round(t.c)} g carbs · ${Math.round(t.f)} g fat${bk?` · plus ${bk} cal of beer planned`:''}.
+LEFT TODAY: ${left.k} cal · ${left.p} g protein · ${left.c} g carbs · ${left.f} g fat${left.k<0?' (over on calories)':''}.
+LOGGED TODAY: ${entries().map(e=>`${entryName(e)} ${(e.items||[]).map(i=>i.n).join(', ')||'(totals only)'}`).join('; ')||'nothing yet'}.
+PLACES: ${open}.
+BEST PICKS FOR THEM NOW (the app's own ranking for their goal, protein left, likes and what's open; prefer these):
+${picks}
+WEEK SO FAR: ${wk.length?`${wk.length} days logged, avg ${avg('k')} cal and ${avg('p')} g protein a day`:'no full days logged yet'}. Streak: ${quipStreak()} days on target.
+THEY OFTEN EAT: ${fav||'not enough history yet'}.
+FOOD PREFERENCES: ${prefs()||'not told yet'}.
+PROFILE: ${prof}.${rec?` Suggested targets from it: ${rec.k} cal, ${rec.p} g protein, ${rec.c} g carbs, ${rec.f} g fat (maintenance about ${rec.tdee} cal).`:''}`;
+}
 function coachPrompt(menus){
-  const G=goals();const saved=(state.settings&&state.settings.goals)||{};const t=dayTot();
-  const days=weekDates().map(d=>{const ds=dstr(d);const x=totFor(ds);return `${d.toLocaleDateString(undefined,{weekday:'short'})} ${ds}: ${x.n?`${Math.round(x.k)} kcal, ${Math.round(x.p)} g protein`:'nothing logged'}`}).join('\n');
-  const tg=k=>`${G[k]}${saved[k]?'':' (default, not set by them)'}`;
-  const P=prefs();
-  return `You are the friendly nutrition helper inside Plate Log, a Vanderbilt student's personal macro tracker. Today is ${state.date}, ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}.
-Their current daily targets: ${tg('k')} kcal, ${tg('p')} g protein, ${tg('c')} g carbs, ${tg('f')} g fat. Their goal: ${{lose:'lose weight',gain:'gain weight',maintain:'maintain weight'}[goalDir()]}${state.settings&&state.settings.dir?'':' (not set by them yet)'}.
-${beerK()?`They plan to drink ${fmtBeer(planBeer().n)} beers later today (~${beerK()} kcal set aside), so food calories left = target - eaten - ${beerK()}.\n`:''}Today so far: ${Math.round(t.k)} kcal, ${Math.round(t.p)} g protein, ${Math.round(t.c)} g carbs, ${Math.round(t.f)} g fat. Entries: ${entries().map(e=>`${entryName(e)} (${e.items.map(i=>i.n).join(', ')}) ${Math.round(e.tot.k)} kcal`).join('; ')||'none'}.
-This week:
-${days}
-Their food preferences: ${P||'not known yet'}
-${menus}
-${finderOn()?'\nThey use food finder mode: they are NOT tracking calories. Never mention calories, macros, targets or their log unless they ask. Recommend by taste, place and what is open.\n':''}
-How to answer:
-- Use as few words as possible. No greetings, no restating the question, no filler, no closing offers. Aim for under 60 words; never over 100.
-- Format: "- " bullets for options, **bold** for dish, place and key numbers. Use a "### " heading only when listing several options. No tables, no paragraphs longer than one sentence.
-- Recommendations ("what's good today", "where should I eat"): 2 or 3 bullets, each exactly like: "**Dish** at **Place** · 450 cal · 38 g protein · open till 3". Combine items into one plate when they're from the same hall. Prefer places open now or opening soonest. Add at most one short line after the bullets.
-- If their food preferences aren't known and they ask for recommendations, first ask in one or two quick questions what they like, dislike, and any diet (vegetarian, halal, allergies). You may give one or two safe picks meanwhile.
-- Whenever they tell you what they like, dislike, or how they eat, return "prefs": the FULL updated summary (one or two short sentences merging old and new), so the app remembers it. Otherwise "prefs" is null.
-- Daily targets: if you don't know their weight, height, age, sex, activity level and goal (lose, maintain, gain), give a starting range and ask for what's missing. When you give specific numbers, also put them in "goals".
-- You can't log food from this chat; for that they use the camera or the box on the main screen.
-- You're not a doctor. For medical conditions, pregnancy or signs of disordered eating, gently suggest Vanderbilt's campus dietitian or the Student Health Center.
+  return `You are Coach inside Plate Log, a Vanderbilt student's food tracker. Give short, direct, practical answers using the facts below. They are exact; never invent numbers, dishes, places or hours that aren't in them.
+
+${coachFacts()}
+${menus?`\nFULL MENUS for what they asked about:${menus}\n`:''}${finderOn()?'\nThey use food finder mode: they are NOT tracking. Never mention calories, macros, targets or their log unless asked. Recommend by taste, place and what is open.\n':''}
+HOW TO ANSWER
+- Lead with the answer in the first line. No greeting, no restating the question, no "great question", no closing offer, no disclaimers.
+- Keep it under 50 words. At most 3 bullets. One idea per bullet.
+- Format a dish exactly: **Dish** at **Place** · 450 cal · 38 g protein. Bold only dish, place and the one key number.
+- Plain words a student uses. No jargon (no "macronutrient", "caloric surplus", "TDEE").
+
+WHAT THEY'LL ASK, AND HOW
+- What to eat / where / I'm hungry: give the top 2 from BEST PICKS (open ones first). If they name a place or meal, pick from FULL MENUS for it. If nothing is open, say when the next place opens and what to get there.
+- Protein left / how do I hit protein: one line with the number left, then 1–2 dishes from BEST PICKS or FULL MENUS that close the gap within the calories left.
+- Calories left / can I fit X: give the number left; say yes or no for X and by how much.
+- Is X good / healthy / should I get X: yes or no for their goal in one line, with its cal and protein if known, then one better swap if there is one.
+- How am I doing / my week: one-line verdict using WEEK SO FAR and the streak, then one specific thing to change.
+- Going out / drinking: how many calories that leaves for food, and one light, high-protein pick.
+- Is a place open / hours: answer from PLACES only.
+- Targets: if PROFILE is filled in, give the suggested targets and put them in "goals". If not, ask only for what's missing (sex, age, height, weight, activity, goal) in one line.
+- They tell you what they like, dislike, or a diet (vegetarian, halal, allergy): confirm in a few words and return the FULL updated "prefs" (one or two short sentences merging old and new). Otherwise "prefs" is null.
+- You can't log food here; if they try, say to use the camera or the box on the Track tab.
+- Medical conditions, pregnancy, or signs of disordered eating: one kind line pointing to Vanderbilt's campus dietitian or Student Health. Nothing else.
+- Anything off-topic: one short line steering back to food.
 
 Reply with only JSON: {"reply":"your markdown answer","goals":null,"prefs":null}
-goals, when given: {"k":2300,"p":160,"c":260,"f":75,"dir":"lose"} (k = calories, others in grams; dir is "lose", "maintain" or "gain" and should match what they said they want). prefs, when given: "Loves spicy food and chicken; no pork; dislikes mushrooms."`;
+goals, when given: {"k":2300,"p":160,"c":260,"f":75,"dir":"lose"} (k = calories, others in grams; dir is "lose", "maintain" or "gain").`;
 }
 async function chatSend(text){
   text=String(text||'').trim();if(!text||chatBusy)return;
@@ -3575,6 +3610,9 @@ async function chatSend(text){
 }
 $('#starters').addEventListener('click',e=>{const b=e.target.closest('.starter');if(b)chatSend(b.textContent)});
 $('#chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend($('#chatIn').value)});
+// like the Track box: the send arrow appears only once there's something to send
+function chatSendVis(){$('#chatForm').classList.toggle('has',!!$('#chatIn').value.trim())}
+$('#chatIn').addEventListener('input',chatSendVis);$('#chatForm').addEventListener('submit',()=>setTimeout(chatSendVis,0));
 $('#goalForm').addEventListener('submit',async e=>{
   e.preventDefault();const g={};for(const k of ['k','p','c','f']){const v=r1($('#g'+k).value);if(v>0)g[k]=v}
   const fin=$('#gfinder').checked,beer=$('#gbeer').checked;state.settings={...(state.settings||{}),finder:fin,beer};applyFinder();renderToday();
