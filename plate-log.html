@@ -1500,7 +1500,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .set .rvtot input,.set .rvtot .kc input,#reviewForm .rvtot input,#reviewForm .rvtot .kc input{font-size:1.22rem!important;font-weight:750;letter-spacing:-.02em}
 /* "Where are you eating?": tiles with an icon, the name, and live open / closed status (green when open, like Eat) */
 #where .halls{gap:8px}
-#where .hall{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:58px;text-align:left;font-size:.95rem}
+#where .hall{display:flex;align-items:center;gap:10px;padding:9px 12px;min-height:52px;text-align:left;font-size:.95rem}
 #where .hic{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.06);color:var(--muted)}
 #where .hic svg{width:17px;height:17px}
 #where .hn{display:flex;flex-direction:column;gap:1px;min-width:0}
@@ -1515,9 +1515,9 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #where .hall.else:active{background:rgba(61,123,255,.16)}
 #where .hall.done{justify-content:center;min-height:46px}
 /* the quiet "Closed places" toggle and the nothing-open note */
-#where .hmore{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;padding:4px 0 2px;font-size:.76rem;font-weight:600;color:var(--faint)}
-#where .hmore .caret{margin-top:-3px}
-#where .hmore.on .caret{transform:rotate(-135deg);margin-top:3px}
+#where .whead{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+#where .hmore{flex:none;border:0;background:none;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.045);font-size:.76rem;font-weight:600;color:var(--faint);white-space:nowrap}
+#where .hmore.on{color:var(--muted)}
 #where .hmore:active{color:var(--muted)}
 #where .hnone{grid-column:1/-1;font-size:.82rem;color:var(--muted);padding:0 2px 2px}
 </style>
@@ -1755,7 +1755,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 <!-- Where are you eating? (asked right before each photo or message) -->
 <div class="scrim" id="where" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="whereTitle">
-    <h2 id="whereTitle">Where are you eating?</h2>
+    <div class="whead"><h2 id="whereTitle">Where are you eating?</h2><button type="button" class="hmore" id="hallMore" hidden></button></div>
     <div class="halls" id="halls" role="group" aria-label="Dining halls. Press and hold to reorder."></div>
     <div class="fine" id="reorderHint">Press and hold to reorder.</div>
     <button type="button" class="btn ghost" id="whereCancel">Cancel</button>
@@ -1919,19 +1919,22 @@ function renderHalls(){
     if(status(u,new Date(now-45*60e3)).open)return {show:true,st:{...st,label:'Just closed'}};
     return {show:false,st}};
   const tile=id=>{const h=HALLS.find(x=>x.id===id),{st}=near(id),cafe=HALL_CAFE.has(id),cls=st?(st.open?' open':' shut'):'';
-      return `<button type="button" class="hall${cls}" data-h="${id}"><span class="hic">${cafe?ICON_CUP:ICON_PLATE}</span><span class="hn"><b>${h.name}</b>${st?`<small>${esc(st.label)}</small>`:''}</span></button>`};
+      return `<button type="button" class="hall${cls}" data-h="${id}"><span class="hic">${cafe?ICON_CUP:ICON_PLATE}</span><span class="hn"><b>${h.name}</b></span></button>`};
   const shown=state.editing?ids:ids.filter(id=>near(id).show),closed=state.editing?[]:ids.filter(id=>!near(id).show);
   const showClosed=state.showClosed||!shown.length;   // nothing open (late night): just show them all
+  // the closed-places switch lives in the title row, so it costs no space in the list
+  const mt=$('#hallMore');mt.hidden=!(closed.length&&shown.length);mt.classList.toggle('on',showClosed);
+  mt.innerHTML=showClosed?'Hide closed':`+${closed.length} closed`;
   box.innerHTML=(shown.length?'':'<div class="hnone">Nothing is open right now.</div>')+shown.map(tile).join('')
-    +(closed.length&&shown.length?`<button type="button" class="hmore${showClosed?' on':''}" id="hallMore">${showClosed?'Hide closed places':`Closed places · ${closed.length}`}<i class="caret" aria-hidden="true"></i></button>`:'')
     +(showClosed?closed.map(tile).join(''):'')
-    +(state.editing?'<button type="button" class="hall done" id="doneReorder">Done</button>':`<button type="button" class="hall else" data-h="0"><span class="hic">${ICON_PIN}</span><span class="hn"><b>Somewhere else</b><small>Off campus, home, a snack</small></span></button>`);
+    +(state.editing?'<button type="button" class="hall done" id="doneReorder">Done</button>':`<button type="button" class="hall else" data-h="0"><span class="hic">${ICON_PIN}</span><span class="hn"><b>Somewhere else</b></span></button>`);
   if(!hoursData&&!renderHalls._wait){renderHalls._wait=1;loadHours().then(()=>{renderHalls._wait=0;if(!$('#where').hidden&&hoursData)renderHalls()})}
 }
 /* The hall popup opens on every camera tap (then the camera opens) and on sending text without a hall picked. */
 let pending=null;
 function openWhere(action){pending=action;state.editing=false;state.showClosed=false;renderHalls();$('#where').hidden=false}
 function closeWhere(){$('#where').hidden=true;state.editing=false}
+$('#hallMore').addEventListener('click',()=>{state.showClosed=!state.showClosed;renderHalls()});
 $('#whereCancel').addEventListener('click',()=>{pending=null;closeWhere()});
 $('#where').addEventListener('click',e=>{if(e.target.id==='where'){pending=null;closeWhere()}});
 const HALL_CAFE=new Set([22,17]);
@@ -1962,7 +1965,6 @@ function hallName(id=state.hall){return (HALLS.find(h=>h.id===id)||{}).name}
   box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
   box.addEventListener('click',e=>{
     if(e.target.id==='doneReorder'){state.editing=false;renderHalls();return}
-    if(e.target.closest('#hallMore')){state.showClosed=!state.showClosed;renderHalls();return}
     if(held||state.editing){held=false;return}
     const b=e.target.closest('[data-h]');if(!b)return;
     state.hall=+b.dataset.h;watchMenu();closeWhere();
