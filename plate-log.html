@@ -1584,7 +1584,22 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 /* "Using these": the same quiet green check as "Using suggested", no pill */
 #pRec #pUse.used{background:none!important;padding:6px 0;display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;color:rgba(61,220,132,.8);opacity:1}
 #pRec #pUse.used .sn{position:static;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:rgba(61,220,132,.85);color:#05230f}
-#pRec #pUse.used .sn svg{width:8px;height:8px}
+#pRec #pUse.used .sn svg{width:8px;height:8px;opacity:1!important;transform:none!important;color:#05230f}
+/* ===== Today: protein, carbs and fat as three equal columns ===== */
+.macros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;animation:rise .55s var(--ease) .12s both}
+.macros .mc{display:flex;flex-direction:column;gap:5px;min-width:0}
+.macros .ml{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.macros .mv{display:flex;align-items:baseline;gap:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.macros .mv b{font-family:var(--display);font-size:1.2rem;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.macros .mv small{font-size:.76rem;font-weight:500;color:var(--muted)}
+.macros .track{height:5px;margin-top:3px;border-radius:9px;background:rgba(255,255,255,.07);overflow:hidden}
+.macros .track i{display:block;height:100%;border-radius:inherit;transition:width .9s var(--spring)}
+.macros .c .track i{background:linear-gradient(90deg,#b98a35,var(--carb))}
+.macros .f .track i{background:linear-gradient(90deg,#8d62c9,var(--fat))}
+.macros .p .ml{color:#c9d8ff}
+.macros .pace{margin:1px 0 0;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.minor{justify-content:flex-end;margin-top:-26px}
+.minor:not(:has(.beerbtn:not([hidden]))){display:none}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1665,15 +1680,14 @@ header.appbar .iconbtn svg{width:18px;height:18px}
         <div class="of" id="kcalOf">calories</div>
       </div>
     </div>
-    <div class="pro">
-      <!-- the number sits right next to its label; the pace status (On pace / Behind…) is on the right -->
-      <div class="head"><span class="plab"><span class="val"><span id="proNum">0</span> <small id="proOf">g</small> <small class="pw">protein</small></span></span><span class="pace" id="paceLab"></span></div>
-      <div class="track"><i id="proBar" style="width:0"></i></div>
+    <!-- protein, carbs and fat read the same way: name, amount of goal, a bar. Protein's pace is the one extra word. -->
+    <div class="macros">
+      <div class="mc p"><span class="ml">Protein</span><span class="mv"><b id="proNum">0</b><small id="proOf">g</small></span><div class="track"><i id="proBar" style="width:0"></i></div><span class="pace" id="paceLab"></span></div>
+      <div class="mc c"><span class="ml">Carbs</span><span class="mv"><b id="carbNum">0</b><small id="carbOf">g</small></span><div class="track"><i id="carbBar" style="width:0"></i></div></div>
+      <div class="mc f"><span class="ml">Fat</span><span class="mv"><b id="fatNum">0</b><small id="fatOf">g</small></span><div class="track"><i id="fatBar" style="width:0"></i></div></div>
     </div>
     <div class="minor">
-      <span><i style="background:var(--carb)"></i><b id="carbNum">0</b><span id="carbOf"> g carbs</span></span>
-      <span><i style="background:var(--fat)"></i><b id="fatNum">0</b><span id="fatOf"> g fat</span></span>
-      <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
+            <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
     </div>
   </section>
 
@@ -2186,8 +2200,9 @@ function renderToday(){
   $('#beerBtn').setAttribute('aria-label',B?`Room for beer: ${fmtBeer(B.n)} ${B.n===1?'beer':'beers'}, ${fmt(bk)} calories set aside`:'Room for beer');
   const foodK=Math.max(1,G.k-bk);
   renderPace(t,G,G.k?Math.min(1,t.k/foodK):0,pp/100);
-  $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=` / ${fmt(G.c)} g carbs`;
-  $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=` / ${fmt(G.f)} g fat`;
+  $('#carbNum').textContent=fmt(t.c);$('#carbOf').textContent=G.c?` / ${fmt(G.c)} g`:' g';
+  $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=G.f?` / ${fmt(G.f)} g`:' g';
+  $('#carbBar').style.width=(G.c?Math.min(100,t.c/G.c*100):0)+'%';$('#fatBar').style.width=(G.f?Math.min(100,t.f/G.f*100):0)+'%';
   const es=entries().slice().sort((a,b)=>a.t<b.t?-1:1);
   $('#log').hidden=!es.length&&!B;
   const fresh=seenEntries?es.filter(e=>!seenEntries.has(e.id)).map(e=>e.id):[];
