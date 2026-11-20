@@ -1742,6 +1742,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .eatbar .esearch:focus-within{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.15),0 0 0 4px rgba(255,255,255,.03)}
 .esearch svg,.field .libbtn{transition:color .3s ease}
 .eatbar .esearch:focus-within svg{color:var(--muted)}
+/* search with no results: one quiet box, not a card inside a card */
+#eatResults>.pickempty{background:none!important;border:0!important;box-shadow:none!important;border-radius:0;padding:18px 14px;text-align:center;font-size:.86rem;color:var(--muted)}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
