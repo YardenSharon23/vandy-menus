@@ -1597,6 +1597,21 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #pToday .top #beerBtn:active{transform:translateY(-50%) scale(.96)}
 .minor:not(:has(.beerbtn:not([hidden]))){display:none}
 .macros .p .ml{color:#7fe3ac}
+/* protein leads (full width, bigger number, thicker bar, pace on the right); carbs and fat sit small underneath */
+.macros{grid-template-columns:1fr;gap:16px}
+.macros .p{gap:6px}
+.macros .p .mtop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.macros .p .mv b{font-size:1.5rem}
+.macros .p .mv small{font-size:.82rem}
+.macros .p .track{height:8px;margin-top:2px}
+.macros .p .pace{margin:0;font-size:.68rem}
+.macros .msub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.macros .msub .mc{gap:6px}
+.macros .msub .mv{gap:4px}
+.macros .msub .ml{font-size:.66rem;margin-right:3px}
+.macros .msub .mv b{font-size:.92rem;font-weight:750}
+.macros .msub .mv small{font-size:.72rem}
+.macros .msub .track{height:3px;margin-top:0}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1681,9 +1696,12 @@ header.appbar .iconbtn svg{width:18px;height:18px}
     </div>
     <!-- protein, carbs and fat read the same way: name, amount of goal, a bar. Protein's pace is the one extra word. -->
     <div class="macros">
-      <div class="mc p"><span class="ml">Protein</span><span class="mv"><b id="proNum">0</b><small id="proOf">g</small></span><div class="track"><i id="proBar" style="width:0"></i></div><span class="pace" id="paceLab"></span></div>
-      <div class="mc c"><span class="ml">Carbs</span><span class="mv"><b id="carbNum">0</b><small id="carbOf">g</small></span><div class="track"><i id="carbBar" style="width:0"></i></div></div>
-      <div class="mc f"><span class="ml">Fat</span><span class="mv"><b id="fatNum">0</b><small id="fatOf">g</small></span><div class="track"><i id="fatBar" style="width:0"></i></div></div>
+      <div class="mc p"><div class="mtop"><span class="ml">Protein</span><span class="pace" id="paceLab"></span></div><span class="mv"><b id="proNum">0</b><small id="proOf">g</small></span><div class="track"><i id="proBar" style="width:0"></i></div></div>
+      <!-- carbs and fat: one compact line each, side by side, under protein -->
+      <div class="msub">
+        <div class="mc c"><span class="mv"><span class="ml">Carbs</span><b id="carbNum">0</b><small id="carbOf">g</small></span><div class="track"><i id="carbBar" style="width:0"></i></div></div>
+        <div class="mc f"><span class="mv"><span class="ml">Fat</span><b id="fatNum">0</b><small id="fatOf">g</small></span><div class="track"><i id="fatBar" style="width:0"></i></div></div>
+      </div>
     </div>
     <div class="minor">
             
@@ -2116,9 +2134,10 @@ function entryName(e){return mealAt(e.t)}
 const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function countTo(el,target){
   target=Math.round(+target||0);const from=+el.dataset.v||0;el.dataset.v=target;
-  if(calm||from===target){el.textContent=target.toLocaleString();return}
+  const fm=el.id==='kcal'?String:v=>v.toLocaleString();   // the big calorie number reads cleaner without a comma (1370)
+  if(calm||from===target){el.textContent=fm(target);return}
   const t0=performance.now(),dur=Math.min(900,350+Math.abs(target-from)*0.4);cancelAnimationFrame(el._raf);
-  const step=now=>{const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=Math.round(from+(target-from)*e).toLocaleString();if(p<1)el._raf=requestAnimationFrame(step)};
+  const step=now=>{const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);el.textContent=fm(Math.round(from+(target-from)*e));if(p<1)el._raf=requestAnimationFrame(step)};
   el._raf=requestAnimationFrame(step);
 }
 let seenEntries=null;   // entry ids already on screen, so only newly logged ones slide in
@@ -2175,7 +2194,7 @@ function renderToday(){
   // With beer planned, the target under the number is what's left for food (target − beer); the food arc and the
   // amber beer arc meet exactly when you've eaten that much.
   const bkT=beerK();
-  $('#kcalOf').textContent=G.k?`of ${fmt(Math.max(0,G.k-bkT))} calories`:'calories';
+  $('#kcalOf').textContent=G.k?`of ${Math.round(Math.max(0,G.k-bkT))} calories`:'calories';
   countTo($('#proNum'),t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
