@@ -3455,11 +3455,11 @@ function setPage(i){markTab(i);enterPage(i)}
 let raf=0,settleT=0;
 function settled(){const vis=visiblePages();const s=Math.round(pager.scrollLeft/Math.max(1,pager.clientWidth));enterPage(vis[Math.max(0,Math.min(vis.length-1,s))])}
 pager.addEventListener('scroll',()=>{
-  cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
-    const vis=visiblePages();const p=pager.scrollLeft/Math.max(1,pager.clientWidth);
-    moveHighlight(Math.max(0,Math.min(vis.length-1,p)));
-    markTab(vis[Math.max(0,Math.min(vis.length-1,Math.round(p)))]);
-  });
+  // the underline moves in the scroll event itself (already once per frame, in step with the pages), not a frame
+  // later, so it tracks the swipe exactly instead of lagging and skipping; the tab labels update on the next frame
+  const vis=visiblePages(),p=Math.max(0,Math.min(vis.length-1,pager.scrollLeft/Math.max(1,pager.clientWidth)));
+  moveHighlight(p);
+  cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>markTab(vis[Math.round(p)]));
   clearTimeout(settleT);settleT=setTimeout(settled,140);   // fallback where 'scrollend' isn't supported
 },{passive:true});
 pager.addEventListener('scrollend',()=>{clearTimeout(settleT);settled()});
