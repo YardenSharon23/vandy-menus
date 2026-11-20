@@ -3204,7 +3204,8 @@ $('#form').addEventListener('submit',async e=>{
     remember(userTurn,reply,meal);
     if(meal){
       hideNote();
-      const replaceId=res.meal.replaces_last&&state.lastLogged&&entries().some(x=>x.id===state.lastLogged)?state.lastLogged:null;
+      // A new photo is new food: it never overwrites the last entry (only typed corrections can).
+      const replaceId=res.meal.replaces_last&&!photo&&state.lastLogged&&entries().some(x=>x.id===state.lastLogged)?state.lastLogged:null;
       openReview({mode:'new',meal,replaceId,ctx});
     }else note(reply);
   }catch(err){if(err&&err.code==='cancelled')hideNote();else sys(errCopy(err&&err.code))}
