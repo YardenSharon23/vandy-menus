@@ -1775,7 +1775,7 @@ html.finder #streakBtn{display:none}
   <nav class="tabs" id="tabs" role="tablist" aria-label="Pages">
     <span class="tabhl" aria-hidden="true"></span>
     <button type="button" role="tab" data-p="0" aria-selected="true">Today</button>
-    <button type="button" role="tab" data-p="1" aria-selected="false">Eat</button>
+    <button type="button" role="tab" data-p="1" aria-selected="false">Find</button>
     <button type="button" role="tab" data-p="2" aria-selected="false">Progress</button>
     <button type="button" role="tab" data-p="3" aria-selected="false">Ask</button>
   </nav>
@@ -1893,7 +1893,7 @@ html.finder #streakBtn{display:none}
 </section>
 
 <!-- Eat: what to eat right now. Top picks first, then search, then the places (open ones only, closed folded away). -->
-<section class="page" id="pEat" aria-label="Eat">
+<section class="page" id="pEat" aria-label="Find">
   <div class="pagein eat">
     <!-- One row: search on the left, a compact meal switch on the right (sunrise / sun / moon; the chosen meal also
          shows its name). Filter chips still slide open under the row while searching. -->
@@ -2284,28 +2284,32 @@ function quipStreak(){
 function quipHome(){const es=entries(),last=[...es].reverse().find(e=>e.hall),byName=last&&HALLS.find(x=>x.name===last.hall&&x.id);
   const id=byName?byName.id:hallOrder().find(i=>i!==0);return {id,name:(HALLS.find(x=>x.id===id)||{}).name}}
 const QUIP={
-  // a dish from "Foods you like" being served right now somewhere open, that you haven't logged today
-  fav(){if(!eat.loaded||!hoursData)return '';const P=prefModel(),es=entries();if(!P.like.length)return '';
-    for(const id of hallOrder()){if(!id)continue;const st=hallStatus(id);if(!st||!st.open)continue;
-      const hit=hallItems(id,defaultMeal()).find(i=>i.kind==='main'&&P.like.some(l=>l.words.every(w=>wordsOf(i.n).includes(w)))&&!es.some(e=>(e.items||[]).some(x=>x.n===i.n)));
-      if(hit)return `${hit.n.replace(/\s*\(.*?\)\s*/g,' ').trim()} at ${(HALLS.find(x=>x.id===id)||{}).name||'a hall'}`}return ''},
+  // your top recommendation at a place that's open now (the same ranking as Top picks, so dishes you like come
+  // first); '' while menus load, and a plain note when nothing is open
+  fav(){if(!eat.loaded||!hoursData)return '';
+    const open=MENU_UNITS.some(id=>{const st=hallStatus(id);return st&&st.open});if(!open)return 'Nothing open right now';
+    const es=entries(),c=topPicks(defaultMeal()).find(c=>c.st&&c.st.open&&!es.some(e=>(e.items||[]).some(x=>x.n===c.items[0].n)));
+    return c?`${c.items[0].n.replace(/\s*\(.*?\)\s*/g,' ').trim()} at ${hallName(c.hall)}`:''},
   protein(){const G=goals(),t=dayTot();if(!G.p)return '';return t.p>=G.p?'Protein goal hit':`${fmt(G.p-t.p)} g protein left today`},
   streak(){const n=quipStreak();return n>=1?`${n} ${n===1?'day':'days'} in a row on target`:''},
   hours(soonOnly){if(!hoursData)return '';const {id,name}=quipHome();if(!id)return '';const st=hallStatus(id);if(!st)return '';
     if(st.open)return st.wait<=45?`${name} closes in ${st.wait} min`:soonOnly?'':`${name} open ${st.label.replace(/^Until/,'until')}`;
     return st.wait<=30?`${name} opens in ${st.wait} min`:soonOnly?'':`${name} ${st.label.replace(/^Opens/,'opens').replace(/^Tomorrow/,'opens tomorrow')}`},
 };
-const QUIP_MODES=[['auto','Smart'],['fav','Dishes you like'],['protein','Protein left'],['streak','Streak'],['hours','Dining hours'],['random','Random'],['date','Just the date']];
+const QUIP_MODES=[['auto','Smart'],['fav','Dishes you like'],['protein','Protein left'],['hours','Dining hours'],['random','Random'],['date','Just the date']];
 function quipLine(){
   if(document.documentElement.classList.contains('finder'))return '';
-  const mode=LS.get('quipMode','auto'),h=new Date().getHours()+new Date().getMinutes()/60,G=goals(),t=dayTot();
+  let mode=LS.get('quipMode','auto');if(!QUIP_MODES.some(m=>m[0]===mode))mode='auto';   // an old "streak" choice → Smart
+  const h=new Date().getHours()+new Date().getMinutes()/60,G=goals(),t=dayTot();
   if(mode==='date')return '';
-  if(QUIP[mode]){const q=QUIP[mode]();if(q)return q}   // the chosen kind; if it has nothing right now, fall through to Smart
-  if(mode==='random'){const all=['fav','protein','streak','hours'].map(k=>QUIP[k]()).filter(Boolean);
-    if(all.length)return all[Math.floor(Date.now()/6e5)%all.length]}   // changes every 10 minutes, not on every render
-  // Smart: food you like first, then hall hours that matter soon, then protein, then the streak
-  return QUIP.fav()||QUIP.hours(true)||(G.p&&t.p>=G.p?'Protein goal hit':'')
-    ||(h>=17&&G.p&&t.k>300&&t.p<G.p*.8?QUIP.protein():'')||(quipStreak()>=2?QUIP.streak():'');
+  // a chosen kind shows only itself; when it has nothing to say, the date shows (never a different kind)
+  if(QUIP[mode])return QUIP[mode]();
+  if(mode==='random'){const all=['fav','protein','hours'].map(k=>QUIP[k]()).filter(q=>q&&q!=='Nothing open right now');
+    return all.length?all[Math.floor(Date.now()/6e5)%all.length]:''}   // changes every 10 minutes, not on every render
+  // Smart: a dish for you first, then hall hours that matter soon, then protein
+  const fav=QUIP.fav();
+  return (fav&&fav!=='Nothing open right now'?fav:'')||QUIP.hours(true)||(G.p&&t.p>=G.p?'Protein goal hit':'')
+    ||(h>=17&&G.p&&t.k>300&&t.p<G.p*.8?QUIP.protein():'');
 }
 function renderStreak(){const b=$('#streakBtn');if(!b)return;const n=quipStreak();
   const h=`${FLAME}<span>${n}<small>${n===1?'day':'days'}</small></span>`;if(b.dataset.h!==h){b.dataset.h=h;b.innerHTML=h}
@@ -2945,18 +2949,30 @@ function scoreFor(k,p,ctx,liked,st){
 function hallStatus(id){const u=hoursData&&hoursData.units.find(x=>x.id===id);return u?{...status(u),u}:null}
 // In food finder mode picks ignore calories and protein left; they go by taste and what's open.
 function eatContext(){const G=goals(),t=dayTot();if(finderOn())return {room:1e9,proLeft:0,dir:'maintain',pm:prefModel()};return {room:Math.max(250,G.k-t.k-beerK()),proLeft:Math.max(0,G.p-t.p),dir:goalDir(),pm:prefModel()}}
+// Variety: a dish that keeps being a top pick on earlier days without you ever logging it slips a little each day
+// (−1.5 a day, at most −4.5, over the last week), so close runners-up get a turn. Dishes you log (2+ times) never slip.
+const PICK_SEEN='pickSeen';
+function pickPenalties(){
+  const seen=LS.get(PICK_SEEN,{}),today=dstr(),wk=new Date();wk.setDate(wk.getDate()-7);const cut=dstr(wk);
+  const logged=new Map(pastFoods().map(r=>[String(r.it.n).toLowerCase().trim(),r.count]));
+  return k=>{if((logged.get(k)||0)>=2)return 0;const days=(seen[k]||[]).filter(d=>d>=cut&&d<today).length;return Math.min(4.5,days*1.5)}}
+function notePicksShown(picks){
+  const seen=LS.get(PICK_SEEN,{}),today=dstr(),wk=new Date();wk.setDate(wk.getDate()-7);const cut=dstr(wk);let ch=false;
+  for(const c of picks){const k=String(c.items[0].n).toLowerCase().trim(),d=(seen[k]||[]).filter(x=>x>=cut);if(!d.includes(today)){d.push(today);ch=true}seen[k]=d}
+  for(const k of Object.keys(seen)){seen[k]=seen[k].filter(x=>x>=cut);if(!seen[k].length){delete seen[k];ch=true}}
+  if(ch)LS.set(PICK_SEEN,seen)}
 function topPicks(meal){
-  const ctx=eatContext();const out=[];
+  const ctx=eatContext();const out=[],pen=pickPenalties(),pk=i=>pen(String(i.n).toLowerCase().trim());
   for(const id of MENU_UNITS){
     const st=hallStatus(id);const items=hallItems(id,meal);
     const mains=items.filter(i=>i.kind==='main'&&!hates(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet));
     const sides=items.filter(i=>i.kind==='side'&&!hates(i,ctx.pm.hate)&&fitsDiet(i,ctx.pm.diet)&&(+i.k||0)>=60);
     for(const m of mains){
       const liked=nameHas(m,ctx.pm.like);
-      out.push({type:'dish',hall:id,st,items:[m],k:+m.k,p:+m.p,liked,score:scoreFor(+m.k,+m.p,ctx,liked,st)});
+      out.push({type:'dish',hall:id,st,items:[m],k:+m.k,p:+m.p,liked,score:scoreFor(+m.k,+m.p,ctx,liked,st)-pk(m)});
       // A full plate only when a matching side (same station family) makes it clearly better.
       const fam=stationFamily(m.s);const best=sides.filter(s=>stationFamily(s.s)===fam)
-        .map(s=>({s,sc:scoreFor(+m.k+ +s.k,+m.p+ +s.p,ctx,bestLike(liked,nameHas(s,ctx.pm.like)),st)})).sort((a,b)=>b.sc-a.sc)[0];
+        .map(s=>({s,sc:scoreFor(+m.k+ +s.k,+m.p+ +s.p,ctx,bestLike(liked,nameHas(s,ctx.pm.like)),st)-pk(m)})).sort((a,b)=>b.sc-a.sc)[0];
       if(best&&+m.k+ +best.s.k<=ctx.room+150)out.push({type:'plate',hall:id,st,items:[m,best.s],k:+m.k+ +best.s.k,p:+m.p+ +best.s.p,liked,score:best.sc});
     }
   }
@@ -2995,7 +3011,7 @@ function renderPicks(){
   if(!eat.loaded){box.innerHTML='<div class="pickempty">Loading today\'s menus…</div>';return}
   const picks=topPicks(eat.meal);
   if(!picks.length){box.innerHTML=`<div class="pickempty">No ${eat.meal.toLowerCase()} menus are posted right now.</div>`;return}
-  eat.pickList=picks;
+  eat.pickList=picks;notePicksShown(picks);
   // One tinted panel with ranked rows (1–3), so the picks read as recommendations, not as more halls.
   box.innerHTML=picks.map((c,ix)=>{
     const st=c.st;const name=c.items.map(i=>i.n).join(' + ');const where=`${esc(hallName(c.hall))}${st?' · '+esc(st.label.toLowerCase()):''}`;
