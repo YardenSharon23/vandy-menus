@@ -1478,6 +1478,11 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #reviewForm .iln .p em{color:var(--blue-2)}#reviewForm .iln .c em{color:var(--carb)}#reviewForm .iln .f em{color:var(--fat)}
 #reviewForm .iln .amt{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--faint)}
 #reviewForm .iln .amt .est{margin-right:3px}
+/* typeable servings inside the stepper */
+#reviewForm .pstep .svf{display:inline-flex;align-items:baseline;justify-content:center;min-width:40px;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);cursor:text}
+#reviewForm .pstep .svf input{width:3.1ch;padding:0;margin:0;border:0;background:transparent;color:inherit;font:inherit;text-align:right;-webkit-appearance:none;appearance:none}
+#reviewForm .pstep .svf input:focus{outline:none}
+#reviewForm .pstep .svf:focus-within{color:var(--blue-2)}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -2087,16 +2092,26 @@ function renderReview(fillTotals){
   const n=D.items.length;
   const amt=i=>{const g=i.v==='estimate'?(i.eg?Math.round(i.eg*i.sv):null):+i.gr>0?Math.round(i.gr*i.sv):null;
     return (i.v==='estimate'?'<span class="est">est.</span> ':'')+(g?g+' g':esc(String(i.v||'1 serving').replace(/\s*portion$/i,'')))};
+  D._line=i=>`<span><b>${fmt(i.k*i.sv)}</b> cal</span><span class="m"><span class="p"><b>${fmt(i.p*i.sv)}</b><em>P</em></span><span class="c"><b>${fmt(i.c*i.sv)}</b><em>C</em></span><span class="f"><b>${fmt(i.f*i.sv)}</b><em>F</em></span></span><span class="amt">${amt(i)}</span>`;
   $('#rvItems').innerHTML=n?D.items.map((i,ix)=>`<div class="ritem">
       <div class="t"><b>${esc(i.n)}</b></div>
-      <div class="iln"><span><b>${fmt(i.k*i.sv)}</b> cal</span><span class="m"><span class="p"><b>${fmt(i.p*i.sv)}</b><em>P</em></span><span class="c"><b>${fmt(i.c*i.sv)}</b><em>C</em></span><span class="f"><b>${fmt(i.f*i.sv)}</b><em>F</em></span></span><span class="amt">${amt(i)}</span></div>
-      <div class="ictl"><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><span>${i.sv}×</span><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
+      <div class="iln">${D._line(i)}</div>
+      <div class="ictl"><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><label class="svf"><input type="text" inputmode="decimal" data-sv="${ix}" value="${svTxt(i.sv)}" aria-label="Servings of ${esc(i.n)}" autocomplete="off">×</label><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
       <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div></div>`).join('')
     :'<div class="empty">No foods listed. Type the totals above.</div>';
   $('#reviewForm').classList.toggle('multi',n>1);
   D._justOpened=null;
-  if(fillTotals){const T=D.manual?D.tot:itemsTot(D.items);for(const k of ['k','p','c','f']){$('#t'+k).value=k==='k'?Math.round(T[k]):r1(T[k]);fitNum($('#t'+k))}}
+  if(fillTotals)fillTotals_(D);
 }
+function fillTotals_(D){const T=D.manual?D.tot:itemsTot(D.items);for(const k of ['k','p','c','f']){$('#t'+k).value=k==='k'?Math.round(T[k]):r1(T[k]);fitNum($('#t'+k))}}
+// Servings as typed: any decimal (1.37), shown with up to 2 places but kept exact
+const svTxt=v=>String(+(+v).toFixed(2));
+$('#rvItems').addEventListener('input',e=>{const el=e.target.closest('[data-sv]');if(!el)return;
+  const v=parseFloat(String(el.value).replace(',','.'));if(!(v>0))return;
+  const D=state.draft,i=D.items[+el.dataset.sv];i.sv=Math.min(50,v);D.manual=false;
+  el.closest('.ritem').querySelector('.iln').innerHTML=D._line(i);fillTotals_(D)});
+$('#rvItems').addEventListener('focusout',e=>{const el=e.target.closest('[data-sv]');if(el&&state.draft){const i=state.draft.items[+el.dataset.sv];if(i)el.value=svTxt(i.sv)}});
+$('#rvItems').addEventListener('focusin',e=>{const el=e.target.closest('[data-sv]');if(el)setTimeout(()=>el.select(),0)});
 // The typeable totals are exactly as wide as their number, so the underline hugs it
 function fitNum(){}   // totals now fill their column (kept so callers stay simple)
 $('#rvItems').addEventListener('click',e=>{
@@ -2104,13 +2119,13 @@ $('#rvItems').addEventListener('click',e=>{
   if(tg){const op=state.draft.openItems||(state.draft.openItems=new Set()),ix=+tg.dataset.tog;op.has(ix)?op.delete(ix):op.add(ix);state.draft._justOpened=op.has(ix)?ix:null;renderReview(false);return}
   const D=state.draft,t=e.target.closest('button');let i;if(!t)return;
   if(t.dataset.x!=null)D.openItems=new Set();   // indexes shift when a food is removed, so fold everything
-  if(t.dataset.inc!=null){i=D.items[+t.dataset.inc];i.sv=Math.round((i.sv+(i.sv<1?0.25:0.5))*4)/4}
-  else if(t.dataset.dec!=null){i=D.items[+t.dataset.dec];i.sv=Math.max(0.25,Math.round((i.sv-(i.sv<=1?0.25:0.5))*4)/4)}
+  if(t.dataset.inc!=null){i=D.items[+t.dataset.inc];i.sv=Math.round((i.sv+(i.sv<1?0.25:0.5))*1000)/1000}
+  else if(t.dataset.dec!=null){i=D.items[+t.dataset.dec];i.sv=Math.max(0.05,Math.round((i.sv-(i.sv<=1?0.25:0.5))*1000)/1000)}
   else if(t.dataset.x!=null){D.items.splice(+t.dataset.x,1)}
   else return;
   D.manual=false;renderReview(true);
 });
-$('#rvItems').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-tog]')){e.preventDefault();e.target.click()}});
+$('#rvItems').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('[data-sv]')){e.preventDefault();e.target.blur();return}if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-tog]')){e.preventDefault();e.target.click()}});
 for(const k of ['k','p','c','f'])$('#t'+k).addEventListener('input',e=>{state.draft.manual=true;fitNum(e.target)});
 // Same food? Compare the meaningful words of two names ("Oat milk latte, 16 oz" vs "Cold oat milk latte, vanilla").
 const FOOD_STOP=new Set(['the','and','with','cold','iced','hot','free','sugar','small','medium','large','unflavored','plain','fresh','side','cup','each']);
@@ -3160,7 +3175,7 @@ ${where}
 How to estimate:
 - Plates almost always hold several foods. Scan the WHOLE photo: every section of the plate, every bowl, cup, side dish and anything at the edges. List each distinct food as its own item: grilled chicken, Brussels sprouts and fries are three items, not one. ALWAYS include every side (rice, potatoes, vegetables, bread, salad, fruit), not just the main. Break built dishes into their parts the way the menu lists them (a bowl or wrap becomes its base, protein, toppings and sauce; a salad becomes greens, each topping and the dressing).
 - Match each item separately to the menu item it most likely is (use station names to tell similar items apart; prefer the meal being served now).
-- Portions, for every item: first estimate how many grams of it are on the plate, using the plate (a standard dinner plate is about 10 in / 25 cm), bowls, cups, utensils and hands for scale, and how much of the plate it covers and how thick it is. Return that as "grams". Then compare with the menu's serving weight in grams and give servings = your grams ÷ serving grams, rounded to 0.25. Do NOT default to 1: a heaping scoop of rice is often 1.5–2 servings, a small spoonful 0.5. If a serving has no gram weight, judge against its listed size (e.g. "4 oz. portion", "1 piece").
+- Portions, for every item: first estimate how many grams of it are on the plate, using the plate (a standard dinner plate is about 10 in / 25 cm), bowls, cups, utensils and hands for scale, and how much of the plate it covers and how thick it is. Return that as "grams". Then compare with the menu's serving weight in grams and give servings = your grams ÷ serving grams, exactly, NOT rounded (e.g. 185 g ÷ 113 g = 1.64). Be as precise as you can about the grams. Do NOT default to 1: a heaping scoop of rice is often 1.5–2 servings, a small spoonful 0.5. If a serving has no gram weight, judge against its listed size (e.g. "4 oz. portion", "1 piece").
 - Include visible sauces, dressings, toppings, bread and drinks as their own items too.
 - If one food on the plate isn't on the menu, still include it: set menu_id null and estimate its calories, protein_g, carbs_g and fat_g from what you see in the photo (typical portion size for how much is there). Never drop a food because you can't match it.
 - A nutrition label in the photo: use its numbers exactly, times the servings they ate (assume 1 unless told).
@@ -3187,10 +3202,11 @@ async function ask(ctx,{history=true,signal}={}){
     const its=res.meal.items.map(it=>{
       const c=it.menu_id?items.find(x=>x.id===String(it.menu_id)):null;
       // Portion: when Claude gives the grams it sees and the menu gives a serving weight, servings = grams ÷ serving grams.
-      const seen=+it.grams>0?Math.round(+it.grams):null;
+      const seen=+it.grams>0?+it.grams:null;
       if(c){
         const fromGrams=seen&&+c.g>0?seen/(+c.g):null;
-        const sv=Math.min(6,Math.max(0.25,Math.round((fromGrams||+it.servings||1)*4)/4));
+        // exact, never snapped to quarters: 185 g of a 113 g serving is 1.637 servings
+        const sv=Math.min(10,Math.max(0.01,fromGrams||+it.servings||1));
         return {n:c.n,v:c.v||'',gr:+c.g||null,eg:seen,sv,k:r1(c.k),p:r1(c.p),c:r1(c.c),f:r1(c.f)};
       }
       return {n:String(it.label||'Food'),v:'estimate',eg:seen,sv:1,k:r1(it.calories),p:r1(it.protein_g),c:r1(it.carbs_g),f:r1(it.fat_g)};
