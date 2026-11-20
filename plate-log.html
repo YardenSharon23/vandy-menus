@@ -1562,13 +1562,6 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 /* Personal info: the number tiles become quiet hairline cells, like Quick add's rows */
 #stPersonal .pgrid label.ptile{background:none;box-shadow:inset 0 -1px 0 var(--line);border-radius:0;padding:8px 2px 9px}
 #stPersonal .pgrid label.ptile:focus-within{background:none;box-shadow:inset 0 -1.5px 0 var(--blue-2)}
-/* Today's entries as one Quick add-style list: hairline rows instead of separate cards */
-#entries{gap:0!important}
-#entries .entry{background:none!important;border:0!important;box-shadow:none!important;border-radius:0!important;border-top:1px solid var(--line)!important;padding:12px 2px!important}
-#entries .entry:first-child{border-top:0!important}
-#entries .entry.pressing{background:rgba(255,255,255,.035)!important}
-#entries .entry .t b{font-size:.93rem;font-weight:600}
-#entries .entry .t small{font-size:.75rem}
 /* Quick add, roomier: two tabs, place icon, calm two-line rows */
 #qkTabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .qk{gap:20px!important}
@@ -1603,9 +1596,6 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #pToday .top #beerBtn{position:absolute;right:0;top:50%;transform:translateY(-50%);margin:0}
 #pToday .top #beerBtn:active{transform:translateY(-50%) scale(.96)}
 .minor:not(:has(.beerbtn:not([hidden]))){display:none}
-/* inner ring = protein: a tiny green line under the calories, and the Protein label in the same green */
-#pToday .gauge .proin{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:.72rem;font-weight:650;color:#7fe3ac;font-variant-numeric:tabular-nums}
-#pToday .gauge .proin i{width:6px;height:6px;border-radius:50%;background:#3ddc84;box-shadow:0 0 6px rgba(61,220,132,.6)}
 .macros .p .ml{color:#7fe3ac}
 </style>
 
@@ -1687,8 +1677,6 @@ header.appbar .iconbtn svg{width:18px;height:18px}
       <div class="center">
         <div class="kcal" id="kcal">0</div>
         <div class="of" id="kcalOf">calories</div>
-        <!-- the inner ring is protein: one small line in its green says so -->
-        <div class="proin" id="proIn"><i></i><span id="proInN">0</span> g protein</div>
       </div>
     </div>
     <!-- protein, carbs and fat read the same way: name, amount of goal, a bar. Protein's pace is the one extra word. -->
@@ -2188,7 +2176,6 @@ function renderToday(){
   // amber beer arc meet exactly when you've eaten that much.
   const bkT=beerK();
   $('#kcalOf').textContent=G.k?`of ${fmt(Math.max(0,G.k-bkT))} calories`:'calories';
-  $('#proInN').textContent=fmt(t.p);
   countTo($('#proNum'),t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
