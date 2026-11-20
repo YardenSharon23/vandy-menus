@@ -2673,19 +2673,35 @@ function openSettings(){const G=goals();dirDraft=goalDir();renderDir();for(const
 // the content fades out, the change happens while it's invisible, the card eases to its new height, content fades back.
 let morphT=null;
 function morphSettings(apply){
-  // only the pieces that come and go fade; the switch you just flipped and the rows that stay never blink
-  const s=$('#settings .sheet'),parts=['#setTabs','#stTargets .trackonly','#goalForm .beerrow'].map(q=>$(q));
-  if(calm){apply();return}
-  clearTimeout(morphT);
-  parts.forEach(p=>{p.style.transition='opacity .12s ease';p.style.opacity='0'});
-  morphT=setTimeout(()=>{
-    const h0=s.offsetHeight;apply();const h1=s.offsetHeight;
-    s.style.height=h0+'px';s.style.overflow='hidden';void s.offsetHeight;
-    s.style.transition='height .42s var(--spring)';s.style.height=h1+'px';
-    parts.forEach(p=>{p.style.transition='none';p.style.opacity='0'});void s.offsetHeight;
-    parts.forEach(p=>{p.style.transition='opacity .28s ease .12s';p.style.opacity=''});
-    morphT=setTimeout(()=>{s.style.height='';s.style.overflow='';s.style.transition='';parts.forEach(p=>p.style.transition='')},460);
-  },120);
+  // Everything moves together on one spring: pieces that leave fold shut (height, padding, the gap they sat in, and a
+  // fade), pieces that arrive unfold, and the tab area eases to its new height. Web Animations, so nothing lingers after.
+  if(calm||!Element.prototype.animate){apply();return}
+  const parts=['#setTabs','#goalForm .beerrow','#stTargets .trackonly'].map(q=>$(q)).filter(Boolean),panes=$('#goalForm .stpanes');
+  const clean=e=>{for(const p of ['display','overflow','max-height','transform'])e.style.removeProperty(p)};
+  for(const e of [...parts,panes]){for(const a of e.getAnimations())a.cancel();clean(e)}   // a quick re-toggle starts from a clean slate
+  clearTimeout(morphT);morphT=setTimeout(()=>[...parts,panes].forEach(clean),560);        // fallback if finish events are delayed
+  const shown=e=>getComputedStyle(e).display!=='none';
+  const box=e=>{const c=getComputedStyle(e);return {h:e.offsetHeight,pt:c.paddingTop,pb:c.paddingBottom,mt:c.marginTop,d:c.display,g:parseFloat(getComputedStyle(e.parentElement).rowGap)||0}};
+  const vis0=parts.map(shown),b0=parts.map(e=>shown(e)?box(e):null),hp0=panes.offsetHeight;
+  apply();
+  const vis1=parts.map(shown),b1=parts.map(e=>shown(e)?box(e):null),hpEnd=panes.offsetHeight;
+  const opt={duration:460,easing:'cubic-bezier(.2,.9,.25,1)'};
+  parts.forEach((e,i)=>{
+    if(vis0[i]===vis1[i])return;
+    const open=b0[i]||b1[i],shut={height:'0px',paddingTop:'0px',paddingBottom:'0px',marginTop:(-open.g)+'px',opacity:0};
+    const full={height:open.h+'px',paddingTop:open.pt,paddingBottom:open.pb,marginTop:open.mt,opacity:1};
+    e.style.overflow='hidden';
+    if(vis0[i]){   // leaving: hold it in the flow (it's display:none now) while it folds away
+      e.style.setProperty('display',open.d,'important');e.style.maxHeight='none';e.style.transform='none';
+      const an=e.animate([full,{...shut,opacity:0,offset:.45},shut],opt);
+      an.onfinish=()=>clean(e);
+    }else{         // arriving: unfold, fading in a beat later
+      const an=e.animate([shut,{...full,opacity:0,offset:.3},full],opt);
+      an.onfinish=()=>e.style.removeProperty('overflow');
+    }
+  });
+  panes.style.overflow='hidden';
+  panes.animate([{height:hp0+'px'},{height:hpEnd+'px'}],opt).onfinish=()=>panes.style.removeProperty('overflow');
 }
 $('#gfinder').addEventListener('change',()=>{const on=$('#gfinder').checked;morphSettings(()=>{$('#goalForm').classList.toggle('finder',on);if(on)setTab('t')})});
 function closeSettings(){$('#settings').hidden=true}
