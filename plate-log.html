@@ -1774,8 +1774,13 @@ html.finder #streakBtn{display:none}
 .askpage .chatpage{max-width:500px;margin:0 auto;width:100%}
 /* centre the tabs: an invisible twin of the gear on the left, so the tabs sit between two equal sides */
 header.appbar::after{content:"";order:-1;flex:none;width:34px;height:1px}
-@media (max-width:440px){header.appbar{gap:2px;padding-left:max(8px, env(safe-area-inset-left, 0px));padding-right:max(8px, env(safe-area-inset-right, 0px))}}
+@media (max-width:440px){header.appbar{gap:2px}}
 @media (max-width:340px){header.appbar .tabs button{font-size:.9rem}}
+/* The bar uses the same column as the page content: the spacer lines up with the streak badge, the gear with the Beer
+   badge. --sbw is the pages' scrollbar width (0 on phones), so the column is identical above and below it. */
+.page{scrollbar-gutter:stable}
+header.appbar{--col:max(16px, calc((100% - var(--sbw, 0px) - 500px) / 2));
+  padding-left:max(var(--col), env(safe-area-inset-left, 0px));padding-right:calc(max(var(--col), env(safe-area-inset-right, 0px)) + var(--sbw, 0px))}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -3466,7 +3471,10 @@ pager.addEventListener('scrollend',()=>{clearTimeout(settleT);settled()});
 function slotOf(i){const v=visiblePages();const s=v.indexOf(i);return s<0?0:s}
 function goPage(i){pager.scrollTo({left:slotOf(i)*pager.clientWidth,behavior:calm?'auto':'smooth'})}
 tabs.addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b)goPage(+b.dataset.p)});
-addEventListener('resize',()=>{pager.scrollLeft=slotOf(curPage)*pager.clientWidth});
+addEventListener('resize',()=>{pager.scrollLeft=slotOf(curPage)*pager.clientWidth;setSbw()});
+// how wide the pages' scrollbar is (0 where scrollbars overlay, like phones), so the top bar can match the content column
+function setSbw(){const p=document.getElementById('pToday');if(p)document.documentElement.style.setProperty('--sbw',Math.max(0,p.offsetWidth-p.clientWidth)+'px')}
+setSbw();
 // Switch food finder mode on or off: hide/show Today and Week, and land on Eat if the current page went away.
 let finderApplied=null;
 function applyFinder(){
