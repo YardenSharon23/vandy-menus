@@ -1488,6 +1488,16 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .eatbar .esearch svg{color:var(--faint);width:16px;height:16px}
 .eatbar .esearch input::placeholder{color:var(--faint)}
 .eatbar .esearch:focus-within{background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(95,160,255,.4)}
+/* ===== Consistency pass: every popup shares one title style, one spacing, one tile style ===== */
+.scrim .sheet{gap:18px;padding:22px 22px 20px}
+.scrim .sheet h2,#reviewForm .rvhead h2,.bz h2,.set h2{font-family:var(--display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.scrim .sheet .fine{font-size:.8rem;color:var(--muted)}
+/* "Where are you eating?" halls: the same soft tiles as Settings (no borders) */
+#where .hall{background:var(--soft);border:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);border-radius:var(--r-tile);min-height:50px;font-size:.95rem;font-weight:650}
+#where .hall:active{background:rgba(255,255,255,.08)}
+#where .halls{gap:6px}
+/* totals read the same in Settings and the add popup: four equal numbers */
+.set .rvtot input,.set .rvtot .kc input,#reviewForm .rvtot input,#reviewForm .rvtot .kc input{font-size:1.22rem!important;font-weight:750;letter-spacing:-.02em}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1726,7 +1736,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
     <h2 id="whereTitle">Where are you eating?</h2>
     <div class="halls" id="halls" role="group" aria-label="Dining halls. Press and hold to reorder."></div>
     <div class="fine" id="reorderHint">Press and hold to reorder.</div>
-    <button type="button" class="btn" id="whereCancel">Cancel</button>
+    <button type="button" class="btn ghost" id="whereCancel">Cancel</button>
   </div>
 </div>
 
@@ -1763,7 +1773,7 @@ header.appbar .iconbtn svg{width:18px;height:18px}
     <div><h2 id="fdName"></h2><div class="fine" id="fdWhere"></div></div>
     <div class="fdgrid" id="fdGrid"></div>
     <div class="actions">
-      <button type="button" class="btn" id="fdClose">Close</button>
+      <button type="button" class="btn ghost" id="fdClose">Close</button>
     </div>
   </div>
 </div>
@@ -2762,7 +2772,7 @@ const BEER_KINDS={100:'Light beer or hard seltzer: Bud Light, Coors Light, Miche
   210:'IPA or craft beer: usually 180–250 a can'};
 let beerDraft=null;
 function openBeer(){
-  const B=planBeer();beerDraft={n:B?Math.round(B.n):2,per:B?B.per:150};   // whole beers only (an old half rounds)
+  const B=planBeer();beerDraft={n:B?Math.round(B.n):2,per:B?B.per:100};   // whole beers only (an old half rounds)
   $('#beerN').value=fmtBeer(beerDraft.n);$('#beerClear').hidden=!B;renderBeer();$('#beer').hidden=false;
 }
 function renderBeer(){
