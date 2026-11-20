@@ -1723,6 +1723,10 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .quipmenu button[aria-checked="true"]{color:var(--ink)}
 .quipmenu button:active{background:rgba(255,255,255,.07)}
 .quipmenu .qmk{width:9px;height:5px;border-left:2px solid var(--blue-2);border-bottom:2px solid var(--blue-2);transform:rotate(-45deg) translateY(-2px)}
+/* over the calorie target: number and the line under it turn red */
+#pToday .gauge.over .kcal{color:#ff7b87}
+#pToday .gauge.over .of{color:#ff8a96;font-weight:650}
+#pToday .gauge .kcal,#pToday .gauge .of{transition:color .4s ease,opacity .45s ease}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -2370,18 +2374,24 @@ function renderToday(){queueMicrotask(renderQuip);
   // nothing logged and no beer planned → the gauge shows as a clean plate; the first log opens it into the rings
   {const g=document.querySelector('#pToday .gauge');if(g)g.classList.toggle('empty',!entries().length&&!planBeer())}
   const t=dayTot(),G=goals();
-  const pct=G.k?Math.min(1,t.k/G.k):0;
+  // Calories shown = food + the beer you've planned; past the target the number, ring and line turn red
+  const beerKc=beerK(),allK=t.k+beerKc,over=G.k?Math.round(allK-G.k):0,isOver=G.k>0&&over>0;
+  const pct=G.k?(isOver?1:Math.min(1,t.k/G.k)):0;
   // Real arc length (π·r), not pathLength, which some phone browsers ignore for dashes.
   $('#arc').style.strokeDashoffset=String(345.58*(1-pct));
   const ct=$('#calTip');ct.style.transform=`rotate(${(180*pct).toFixed(2)}deg)`;ct.setAttribute('opacity',pct>.02?'.95':'0');
   // stretch the blue→cyan gradient over the filled part only, so a short fill still ends in cyan like the protein bar
   const endX=130-110*Math.cos(Math.PI*pct);
   $('#gg').setAttribute('x2',String(Math.max(40,endX+6)));
-  countTo($('#kcal'),t.k);
+  {const st=[...document.querySelectorAll('#gg stop')],cols=isOver?['#b8323f','#ff6b78','#ffa3ab']:['#2f62d9','#5fa0ff','#8fd8ff'];
+    st.forEach((s,i)=>s.setAttribute('stop-color',cols[i]||cols[2]));
+    const sh=document.querySelector('#glow feDropShadow');if(sh)sh.setAttribute('flood-color',isOver?'#ff5a68':'#4d8cff');
+    document.querySelector('#pToday .gauge').classList.toggle('over',isOver)}
+  countTo($('#kcal'),allK);
   // With beer planned, the target under the number is what's left for food (target − beer); the food arc and the
   // amber beer arc meet exactly when you've eaten that much.
   const bkT=beerK();
-  $('#kcalOf').textContent=G.k?`of ${Math.round(Math.max(0,G.k-bkT))} calories`:'calories';
+  $('#kcalOf').textContent=!G.k?'calories':isOver?`${over} calories over`:`of ${Math.round(G.k)} calories`;
   countTo($('#proNum'),t.p);$('#proOf').textContent=G.p?`/ ${fmt(G.p)} g`:'g';
   const pp=G.p>0?Math.min(100,t.p/G.p*100):0;
   $('#proBar').style.width=(t.p>0?Math.max(pp,3):0)+'%';   // a sliver shows as soon as any protein is logged
