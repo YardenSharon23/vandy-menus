@@ -1727,6 +1727,15 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #pToday .gauge.over .kcal{color:#ff7b87}
 #pToday .gauge.over .of{color:#ff8a96;font-weight:650}
 #pToday .gauge .kcal,#pToday .gauge .of{transition:color .4s ease,opacity .45s ease}
+/* meal switch: out fast, in soft. The whole list fades out; each card then rises in with a small stagger */
+#picks,#eatPlaces{transition:opacity .15s ease,transform .15s ease}
+#picks.mout,#eatPlaces.mout{opacity:0;transform:translateY(3px)}
+@keyframes mealIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#picks.min{animation:mealIn .42s var(--spring) both}
+#eatPlaces.min .place,#eatPlaces.min .pgroup>*:not(.place){animation:mealIn .46s var(--spring) both}
+#eatPlaces.min .place:nth-child(1){animation-delay:.03s}#eatPlaces.min .place:nth-child(2){animation-delay:.06s}
+#eatPlaces.min .place:nth-child(3){animation-delay:.09s}#eatPlaces.min .place:nth-child(4){animation-delay:.12s}
+#eatPlaces.min .place:nth-child(5){animation-delay:.15s}#eatPlaces.min .place:nth-child(n+6){animation-delay:.18s}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -3083,9 +3092,17 @@ function enterEat(){
   if(!eat.loaded)loadEatMenus();
   clearInterval(hrTimer);hrTimer=setInterval(()=>{if(curPage!==1)clearInterval(hrTimer);else{renderEat()}},60000);
 }
-// switching meals: the highlight slides over, and the picks + places below softly fade into the new meal
-$('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]');if(!b||b.dataset.meal===eat.meal)return;eat.meal=b.dataset.meal;renderEat();
-  for(const el of [$('#picks'),$('#eatPlaces')]){el.classList.remove('mswap');void el.offsetWidth;el.classList.add('mswap')}});
+// switching meals: the highlight slides over right away; the list underneath fades out quickly, swaps while it's
+// invisible, then the new meal's places settle in one after another (a light stagger, no jump)
+let mealT=null;
+$('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]');if(!b||b.dataset.meal===eat.meal)return;eat.meal=b.dataset.meal;
+  for(const x of document.querySelectorAll('#mealSeg [data-meal]'))x.setAttribute('aria-pressed',String(x.dataset.meal===eat.meal));
+  $('#mealSeg').dataset.a=String(['Breakfast','Lunch','Dinner'].indexOf(eat.meal));
+  const els=[$('#picks'),$('#eatPlaces')];
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){renderEat();return}
+  for(const el of els){el.classList.remove('mswap','min');el.classList.add('mout')}
+  clearTimeout(mealT);mealT=setTimeout(()=>{renderEat();for(const el of els){el.classList.remove('mout');void el.offsetWidth;el.classList.add('min')}
+    mealT=setTimeout(()=>{for(const el of els)el.classList.remove('min')},750)},150)});   // drop the class so later refreshes don't replay it
 // Top picks can fold away; the choice is remembered on this device.
 function setPicksOpen(open){
   const p=$('#picks'),t=$('#pickToggle');p.classList.toggle('folded',!open);t.setAttribute('aria-expanded',String(open));
