@@ -1671,6 +1671,23 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #reviewForm .ramt{flex:1;min-width:0;font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #reviewForm .rrm{flex:none;border:0;background:none;padding:6px 2px 6px 4px;font-size:.76rem;font-weight:650;color:#ff8a96}
 #reviewForm .rrm:active{opacity:.6}
+/* more air: name and its macros breathe, rows sit further apart, the editor has room above and below */
+#reviewForm .rtap{padding:15px 2px;align-items:flex-start}
+#reviewForm .rtap .t{gap:6px}
+#reviewForm .rtap .iln{gap:2px 12px}
+#reviewForm .rk{padding-top:1px}
+#reviewForm .rtap .caret{margin-top:7px}
+#reviewForm .redit{padding:2px 2px 16px}
+#reviewForm .ritem.open .rtap{padding-bottom:12px}
+/* the row editor slides open: height eases on a spring, the controls fade and settle in */
+#reviewForm .rwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s var(--spring)}
+#reviewForm .ritem.open .rwrap{grid-template-rows:1fr}
+#reviewForm .rwrap>div{min-height:0;overflow:hidden}
+#reviewForm .redit{animation:none;opacity:0;transform:translateY(-6px);transition:opacity .22s ease,transform .42s var(--spring)}
+#reviewForm .ritem.open .redit{opacity:1;transform:none;transition:opacity .3s ease .06s,transform .42s var(--spring)}
+#reviewForm .ritem .rtap{transition:padding .42s var(--spring)}
+#reviewForm .ritem:not(.open) .redit *{pointer-events:none}
+@media (prefers-reduced-motion: reduce){#reviewForm .rwrap,#reviewForm .redit,#reviewForm .rtap{transition:none}}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -2342,7 +2359,7 @@ function renderReview(fillTotals){
   if(D.openIx!=null&&D.openIx>=n)D.openIx=null;
   $('#rvItems').innerHTML=n?D.items.map((i,ix)=>{const open=D.openIx===ix;return `<div class="ritem${open?' open':''}">
       <button type="button" class="rtap" data-open="${ix}" aria-expanded="${open}"><span class="t"><b>${esc(i.n)}</b><span class="iln">${D._line(i)}</span></span><span class="rk"><span><b>${fmt(i.k*i.sv)}</b>cal</span>${i.sv!==1?`<span class="sv">${svTxt(i.sv)}×</span>`:''}</span><i class="caret" aria-hidden="true"></i></button>
-      ${open?`<div class="redit"><span class="ramt">${amt(i)}</span><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><label class="svf"><input type="text" inputmode="decimal" data-sv="${ix}" value="${svTxt(i.sv)}" aria-label="Servings of ${esc(i.n)}" autocomplete="off">×</label><button type="button" data-inc="${ix}" aria-label="More">+</button></span><button type="button" class="rrm" data-x="${ix}">Remove</button></div>`:''}</div>`}).join('')
+      <div class="rwrap"><div><div class="redit"><span class="ramt">${amt(i)}</span><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><label class="svf"><input type="text" inputmode="decimal" data-sv="${ix}" value="${svTxt(i.sv)}" aria-label="Servings of ${esc(i.n)}" autocomplete="off">×</label><button type="button" data-inc="${ix}" aria-label="More">+</button></span><button type="button" class="rrm" data-x="${ix}">Remove</button></div></div></div></div>`}).join('')
     :($('#rvName').hidden?'<div class="empty">No foods listed. Type the totals above.</div>':'');
   $('#reviewForm').classList.toggle('multi',n>1);
   D._justOpened=null;
@@ -2361,7 +2378,9 @@ $('#rvItems').addEventListener('focusin',e=>{const el=e.target.closest('[data-sv
 function fitNum(){}   // totals now fill their column (kept so callers stay simple)
 $('#rvItems').addEventListener('click',e=>{
   const oo=e.target.closest('[data-open]');
-  if(oo){const D=state.draft,ix=+oo.dataset.open;D.openIx=D.openIx===ix?null:ix;renderReview(false);return}
+  // open / close by class only, so the editor slides smoothly instead of the list being redrawn
+  if(oo){const D=state.draft,ix=+oo.dataset.open;D.openIx=D.openIx===ix?null:ix;
+    document.querySelectorAll('#rvItems .ritem').forEach((r,j)=>{const on=j===D.openIx;r.classList.toggle('open',on);r.querySelector('.rtap').setAttribute('aria-expanded',String(on))});return}
   const tg=e.target.closest('[data-tog]');
   if(tg){const op=state.draft.openItems||(state.draft.openItems=new Set()),ix=+tg.dataset.tog;op.has(ix)?op.delete(ix):op.add(ix);state.draft._justOpened=op.has(ix)?ix:null;renderReview(false);return}
   const D=state.draft,t=e.target.closest('button');let i;if(!t)return;
