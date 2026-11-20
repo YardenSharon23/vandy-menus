@@ -1758,6 +1758,15 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 html.finder #streakBtn{display:none}
 #pToday .top>div:first-child{max-width:calc(100% - 156px);overflow:hidden;white-space:nowrap}
 #pToday .top h1,#pToday .top .sub{letter-spacing:.1em}
+/* food rows don't shrink when pressed (that moved the arrow out from under your finger); a soft dim instead */
+#reviewForm .rtap:active{transform:none!important;opacity:.7}
+/* plate → gauge: the plate's rim grows out and down until it lines up with the gauge's rings (r62 → r110, centre
+   80 → 135), fading as the real rings arrive under it; the fork and knife slip away first. Reverses on a clean day. */
+#pToday .gauge #plate{transform:translateY(55px) scale(1.774);transition:opacity .55s ease .08s,transform .75s cubic-bezier(.2,.9,.25,1)}
+#pToday .gauge.empty #plate{transform:none;transition:opacity .4s ease,transform .6s cubic-bezier(.2,.9,.25,1)}
+#pToday .gauge #plate .utensils,#pToday .gauge #plate text{transition:opacity .2s ease}
+#pToday .gauge:not(.empty) #plate .utensils,#pToday .gauge:not(.empty) #plate text{opacity:0}
+#pToday .gauge.opening svg>path,#pToday .gauge.opening .center{transition-delay:.18s}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1848,7 +1857,7 @@ html.finder #streakBtn{display:none}
           <circle cx="130" cy="80" r="62" fill="none" stroke="#5fa0ff" stroke-opacity=".12" stroke-width="12"/>
           <circle cx="130" cy="80" r="45" fill="none" stroke="#3ddc84" stroke-opacity=".10" stroke-width="8"/>
           <circle cx="130" cy="80" r="36" fill="#ffffff" fill-opacity=".025"/>
-          <g fill="none" stroke="#8a91a6" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <g class="utensils" fill="none" stroke="#8a91a6" stroke-opacity=".55" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M40 46v26M34 46v13a6 6 0 0 0 12 0V46M40 72v44"/>
             <path d="M224 46c-8 6-10 22-10 36h10v34"/>
           </g>
@@ -2413,7 +2422,10 @@ function renderPace(t,G,calPct,proPct){
 }
 function renderToday(){queueMicrotask(renderQuip);
   // nothing logged and no beer planned → the gauge shows as a clean plate; the first log opens it into the rings
-  {const g=document.querySelector('#pToday .gauge');if(g)g.classList.toggle('empty',!entries().length&&!planBeer())}
+  {const g=document.querySelector('#pToday .gauge');if(g){const e=!entries().length&&!planBeer(),was=g.classList.contains('empty');
+    g.classList.toggle('empty',e);
+    // the moment the plate opens, the rings wait a beat so the plate visibly grows into them
+    if(was&&!e){g.classList.add('opening');clearTimeout(g._op);g._op=setTimeout(()=>g.classList.remove('opening'),900)}}}
   const t=dayTot(),G=goals();
   // Calories shown = food + the beer you've planned; past the target the number, ring and line turn red
   const beerKc=beerK(),allK=t.k+beerKc,over=G.k?Math.round(allK-G.k):0,isOver=G.k>0&&over>0;
@@ -2536,7 +2548,8 @@ $('#rvItems').addEventListener('focusin',e=>{const el=e.target.closest('[data-sv
 // The typeable totals are exactly as wide as their number, so the underline hugs it
 function fitNum(){}   // totals now fill their column (kept so callers stay simple)
 $('#rvItems').addEventListener('click',e=>{
-  const oo=e.target.closest('[data-open]');
+  // a tap that lands on the row's edge (outside the button) still toggles it, as long as it isn't in the editor
+  const oo=e.target.closest('[data-open]')||(e.target.classList&&e.target.classList.contains('ritem')?e.target.querySelector('[data-open]'):null);
   // open / close by class only, so the editor slides smoothly instead of the list being redrawn
   if(oo){const D=state.draft,ix=+oo.dataset.open;D.openIx=D.openIx===ix?null:ix;
     document.querySelectorAll('#rvItems .ritem').forEach((r,j)=>{const on=j===D.openIx;r.classList.toggle('open',on);r.querySelector('.rtap').setAttribute('aria-expanded',String(on))});return}
