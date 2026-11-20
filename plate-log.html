@@ -1642,6 +1642,11 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #pgCal.heat span.miss{background:rgba(242,196,107,.22)}
 #pgCal.heat span.fut{background:rgba(255,255,255,.02)}
 #pgCal.heat span.now{box-shadow:inset 0 0 0 1.5px rgba(95,160,255,.7)}
+/* manual add: a quiet name field under the title, same soft fill as the note field */
+#reviewForm .rvname{width:100%;margin-top:-6px;padding:12px 14px;border:0;border-radius:var(--r-ctl);background:var(--soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);color:var(--ink);font:inherit;font-size:16px;font-weight:600}
+#reviewForm .rvname::placeholder{color:var(--faint);font-weight:500}
+#reviewForm .rvname:focus{outline:none;box-shadow:inset 0 0 0 1px rgba(95,160,255,.45)}
+#reviewForm .rvname[hidden]{display:none}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1914,6 +1919,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
        then the foods as hairline rows with the serving stepper right on each row. No boxed fields, no helper text. -->
   <form class="sheet rv" id="reviewForm" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
     <div class="rvhead"><h2 id="rvTitle">Add to today</h2><span class="where" id="rvWhere"></span></div>
+    <!-- manual add only: name the food yourself -->
+    <input class="rvname" id="rvName" placeholder="What did you have?" aria-label="Food name" autocomplete="off" hidden>
     <div class="rvtot" aria-label="Totals. Tap a number to change it.">
       <label class="kc"><input type="number" inputmode="decimal" min="0" step="any" id="tk" aria-label="Calories"><span>calories</span></label>
       <label><input type="number" inputmode="decimal" min="0" step="any" id="tp" aria-label="Protein grams"><span><i class="dp"></i>protein</span></label>
@@ -2280,6 +2287,7 @@ function openReview({mode,entry,meal,replaceId,ctx}){
     items:src.items.map(i=>({...i})),tot:{...src.tot},manual:!!(mode==='edit'&&entry.manual)};
   // the meal (named by the clock) is the title; where and when sit quietly beside it
   $('#rvTitle').textContent=state.draft.name;
+  const nm=$('#rvName');nm.hidden=!(mode==='new'&&!src.items.length);nm.value='';
   $('#rvSave').textContent=mode==='edit'||replaceId?'Save':'Add';
   $('#rvDelete').hidden=mode!=='edit';$('#rvDelete').dataset.armed='';$('#rvDelete').textContent='Delete';
   $('#rvWhere').textContent=[src.hall,new Date(mode==='edit'?entry.t:Date.now()).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})].filter(Boolean).join(' · ');
@@ -2312,7 +2320,7 @@ function renderReview(fillTotals){
       <div class="iln">${D._line(i)}</div>
       <div class="ictl"><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><label class="svf"><input type="text" inputmode="decimal" data-sv="${ix}" value="${svTxt(i.sv)}" aria-label="Servings of ${esc(i.n)}" autocomplete="off">×</label><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
       <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div></div>`).join('')
-    :'<div class="empty">No foods listed. Type the totals above.</div>';
+    :($('#rvName').hidden?'<div class="empty">No foods listed. Type the totals above.</div>':'');
   $('#reviewForm').classList.toggle('multi',n>1);
   D._justOpened=null;
   if(fillTotals)fillTotals_(D);
@@ -2359,6 +2367,9 @@ $('#rvDelete').addEventListener('click',async()=>{const D=state.draft;if(!D)retu
 $('#reviewForm').addEventListener('submit',async e=>{
   e.preventDefault();const D=state.draft;if(!D)return;
   const tot={k:Math.max(0,r1($('#tk').value)),p:Math.max(0,r1($('#tp').value)),c:Math.max(0,r1($('#tc').value)),f:Math.max(0,r1($('#tf').value))};
+  // manual add: the typed name becomes the entry's one food, carrying the totals you typed
+  const typed=!$('#rvName').hidden&&$('#rvName').value.trim();
+  if(typed&&!D.items.length)D.items=[{n:typed.slice(0,80),v:'1 serving',gr:null,sv:1,k:tot.k,p:tot.p,c:tot.c,f:tot.f}];
   const entry={id:D.id||Date.now().toString(36)+Math.random().toString(36).slice(2,6),t:D.t||new Date().toISOString(),name:mealAt(D.t),hall:D.hall,items:D.items,tot,manual:!!D.manual};
   const replace=D.mode==='edit'?D.id:D.replaceId;
   // No double counting: if you logged something on its own (a latte) and then log a meal that already includes it,
@@ -3349,7 +3360,7 @@ document.addEventListener('click',e=>{if(!$('#addMenu').hidden&&!e.target.closes
 $('#addMenu').addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(!b)return;setAddMenu(false);const a=b.dataset.add;
   if(a==='photo')openWhere('photo');
   else if(a==='library')openWhere('library');
-  else if(a==='manual'){openReview({mode:'new',meal:{name:mealAt(),hall:'',items:[],tot:{k:0,p:0,c:0,f:0}}});state.draft.manual=true;setTimeout(()=>$('#tk').focus(),60)}
+  else if(a==='manual'){openReview({mode:'new',meal:{name:mealAt(),hall:'',items:[],tot:{k:0,p:0,c:0,f:0}}});state.draft.manual=true;setTimeout(()=>$('#rvName').focus(),60)}
   else if(a==='quick')openQuick()});
 // Every food you've logged, newest first, with how often it comes up.
 function pastFoods(){
