@@ -1581,6 +1581,10 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .qrow small i{font-style:normal;margin:0 6px;color:var(--faint)}
 .qrow .qplus{width:32px;height:32px}
 .qempty{padding:26px 2px 18px;text-align:center}
+/* "Using these": the same quiet green check as "Using suggested", no pill */
+#pRec #pUse.used{background:none!important;padding:6px 0;display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;color:rgba(61,220,132,.8);opacity:1}
+#pRec #pUse.used .sn{position:static;display:grid;place-items:center;width:14px;height:14px;border-radius:50%;background:rgba(61,220,132,.85);color:#05230f}
+#pRec #pUse.used .sn svg{width:8px;height:8px}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -2355,7 +2359,6 @@ function renderRec(){
   if(ready){
     if(!was){box.classList.remove('reveal');void box.offsetWidth;box.classList.add('reveal');for(const id of ['rk','rp','rc','rf'])$('#'+id).dataset.v=0}
     countTo($('#rk'),r.k);countTo($('#rp'),r.p);countTo($('#rc'),r.c);countTo($('#rf'),r.f);
-    const u=$('#pUse');if(u.dataset.k!==String(r.k+'/'+r.p)){u.dataset.k=r.k+'/'+r.p;u.disabled=false;u.textContent='Use these'}
   }
   renderSugBtn();
 }
@@ -2371,6 +2374,9 @@ function renderSugBtn(){
   const same=r&&+$('#gk').value===r.k&&+$('#gp').value===r.p&&+$('#gc').value===r.c&&+$('#gf').value===r.f;
   const html=same?`<span class="tok"><i class="sn">${CHECK_SVG}</i>Using suggested</span>`:`<button type="button" class="tuse" data-sug="${r?'fill':'go'}">Use suggested</button>`;
   if(box.dataset.h!==html){box.dataset.h=html;box.innerHTML=html}
+  // Personal info's "Use these" says so when your targets already are the suggestion
+  const u=$('#pUse');if(u&&r){const t=same?`<i class="sn">${CHECK_SVG}</i>Using these`:'Use these';
+    u.disabled=!!same;u.classList.toggle('used',!!same);if(u.dataset.h!==t){u.dataset.h=t;u.innerHTML=t}}
 }
 $('#tSug').addEventListener('click',e=>{const b=e.target.closest('[data-sug]');if(!b)return;
   if(b.dataset.sug==='go'){setTab('p');return}
@@ -2393,7 +2399,7 @@ $('#stPersonal').addEventListener('click',e=>{
   if(a){profDraft.act=a.dataset.act;renderRec();return}
   if(e.target.closest('#pUse')){const r=recommend(readProf(),dirDraft);if(!r)return;
     $('#gk').value=r.k;$('#gp').value=r.p;$('#gc').value=r.c;$('#gf').value=r.f;renderSugBtn();
-    const b=$('#pUse');b.disabled=true;b.textContent='Applied ✓';setTimeout(()=>setTab('t'),550)}   // show the filled-in targets
+    setTimeout(()=>setTab('t'),550)}   // show the filled-in targets
 });
 for(const id of ['page','pft','pin','plb'])$('#'+id).addEventListener('input',renderRec);
 // feet is one digit, so typing it jumps straight to inches
@@ -3300,7 +3306,7 @@ function renderQuick(){
   const empty={recent:'Foods you log show up here.',often:'Foods you have more than once show up here.'}[qkTab];
   // one quiet line per food: calories and protein, then where it was from; the place's icon on the left
   $('#qkList').innerHTML=qkRows.length?qkRows.map((r,ix)=>{const i=r.it,h=HALLS.find(x=>x.name===r.hall);
-    return `<button type="button" class="qrow" data-qi="${ix}"><span class="qic">${h&&h.id?hallIcon(h.id):ICON_PIN}</span><span class="qt"><b>${esc(i.n)}</b><small><b>${fmt(i.k*i.sv)}</b> cal<i>·</i><b>${fmt(i.p*i.sv)}</b>g protein${r.hall?`<i>·</i>${esc(r.hall)}`:''}</small></span><span class="qplus" aria-hidden="true">+</span></button>`}).join('')
+    return `<button type="button" class="qrow" data-qi="${ix}"><span class="qt"><b>${esc(i.n)}</b><small><b>${fmt(i.k*i.sv)}</b> cal<i>·</i><b>${fmt(i.p*i.sv)}</b>g protein${r.hall?`<i>·</i>${esc(r.hall)}`:''}</small></span><span class="qplus" aria-hidden="true">+</span></button>`}).join('')
     :`<div class="qempty">${empty}</div>`;
 }
 $('#qkTabs').addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(!b||b.dataset.q===qkTab)return;qkTab=b.dataset.q;renderQuick();
