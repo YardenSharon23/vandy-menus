@@ -1772,6 +1772,10 @@ html.finder #streakBtn{display:none}
 #chatForm .send{width:44px;height:44px;transition:transform .25s var(--spring),opacity .2s ease}
 #chatForm:not(.has) .send{opacity:0;transform:scale(.6);pointer-events:none}
 .askpage .chatpage{max-width:500px;margin:0 auto;width:100%}
+/* centre the tabs: an invisible twin of the gear on the left, so the tabs sit between two equal sides */
+header.appbar::after{content:"";order:-1;flex:none;width:34px;height:1px}
+@media (max-width:440px){header.appbar{gap:2px;padding-left:max(8px, env(safe-area-inset-left, 0px));padding-right:max(8px, env(safe-area-inset-right, 0px))}}
+@media (max-width:340px){header.appbar .tabs button{font-size:.9rem}}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
