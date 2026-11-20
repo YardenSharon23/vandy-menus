@@ -1593,8 +1593,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .macros .pace{margin:1px 0 0;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .minor{display:none!important}
 #pToday .top{position:relative}
-#pToday .top #beerBtn{position:absolute;right:0;top:50%;transform:translateY(-50%);margin:0}
-#pToday .top #beerBtn:active{transform:translateY(-50%) scale(.96)}
+.loghead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.loghead #beerBtn{margin:0}
 .minor:not(:has(.beerbtn:not([hidden]))){display:none}
 .macros .p .ml{color:#7fe3ac}
 /* protein leads (full width, bigger number, thicker bar, pace on the right); carbs and fat sit small underneath */
@@ -1612,6 +1612,36 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .macros .msub .mv b{font-size:.92rem;font-weight:750}
 .macros .msub .mv small{font-size:.72rem}
 .macros .msub .track{display:none}   /* carbs and fat: just the numbers, no bars */
+/* ===== Progress, calmer and more premium: quiet cards, one accent per chart, soft calendar circles ===== */
+.prog{gap:16px}
+#pgCalWrap,.prog>div:has(#pgChart),.prog>div:has(#pgPro){padding:16px 16px 14px;border-radius:var(--r-card);
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012));box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),inset 0 1px 0 rgba(255,255,255,.04)}
+#pgCalWrap[hidden]{display:none}
+.prog .wkhead .stitle{font-size:.98rem}
+.prog .pgtop{margin-top:-6px}
+/* charts: on-target days carry the color, the rest stay neutral so nothing shouts */
+#pWeek .pgb.miss i{background:rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);opacity:1}
+#pWeek #pgPro .pgb.miss i{background:rgba(255,255,255,.11)}
+#pWeek .pgb em{color:var(--faint)}
+#pWeek .pgb.hit em{color:var(--muted)}
+#pWeek .pgline{border-top:1px dashed rgba(255,255,255,.2)}
+#pWeek .pgline b{color:var(--faint)}
+/* month calendar: day numbers in soft circles; a hit is a filled green circle, a miss is a small amber dot */
+#pgCal.month{gap:6px 0}
+#pgCal.month em{padding-bottom:2px}
+#pgCal.month span{position:relative;width:32px;height:32px;margin:0 auto;border-radius:50%;background:none;box-shadow:none;font-size:.76rem;font-weight:600;color:var(--muted)}
+#pgCal.month span.hit{background:rgba(61,220,132,.16);color:#a6f3c8;box-shadow:none}
+#pgCal.month span.miss{background:none;color:#e2cfa3}
+#pgCal.month span.miss::after{content:"";position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--carb);opacity:.8}
+#pgCal.month span.off{color:var(--faint)}
+#pgCal.month span.fut{color:rgba(255,255,255,.16)}
+#pgCal.month span.now{box-shadow:inset 0 0 0 1.5px rgba(95,160,255,.7);color:var(--ink)}
+/* 3-month grid: small soft squares, no borders */
+#pgCal.heat span{border-radius:5px;box-shadow:none;background:rgba(255,255,255,.045)}
+#pgCal.heat span.hit{background:rgba(61,220,132,.42)}
+#pgCal.heat span.miss{background:rgba(242,196,107,.22)}
+#pgCal.heat span.fut{background:rgba(255,255,255,.02)}
+#pgCal.heat span.now{box-shadow:inset 0 0 0 1.5px rgba(95,160,255,.7)}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1635,8 +1665,6 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 <main class="app">
   <div class="top">
     <div><h1 id="dayH">Today</h1><div class="sub" id="day"></div></div>
-    <!-- Room for beer lives in the top-right corner, level with the date -->
-    <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
   </div>
 
   <section class="hero" aria-label="Today's macros">
@@ -1709,7 +1737,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
   </section>
 
   <section class="log" id="log" hidden aria-label="Today's entries">
-    <h2 class="stitle">Entries</h2>
+    <!-- Room for beer sits on the right of the Entries heading -->
+    <div class="loghead"><h2 class="stitle">Entries</h2><button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button></div>
     <div class="entries" id="entries"></div>
   </section>
 
@@ -2223,7 +2252,7 @@ function renderToday(){
   $('#fatNum').textContent=fmt(t.f);$('#fatOf').textContent=G.f?` / ${fmt(G.f)} g`:' g';
   $('#carbBar').style.width=(G.c?Math.min(100,t.c/G.c*100):0)+'%';$('#fatBar').style.width=(G.f?Math.min(100,t.f/G.f*100):0)+'%';
   const es=entries().slice().sort((a,b)=>a.t<b.t?-1:1);
-  $('#log').hidden=!es.length&&!B;
+  $('#log').hidden=!es.length&&!B&&!beerOn();   // with beer on, the heading stays so its button is reachable
   const fresh=seenEntries?es.filter(e=>!seenEntries.has(e.id)).map(e=>e.id):[];
   seenEntries=new Set(es.map(e=>e.id));
   $('#entries').innerHTML=es.map(e=>{const n=entryName(e);return `<button type="button" class="entry${fresh.includes(e.id)?' new':''}" data-edit="${esc(e.id)}">
