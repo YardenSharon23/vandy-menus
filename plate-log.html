@@ -1747,6 +1747,16 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 /* the whole top row opens the menu; the date animates in like the line does */
 #pToday .top{cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:34px;align-items:center}
 #pToday .top>div:first-child.in{animation:mswap .45s var(--spring) both}
+/* streak badge: the Beer pill's twin on the left, with an ember flame; quiet grey when there's no streak yet */
+#pToday .top #streakBtn{position:absolute;left:0;top:50%;transform:translateY(-50%);margin:0}
+#pToday .top #streakBtn:active{transform:translateY(-50%) scale(.96)}
+.streakbtn svg{color:#ffa75a!important;filter:drop-shadow(0 0 4px rgba(255,150,70,.45))}
+.streakbtn span{font-variant-numeric:tabular-nums}
+.streakbtn.cold svg{color:var(--faint)!important;filter:none}
+.streakbtn.cold{color:var(--muted)}
+html.finder #streakBtn{display:none}
+#pToday .top>div:first-child{max-width:calc(100% - 156px);overflow:hidden;white-space:nowrap}
+#pToday .top h1,#pToday .top .sub{letter-spacing:.1em}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -1773,6 +1783,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
     <!-- a short, dry line about right now (a hall closing, your streak…) takes the date's place when there's one worth saying -->
     <div class="quip" id="quip" role="button" tabindex="0" aria-haspopup="menu" hidden></div>
     <div class="quipmenu" id="quipMenu" role="menu" aria-label="What the top line shows" hidden></div>
+    <!-- your streak in the top-left corner, balancing Beer on the right; tap it for Progress -->
+    <button type="button" class="beerbtn streakbtn" id="streakBtn" aria-label="Streak: open Progress"></button>
     <!-- Room for beer lives in the top-right corner, level with the date -->
     <button type="button" class="beerbtn" id="beerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M6 8a2.5 2.5 0 0 1 3-3.5A3 3 0 0 1 14 5a2.3 2.3 0 0 1 2 3"/></svg><span id="beerBtnTxt">Room for beer</span></button>
   </div>
@@ -2285,7 +2297,10 @@ function quipLine(){
   return QUIP.fav()||QUIP.hours(true)||(G.p&&t.p>=G.p?'Protein goal hit':'')
     ||(h>=17&&G.p&&t.k>300&&t.p<G.p*.8?QUIP.protein():'')||(quipStreak()>=2?QUIP.streak():'');
 }
-function renderQuip(){const q=quipLine(),el=$('#quip');if(!el)return;
+function renderStreak(){const b=$('#streakBtn');if(!b)return;const n=quipStreak();
+  const h=`${FLAME}<span>${n}<small>${n===1?'day':'days'}</small></span>`;if(b.dataset.h!==h){b.dataset.h=h;b.innerHTML=h}
+  b.classList.toggle('cold',!n);b.setAttribute('aria-label',`${n}-day streak. Open Progress`)}
+function renderQuip(){renderStreak();const q=quipLine(),el=$('#quip');if(!el)return;
   if(el.dataset.q!==q){el.dataset.q=q;el.textContent=q;el.classList.remove('in');void el.offsetWidth;if(q)el.classList.add('in')}
   // the date fades back in the same way when it takes over the spot
   const dt=$('#pToday .top>div');if(dt.hidden&&!q){dt.hidden=false;dt.classList.remove('in');void dt.offsetWidth;dt.classList.add('in')}else dt.hidden=!!q;
@@ -2296,6 +2311,7 @@ function setQuipMenu(open){const m=$('#quipMenu');if(!m)return;
     m.innerHTML=QUIP_MODES.map(([k,l])=>`<button type="button" role="menuitemradio" aria-checked="${k===cur}" data-qm="${k}">${l}${k===cur?'<i class="qmk" aria-hidden="true"></i>':''}</button>`).join('')}
   m.hidden=!open}
 $('#pToday .top').addEventListener('click',e=>{if(e.target.closest('#beerBtn'))return;
+  if(e.target.closest('#streakBtn')){e.stopPropagation();setQuipMenu(false);setPage(2);return}
   const b=e.target.closest('[data-qm]');if(b){LS.set('quipMode',b.dataset.qm);setQuipMenu(false);renderQuip();return}
   if(e.target.closest('#quipMenu'))return;
   e.stopPropagation();setQuipMenu($('#quipMenu').hidden)});   // the whole row is the hit area (Beer keeps its own)
