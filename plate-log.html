@@ -1745,7 +1745,8 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 /* search with no results: one quiet box, not a card inside a card */
 #eatResults>.pickempty{background:none!important;border:0!important;box-shadow:none!important;border-radius:0;padding:18px 14px;text-align:center;font-size:.86rem;color:var(--muted)}
 /* the whole top row opens the menu; the date animates in like the line does */
-#pToday .top{cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:34px;align-items:center}
+#pToday .top{min-height:34px;align-items:center}
+.quipmenu button{width:100%}
 #pToday .top>div:first-child.in{animation:mswap .45s var(--spring) both}
 /* streak badge: the Beer pill's twin on the left, with an ember flame; quiet grey when there's no streak yet */
 #pToday .top #streakBtn{position:absolute;left:0;top:50%;transform:translateY(-50%);margin:0}
@@ -2311,10 +2312,11 @@ function setQuipMenu(open){const m=$('#quipMenu');if(!m)return;
     m.innerHTML=QUIP_MODES.map(([k,l])=>`<button type="button" role="menuitemradio" aria-checked="${k===cur}" data-qm="${k}">${l}${k===cur?'<i class="qmk" aria-hidden="true"></i>':''}</button>`).join('')}
   m.hidden=!open}
 $('#pToday .top').addEventListener('click',e=>{if(e.target.closest('#beerBtn'))return;
-  if(e.target.closest('#streakBtn')){e.stopPropagation();setQuipMenu(false);setPage(2);return}
+  if(e.target.closest('#streakBtn')){e.stopPropagation();setQuipMenu(false);goPage(2);return}
   const b=e.target.closest('[data-qm]');if(b){LS.set('quipMode',b.dataset.qm);setQuipMenu(false);renderQuip();return}
   if(e.target.closest('#quipMenu'))return;
-  e.stopPropagation();setQuipMenu($('#quipMenu').hidden)});   // the whole row is the hit area (Beer keeps its own)
+  // only the line itself (or the date) opens the menu, not the empty space around it
+  if(e.target.closest('#quip')||e.target.closest('#pToday .top>div:first-child')){e.stopPropagation();setQuipMenu($('#quipMenu').hidden)}});
 document.addEventListener('click',e=>{const m=$('#quipMenu');if(m&&!m.hidden&&!e.target.closest('#quipMenu')&&!e.target.closest('#pToday .top'))setQuipMenu(false)});
 setInterval(()=>{if(!document.hidden)renderQuip()},60000);
 function renderDay(){const d=new Date();$('#dayH').textContent=d.toLocaleDateString(undefined,{weekday:'long'});$('#day').textContent=d.toLocaleDateString(undefined,{month:'long',day:'numeric'})}
