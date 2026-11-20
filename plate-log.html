@@ -1647,6 +1647,30 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 #reviewForm .rvname::placeholder{color:var(--faint);font-weight:500}
 #reviewForm .rvname:focus{outline:none;box-shadow:inset 0 0 0 1px rgba(95,160,255,.45)}
 #reviewForm .rvname[hidden]{display:none}
+/* ===== Add popup food list: calm rows, tap one to edit it ===== */
+#reviewForm .ritems{gap:0;margin-top:-4px}
+#reviewForm .ritem{display:block!important;padding:0!important;background:none!important;box-shadow:none!important;border:0;border-top:1px solid var(--line);border-radius:0}
+#reviewForm .ritem:first-child{border-top:0}
+#reviewForm .rtap{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;text-align:left;padding:12px 2px;color:var(--ink)}
+#reviewForm .rtap:active{opacity:.75}
+#reviewForm .rtap .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#reviewForm .rtap .t>b{font-size:.93rem;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#reviewForm .rtap .iln{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:.74rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+#reviewForm .rtap .iln b{color:var(--ink);font-weight:700;margin-right:1px}
+#reviewForm .rtap .iln .sv{color:var(--blue-2);font-weight:650}
+#reviewForm .rtap .iln>span{display:inline!important;flex-direction:row!important;white-space:nowrap}
+#reviewForm .rtap .iln b{display:inline!important}
+#reviewForm .rk{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+#reviewForm .rk .sv{font-size:.7rem;font-weight:650;color:var(--blue-2)}
+#reviewForm .rk>span:first-child{display:flex;align-items:baseline;gap:3px}
+#reviewForm .rk b{font-family:var(--display);font-size:1.02rem;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+#reviewForm .rtap .caret{margin-left:2px}
+#reviewForm .ritem.open .caret{transform:rotate(-135deg) translate(-1px,-1px)}
+/* the editor that opens under a row */
+#reviewForm .redit{display:flex;align-items:center;gap:10px;padding:0 2px 12px;animation:pexpIn .3s var(--spring) both}
+#reviewForm .ramt{flex:1;min-width:0;font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#reviewForm .rrm{flex:none;border:0;background:none;padding:6px 2px 6px 4px;font-size:.76rem;font-weight:650;color:#ff8a96}
+#reviewForm .rrm:active{opacity:.6}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -2309,17 +2333,16 @@ function amountText(i){
 }
 function renderReview(fillTotals){
   const D=state.draft;
-  // One tight row per food: the name, and right under it everything about it on one line
-  // (amount · cal · P C F, scaled to the servings); stepper and remove on the right.
+  // A calm list: each food is one row (name, its macros underneath, calories on the right).
+  // Tap a row to open its editor (amount, servings stepper, remove); only one is open at a time.
   const n=D.items.length;
   const amt=i=>{const g=i.v==='estimate'?(i.eg?Math.round(i.eg*i.sv):null):+i.gr>0?Math.round(i.gr*i.sv):null;
     return (i.v==='estimate'?'<span class="est">est.</span> ':'')+(g?g+' g':esc(String(i.v||'1 serving').replace(/\s*portion$/i,'')))};
-  D._line=i=>`<span><b>${fmt(i.k*i.sv)}</b> cal</span><span class="m"><span class="p"><b>${fmt(i.p*i.sv)}</b><em>P</em></span><span class="c"><b>${fmt(i.c*i.sv)}</b><em>C</em></span><span class="f"><b>${fmt(i.f*i.sv)}</b><em>F</em></span></span><span class="amt">${amt(i)}</span>`;
-  $('#rvItems').innerHTML=n?D.items.map((i,ix)=>`<div class="ritem">
-      <div class="t"><b>${esc(i.n)}</b></div>
-      <div class="iln">${D._line(i)}</div>
-      <div class="ictl"><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><label class="svf"><input type="text" inputmode="decimal" data-sv="${ix}" value="${svTxt(i.sv)}" aria-label="Servings of ${esc(i.n)}" autocomplete="off">×</label><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
-      <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div></div>`).join('')
+  D._line=i=>`<span class="p"><b>${fmt(i.p*i.sv)}</b>g protein</span><span class="c"><b>${fmt(i.c*i.sv)}</b>g carbs</span><span class="f"><b>${fmt(i.f*i.sv)}</b>g fat</span>`;
+  if(D.openIx!=null&&D.openIx>=n)D.openIx=null;
+  $('#rvItems').innerHTML=n?D.items.map((i,ix)=>{const open=D.openIx===ix;return `<div class="ritem${open?' open':''}">
+      <button type="button" class="rtap" data-open="${ix}" aria-expanded="${open}"><span class="t"><b>${esc(i.n)}</b><span class="iln">${D._line(i)}</span></span><span class="rk"><span><b>${fmt(i.k*i.sv)}</b>cal</span>${i.sv!==1?`<span class="sv">${svTxt(i.sv)}×</span>`:''}</span><i class="caret" aria-hidden="true"></i></button>
+      ${open?`<div class="redit"><span class="ramt">${amt(i)}</span><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><label class="svf"><input type="text" inputmode="decimal" data-sv="${ix}" value="${svTxt(i.sv)}" aria-label="Servings of ${esc(i.n)}" autocomplete="off">×</label><button type="button" data-inc="${ix}" aria-label="More">+</button></span><button type="button" class="rrm" data-x="${ix}">Remove</button></div>`:''}</div>`}).join('')
     :($('#rvName').hidden?'<div class="empty">No foods listed. Type the totals above.</div>':'');
   $('#reviewForm').classList.toggle('multi',n>1);
   D._justOpened=null;
@@ -2331,16 +2354,18 @@ const svTxt=v=>String(+(+v).toFixed(2));
 $('#rvItems').addEventListener('input',e=>{const el=e.target.closest('[data-sv]');if(!el)return;
   const v=parseFloat(String(el.value).replace(',','.'));if(!(v>0))return;
   const D=state.draft,i=D.items[+el.dataset.sv];i.sv=Math.min(50,v);D.manual=false;
-  el.closest('.ritem').querySelector('.iln').innerHTML=D._line(i);fillTotals_(D)});
+  const row=el.closest('.ritem');row.querySelector('.iln').innerHTML=D._line(i);row.querySelector('.rk b').textContent=fmt(i.k*i.sv);const sv=row.querySelector('.rk .sv');if(sv)sv.textContent=svTxt(i.sv)+'×';fillTotals_(D)});
 $('#rvItems').addEventListener('focusout',e=>{const el=e.target.closest('[data-sv]');if(el&&state.draft){const i=state.draft.items[+el.dataset.sv];if(i)el.value=svTxt(i.sv)}});
 $('#rvItems').addEventListener('focusin',e=>{const el=e.target.closest('[data-sv]');if(el)setTimeout(()=>el.select(),0)});
 // The typeable totals are exactly as wide as their number, so the underline hugs it
 function fitNum(){}   // totals now fill their column (kept so callers stay simple)
 $('#rvItems').addEventListener('click',e=>{
+  const oo=e.target.closest('[data-open]');
+  if(oo){const D=state.draft,ix=+oo.dataset.open;D.openIx=D.openIx===ix?null:ix;renderReview(false);return}
   const tg=e.target.closest('[data-tog]');
   if(tg){const op=state.draft.openItems||(state.draft.openItems=new Set()),ix=+tg.dataset.tog;op.has(ix)?op.delete(ix):op.add(ix);state.draft._justOpened=op.has(ix)?ix:null;renderReview(false);return}
   const D=state.draft,t=e.target.closest('button');let i;if(!t)return;
-  if(t.dataset.x!=null)D.openItems=new Set();   // indexes shift when a food is removed, so fold everything
+  if(t.dataset.x!=null){D.openItems=new Set();D.openIx=null}   // indexes shift when a food is removed, so fold everything
   if(t.dataset.inc!=null){i=D.items[+t.dataset.inc];i.sv=Math.round((i.sv+(i.sv<1?0.25:0.5))*1000)/1000}
   else if(t.dataset.dec!=null){i=D.items[+t.dataset.dec];i.sv=Math.max(0.05,Math.round((i.sv-(i.sv<=1?0.25:0.5))*1000)/1000)}
   else if(t.dataset.x!=null){D.items.splice(+t.dataset.x,1)}
