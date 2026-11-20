@@ -1463,58 +1463,21 @@ header.appbar .iconbtn svg{width:18px;height:18px}
 .pagein{gap:26px}
 .page .app{gap:26px}
 .eat{gap:20px}
-/* ===== Add / edit popup: meal as the title, one big total, every food a clear block ===== */
-#reviewForm{gap:18px}
-#reviewForm .rvhead{flex-direction:column;align-items:flex-start;gap:3px}
-#reviewForm .rvhead h2{font-family:var(--display);font-size:1.45rem;font-weight:800;letter-spacing:-.025em;line-height:1.1}
-#reviewForm .rvhead .where{font-size:.8rem}
-/* totals: calories large on its own line, then protein / carbs / fat as three soft tiles */
-#reviewForm .rvtot{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0;border-bottom:0}
-#reviewForm .rvtot label{padding:10px 0 9px;gap:3px;border-radius:var(--r-tile);background:var(--soft)}
-#reviewForm .rvtot label::before{display:none}
-#reviewForm .rvtot label.kc{grid-column:1/-1;background:none;padding:2px 0 6px;gap:0}
-#reviewForm .rvtot .kc input{font-size:2.6rem!important;font-weight:800;letter-spacing:-.045em;line-height:1.05}
-#reviewForm .rvtot input{font-size:1.2rem!important;font-weight:750}
-#reviewForm .rvtot span{font-size:.72rem;gap:5px}
-#reviewForm .rvtot span i{display:block;width:6px;height:6px}
-#reviewForm .rvtot .kc span{font-size:.78rem}
-#reviewForm .rvtot label:focus-within{background:rgba(61,123,255,.12)}
-#reviewForm .rvtot label.kc:focus-within{background:none}
-#reviewForm.multi .rvtot .kc span::before{content:"total"}
-/* foods */
-#reviewForm .ritems{margin:0;gap:8px;background:none;padding:0}
-#reviewForm .rilab{font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);padding:0 2px}
-#reviewForm .ritem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:start;padding:13px 14px 12px;border:0;border-radius:var(--r-tile);background:var(--soft);box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
-#reviewForm .ritem .t{cursor:default}
-#reviewForm .ritem .t b{font-size:.98rem;font-weight:650;line-height:1.3;color:var(--ink);-webkit-line-clamp:3}
-#reviewForm .ritem .t small{margin-top:3px;font-size:.76rem;white-space:normal}
-#reviewForm .ikc{text-align:right;line-height:1}
-#reviewForm .ikc b{display:block;font-family:var(--display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-#reviewForm .ikc small{display:block;margin-top:3px;font-size:.7rem;color:var(--muted)}
-#reviewForm .imac{grid-column:1/2;align-self:center;display:flex;flex-wrap:wrap;gap:4px 12px;padding:0;font-size:.76rem;color:var(--muted);animation:none}
-#reviewForm .imac span{gap:0;white-space:nowrap}
-#reviewForm .imac i{margin-right:5px}
-#reviewForm .imac b{color:var(--ink);font-weight:700;margin-right:1px}
-#reviewForm .ictl{grid-column:2/3;display:flex;align-items:center;gap:4px;justify-self:end}
-#reviewForm .ritem .rx{margin-right:-6px}
-#reviewForm .rnote{margin-top:-4px}
-/* phone-friendly order: name | cal, amount | stepper, then the macros on their own line */
-#reviewForm .ritem{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t kc" "amt ctl" "mac mac";gap:4px 12px}
-#reviewForm .ritem .t{grid-area:t}#reviewForm .ikc{grid-area:kc}
-#reviewForm .iamt{grid-area:amt;align-self:center;font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
-#reviewForm .ictl{grid-area:ctl;margin-top:2px}
-#reviewForm .imac{grid-area:mac;margin-top:8px;padding-top:9px;border-top:1px solid var(--line);gap:4px 14px}
-#reviewForm .ikc{display:flex;align-items:baseline;gap:3px}
-#reviewForm .ikc small{margin:0}
-/* rows as flex lines so the name gets the full width beside its calories */
-#reviewForm .ritem{display:flex;flex-direction:column;gap:6px}
-#reviewForm .ir1{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-#reviewForm .ir1 .t{flex:1;min-width:0}
-#reviewForm .ir2{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0 12px}
-#reviewForm .ir2 .iamt{flex:1;min-width:0}
-#reviewForm .ir2 .ictl{margin:0}
-#reviewForm .ir2 .imac{order:3;flex-basis:100%;margin-top:8px}
-#reviewForm .ikc{flex:none}
+/* ===== Add / edit popup, compact: meal title, one row of totals, one tight row per food ===== */
+#reviewForm .rvhead h2{font-family:var(--display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
+#reviewForm .ritems{margin-top:-4px}
+#reviewForm .ritem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:center;padding:11px 0}
+#reviewForm .ritem .t{min-width:0;cursor:default}
+#reviewForm .ritem .t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.93rem;font-weight:600;line-height:1.3}
+#reviewForm .ictl{grid-row:1/3;grid-column:2;display:flex;align-items:center;gap:2px}
+/* everything about one food on one line, right under its name: amount · cal · P C F */
+#reviewForm .iln{display:flex;align-items:baseline;gap:0 9px;min-width:0;font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}
+#reviewForm .iln b{color:var(--ink);font-weight:700}
+#reviewForm .iln .m{display:inline-flex;gap:7px}
+#reviewForm .iln .m span em{font-style:normal;font-weight:700;margin-left:2px;font-size:.68rem}
+#reviewForm .iln .p em{color:var(--blue-2)}#reviewForm .iln .c em{color:var(--carb)}#reviewForm .iln .f em{color:var(--fat)}
+#reviewForm .iln .amt{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--faint)}
+#reviewForm .iln .amt .est{margin-right:3px}
 </style>
 
 <div class="bg" aria-hidden="true"></div>
@@ -2119,14 +2082,16 @@ function amountText(i){
 }
 function renderReview(fillTotals){
   const D=state.draft;
-  // Each food is a clear block: name | calories, then amount | servings stepper, then its macros on their own line.
+  // One tight row per food: the name, and right under it everything about it on one line
+  // (amount · cal · P C F, scaled to the servings); stepper and remove on the right.
   const n=D.items.length;
-  $('#rvItems').innerHTML=n?`<div class="rilab">${n===1?'1 food':n+' foods'}</div>`+D.items.map((i,ix)=>`<div class="ritem">
-      <div class="ir1"><div class="t"><b>${esc(i.n)}</b></div><div class="ikc"><b>${fmt(i.k*i.sv)}</b><small>cal</small></div></div>
-      <div class="ir2"><div class="iamt">${amountText(i)}</div>
-      <div class="imac"><span><i class="dp"></i><b>${r1(i.p*i.sv)}</b>g protein</span><span><i class="dc"></i><b>${r1(i.c*i.sv)}</b>g carbs</span><span><i class="df"></i><b>${r1(i.f*i.sv)}</b>g fat</span></div>
+  const amt=i=>{const g=i.v==='estimate'?(i.eg?Math.round(i.eg*i.sv):null):+i.gr>0?Math.round(i.gr*i.sv):null;
+    return (i.v==='estimate'?'<span class="est">est.</span> ':'')+(g?g+' g':esc(String(i.v||'1 serving').replace(/\s*portion$/i,'')))};
+  $('#rvItems').innerHTML=n?D.items.map((i,ix)=>`<div class="ritem">
+      <div class="t"><b>${esc(i.n)}</b></div>
+      <div class="iln"><span><b>${fmt(i.k*i.sv)}</b> cal</span><span class="m"><span class="p"><b>${fmt(i.p*i.sv)}</b><em>P</em></span><span class="c"><b>${fmt(i.c*i.sv)}</b><em>C</em></span><span class="f"><b>${fmt(i.f*i.sv)}</b><em>F</em></span></span><span class="amt">${amt(i)}</span></div>
       <div class="ictl"><span class="pstep sm" role="group" aria-label="Servings of ${esc(i.n)}"><button type="button" data-dec="${ix}" aria-label="Less">&minus;</button><span>${i.sv}×</span><button type="button" data-inc="${ix}" aria-label="More">+</button></span>
-      <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div></div></div>`).join('')
+      <button type="button" class="rx" data-x="${ix}" aria-label="Remove ${esc(i.n)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div></div>`).join('')
     :'<div class="empty">No foods listed. Type the totals above.</div>';
   $('#reviewForm').classList.toggle('multi',n>1);
   D._justOpened=null;
