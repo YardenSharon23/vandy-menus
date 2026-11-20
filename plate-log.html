@@ -3152,12 +3152,27 @@ $('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]
   clearTimeout(mealT);mealT=setTimeout(()=>{renderEat();for(const el of els){el.classList.remove('mout');void el.offsetWidth;el.classList.add('min')}
     mealT=setTimeout(()=>{for(const el of els)el.classList.remove('min')},750)},150)});   // drop the class so later refreshes don't replay it
 // Top picks can fold away; the choice is remembered on this device.
-function setPicksOpen(open){
-  const p=$('#picks'),t=$('#pickToggle');p.classList.toggle('folded',!open);t.setAttribute('aria-expanded',String(open));
+// Top picks opens like a drawer: the card grows to its real height on a spring while the picks inside fade up one
+// after another; closing folds it back smoothly. (Web Animations, measured from the real height, so no lag or snap.)
+function setPicksOpen(open,instant){
+  const p=$('#picks'),t=$('#pickToggle');t.setAttribute('aria-expanded',String(open));
   $('#pickToggleTxt').textContent=open?'Hide':'Show';LS.set('picksOpen2',open);
+  for(const a of p.getAnimations())a.cancel();
+  if(instant||calm||!p.animate){p.classList.toggle('folded',!open);return}
+  const was=!p.classList.contains('folded');if(was===open)return;
+  const c=()=>getComputedStyle(p);
+  p.classList.remove('folded');const cs=c(),full={height:p.offsetHeight+'px',paddingTop:cs.paddingTop,paddingBottom:cs.paddingBottom,opacity:1,borderTopWidth:cs.borderTopWidth,borderBottomWidth:cs.borderBottomWidth};
+  const shut={height:'0px',paddingTop:'0px',paddingBottom:'0px',opacity:0,borderTopWidth:'0px',borderBottomWidth:'0px'};
+  p.style.overflow='hidden';p.style.transition='none';   // the old CSS fold transition would fight this one
+  const opt={duration:open?480:340,easing:open?'cubic-bezier(.2,.9,.25,1)':'cubic-bezier(.4,0,.2,1)'};
+  const an=p.animate(open?[shut,{...full,opacity:.6,offset:.5},full]:[full,shut],opt);
+  if(open)[...p.children].forEach((r,i)=>r.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:380,delay:90+i*55,easing:'cubic-bezier(.2,.9,.25,1)',fill:'backwards'}));
+  else p.classList.add('folded');   // the folded look is the end state; the animation plays over it
+  const tidy=()=>{p.style.removeProperty('overflow');p.style.removeProperty('transition')};
+  an.onfinish=an.oncancel=tidy;clearTimeout(setPicksOpen.t);setPicksOpen.t=setTimeout(tidy,opt.duration+80);   // fallback if finish is delayed
 }
 $('#pickToggle').addEventListener('click',()=>setPicksOpen($('#pickToggle').getAttribute('aria-expanded')!=='true'));
-setPicksOpen(LS.get('picksOpen2',false));   // collapsed until you open it
+setPicksOpen(LS.get('picksOpen2',false),true);   // collapsed until you open it
 $('#eatQ').addEventListener('input',()=>{eat.q=$('#eatQ').value;renderResults();if($('#eatResults').hidden)renderPlaces()});
 // Filter chips show only while you're searching: open on focus, stay while there's text or you're adding a filter,
 // and fold away once you leave an empty search box.
