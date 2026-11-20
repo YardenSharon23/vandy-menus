@@ -1918,8 +1918,8 @@ function renderHalls(){
     if(status(u,new Date(now+30*60e3)).open)return {show:true,st};
     if(status(u,new Date(now-45*60e3)).open)return {show:true,st:{...st,label:'Just closed'}};
     return {show:false,st}};
-  const tile=id=>{const h=HALLS.find(x=>x.id===id),{st}=near(id),cafe=HALL_CAFE.has(id),cls=st?(st.open?' open':' shut'):'';
-      return `<button type="button" class="hall${cls}" data-h="${id}"><span class="hic">${cafe?ICON_CUP:ICON_PLATE}</span><span class="hn"><b>${h.name}</b></span></button>`};
+  const tile=id=>{const h=HALLS.find(x=>x.id===id),{st}=near(id),cls=st?(st.open?' open':' shut'):'';
+      return `<button type="button" class="hall${cls}" data-h="${id}"><span class="hic">${hallIcon(id)}</span><span class="hn"><b>${h.name}</b></span></button>`};
   const shown=state.editing?ids:ids.filter(id=>near(id).show),closed=state.editing?[]:ids.filter(id=>!near(id).show);
   const showClosed=state.showClosed||!shown.length;   // nothing open (late night): just show them all
   // the closed-places switch lives in the title row, so it costs no space in the list
@@ -1937,7 +1937,12 @@ function closeWhere(){$('#where').hidden=true;state.editing=false}
 $('#hallMore').addEventListener('click',()=>{state.showClosed=!state.showClosed;renderHalls()});
 $('#whereCancel').addEventListener('click',()=>{pending=null;closeWhere()});
 $('#where').addEventListener('click',e=>{if(e.target.id==='where'){pending=null;closeWhere()}});
-const HALL_CAFE=new Set([22,17]);
+// One icon per kind of place: dining halls share the fork and knife; the rest get their own.
+const ICON_SMOOTHIE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9h12l-1.4 10.6A1.6 1.6 0 0 1 15 21H9a1.6 1.6 0 0 1-1.6-1.4z"/><path d="M5 9h14"/><path d="M12.5 9 15 2.5h2.5"/><path d="M7.2 13.5h9.6"/></svg>';
+const ICON_BAGEL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9" ry="8"/><ellipse cx="12" cy="12" rx="3" ry="2.4"/><path d="M8 6.8l.6.5M15.4 6.9l-.5.6M18 11.2l-.8.2M6.2 14.8l.8-.3M12 18.6v-.9"/></svg>';
+const ICON_BURGER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5C4 6.9 7.6 4 12 4s8 2.9 8 6.5z"/><path d="M3.5 14h17"/><path d="M4.5 17.5h15v.5a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z"/><path d="M9 7.5h.01M12.5 6.8h.01M15 8h.01"/></svg>';
+const HALL_ICON={17:'smoothie',22:'bagel',4:'burger'};
+const hallIcon=id=>({smoothie:ICON_SMOOTHIE,bagel:ICON_BAGEL,burger:ICON_BURGER})[HALL_ICON[id]]||ICON_PLATE;
 const ICON_PLATE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3M6 12v9M17 21V3c-2.2 1-3.5 3.6-3.5 7 0 1.7.9 2.6 2.5 3H17"/></svg>';
 const ICON_CUP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 9.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M9 2.5c-.6.8-.6 1.7 0 2.5M12.5 2.5c-.6.8-.6 1.7 0 2.5"/></svg>';
 const ICON_PIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
