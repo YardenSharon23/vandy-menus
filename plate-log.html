@@ -3157,19 +3157,20 @@ $('#mealSeg').addEventListener('click',e=>{const b=e.target.closest('[data-meal]
 function setPicksOpen(open,instant){
   const p=$('#picks'),t=$('#pickToggle');t.setAttribute('aria-expanded',String(open));
   $('#pickToggleTxt').textContent=open?'Hide':'Show';LS.set('picksOpen2',open);
-  for(const a of p.getAnimations())a.cancel();
+  for(const a of p.getAnimations())a.cancel();clearTimeout(setPicksOpen.t);
   if(instant||calm||!p.animate){p.classList.toggle('folded',!open);return}
   const was=!p.classList.contains('folded');if(was===open)return;
   const c=()=>getComputedStyle(p);
   p.classList.remove('folded');const cs=c(),full={height:p.offsetHeight+'px',paddingTop:cs.paddingTop,paddingBottom:cs.paddingBottom,opacity:1,borderTopWidth:cs.borderTopWidth,borderBottomWidth:cs.borderBottomWidth};
   const shut={height:'0px',paddingTop:'0px',paddingBottom:'0px',opacity:0,borderTopWidth:'0px',borderBottomWidth:'0px'};
   p.style.overflow='hidden';p.style.transition='none';   // the old CSS fold transition would fight this one
-  const opt={duration:open?480:340,easing:open?'cubic-bezier(.2,.9,.25,1)':'cubic-bezier(.4,0,.2,1)'};
+  const opt={duration:open?480:340,easing:open?'cubic-bezier(.2,.9,.25,1)':'cubic-bezier(.4,0,.2,1)',fill:open?'none':'forwards'};
   const an=p.animate(open?[shut,{...full,opacity:.6,offset:.5},full]:[full,shut],opt);
   if(open)[...p.children].forEach((r,i)=>r.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'none'}],{duration:380,delay:90+i*55,easing:'cubic-bezier(.2,.9,.25,1)',fill:'backwards'}));
-  else p.classList.add('folded');   // the folded look is the end state; the animation plays over it
-  const tidy=()=>{p.style.removeProperty('overflow');p.style.removeProperty('transition')};
-  an.onfinish=an.oncancel=tidy;clearTimeout(setPicksOpen.t);setPicksOpen.t=setTimeout(tidy,opt.duration+80);   // fallback if finish is delayed
+  // closing: the card stays unfolded while it shrinks (the folded class caps max-height at 0, which would cut it
+  // off instantly), and only takes the folded state once the animation is done
+  const tidy=()=>{if(!open){p.classList.add('folded');an.cancel()}p.style.removeProperty('overflow');p.style.removeProperty('transition')};
+  an.onfinish=tidy;an.oncancel=()=>{p.style.removeProperty('overflow');p.style.removeProperty('transition')};setPicksOpen.t=setTimeout(tidy,opt.duration+80);   // fallback if finish is delayed
 }
 $('#pickToggle').addEventListener('click',()=>setPicksOpen($('#pickToggle').getAttribute('aria-expanded')!=='true'));
 setPicksOpen(LS.get('picksOpen2',false),true);   // collapsed until you open it
